@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>مدينة الأزهر السكنية - النسخة النهائية</title>
+<style>
+body { font-family: Arial; direction: rtl; text-align: center; background:#f5f5f5;}
+.container {background:white;padding:20px;max-width:900px;margin:30px auto;border-radius:8px;}
+select, button, input {width:80%;padding:10px;margin:10px 0;font-size:16px;}
+iframe {width:100%;height:400px;border:1px solid #ccc;margin-bottom:20px;}
+#loginModal {display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;}
+#loginBox {background:white;padding:20px;width:300px;border-radius:8px;}
+#unitInterface {display:none; background:white; padding:20px; border-radius:8px; max-width:900px; margin:20px auto;text-align:right;}
+#unitInterface button.tabBtn {width:22%;margin:5px 1%;padding:8px;}
+.tabContent {display:none;margin-top:15px;}
+.editable {width:95%;margin:5px 0;}
+table {width:100%;border-collapse: collapse;margin:10px 0;}
+table, th, td {border:1px solid #ccc;}
+th, td {padding:5px;text-align:center;}
+td.editableCell {cursor:text;}
+button.deleteBtn {background:red;color:white;border:none;padding:2px 6px;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="container" id="userSelection">
+<h2>مدينة الأزهر السكنية</h2>
+<iframe src="map.pdf"></iframe>
+
+<select id="category">
+  <option value="">اختر الفئة</option>
+  <option value="A">الفئة A</option>
+  <option value="B">الفئة B</option>
+  <option value="C">الفئة C</option>
+  <option value="D">الفئة D</option>
+</select>
+
+<select id="unit"><option value="">اختر رقم الوحدة</option></select>
+
+<button onclick="openLogin()">متابعة / تسجيل دخول</button>
+</div>
+
+<div id="loginModal">
+<div id="loginBox">
+<h3 id="loginUnit"></h3>
+<input type="text" id="username" placeholder="اسم المستخدم"><br><br>
+<input type="password" id="password" placeholder="كلمة المرور"><br><br>
+<button onclick="login()">دخول</button>
+<button onclick="closeLogin()">إلغاء</button>
+</div>
+</div>
+
+<div id="unitInterface">
+<button onclick="logout()" style="float:left;padding:5px 10px;">خروج</button>
+<h2 id="unitTitleInterface"></h2>
+
+<!-- Tabs -->
+<div>
+<button class="tabBtn" onclick="showTab('unitInfo')">بيانات الوحدة</button>
+<button class="tabBtn" onclick="showTab('payments')">الدفعات</button>
+<button class="tabBtn" onclick="showTab('construction')">البناء</button>
+<button class="tabBtn" onclick="showTab('unitHistory')">تاريخ الوحدة</button>
+<button class="tabBtn" onclick="showTab('media')">الصور والفيديو</button>
+<button class="tabBtn" onclick="showTab('alerts')">الإنذارات</button>
+<button class="tabBtn" onclick="showTab('notifications')">التبليغات</button>
+<button class="tabBtn" onclick="showTab('userPass')">تعديل المستخدم</button>
+</div>
+
+<!-- Tab Contents -->
+<div id="unitInfo" class="tabContent">
+<h3>بيانات الوحدة</h3>
+<label>اسم المستفيد:</label>
+<input type="text" id="ownerName" class="editable" readonly><br>
+<label>رقم الهاتف:</label>
+<input type="text" id="ownerPhone" class="editable" readonly><br>
+<button id="saveInfo" onclick="saveData('info')">حفظ</button>
+</div>
+
+<div id="payments" class="tabContent">
+<h3>الدفعات</h3>
+<table id="paymentsTable"><tr><th>رقم الدفعة</th><th>التاريخ</th><th>المبلغ</th><th>ملاحظات</th><th>حذف</th></tr></table>
+<button onclick="addRow('paymentsTable')" id="addPayments">إضافة دفعة</button>
+<button id="savePayments" onclick="saveData('payments')">حفظ</button>
+</div>
+
+<div id="construction" class="tabContent">
+<h3>مرحلة البناء</h3>
+<table id="constructionTable"><tr><th>المرحلة</th><th>تاريخ البدء</th><th>تاريخ الانتهاء</th><th>ملاحظات</th><th>حذف</th></tr></table>
+<button onclick="addRow('constructionTable')" id="addConstruction">إضافة مرحلة</button>
+<button id="saveConstruction" onclick="saveData('construction')">حفظ</button>
+</div>
+
+<div id="unitHistory" class="tabContent">
+<h3>تاريخ الوحدة</h3>
+<table id="unitHistoryTable"><tr><th>نوع العملية</th><th>التاريخ</th><th>ملاحظات</th><th>حذف</th></tr></table>
+<button onclick="addRow('unitHistoryTable')" id="addHistory">إضافة</button>
+<button id="saveHistory" onclick="saveData('history')">حفظ</button>
+</div>
+
+<div id="media" class="tabContent">
+<h3>الصور والفيديو</h3>
+<div id="mediaList"></div>
+<input type="file" id="mediaInput" class="editable" multiple>
+<button onclick="addMedia()" id="addMediaBtn">إضافة</button>
+<button id="saveMedia" onclick="saveData('media')">حفظ</button>
+</div>
+
+<div id="alerts" class="tabContent">
+<h3>الإنذارات</h3>
+<div id="alertsList"></div>
+<input type="file" id="alertsInput" class="editable" multiple>
+<button onclick="addAlert()" id="addAlertBtn">إضافة</button>
+<button id="saveAlerts" onclick="saveData('alerts')">حفظ</button>
+</div>
+
+<div id="notifications" class="tabContent">
+<h3>التبليغات</h3>
+<table id="notifyTable"><tr><th>التاريخ</th><th>ملاحظات الاتصال</th><th>حذف</th></tr></table>
+<button onclick="addRow('notifyTable')" id="addNotify">إضافة تبليغ</button>
+<button id="saveNotify" onclick="saveData('notifications')">حفظ</button>
+</div>
+
+<div id="userPass" class="tabContent">
+<h3>تعديل اسم المستخدم وكلمة المرور (أدمن فقط)</h3>
+<label>اسم المستخدم للوحدة:</label>
+<input type="text" id="unitUsername"><br>
+<label>كلمة المرور:</label>
+<input type="password" id="unitPassword"><br>
+<button onclick="saveUserPass()">حفظ التعديلات</button>
+</div>
+
+<script>
+// إعداد الوحدات
+const unitsCount={A:300,B:100,C:200,D:100};
+let unitData={};
+const adminUser="admin",adminPass="admin123";
+const categorySelect=document.getElementById("category");
+const unitSelect=document.getElementById("unit");
+let selectedUnit="", isAdmin=false;
+
+// تعبئة رقم الوحدة
+categorySelect.addEventListener("change", function(){
+  const cat=this.value; 
+  unitSelect.innerHTML='<option value="">اختر رقم الوحدة</option>';
+  if(cat && unitsCount[cat]){
+    for(let i=1;i<=unitsCount[cat];i++){
+      const opt=document.createElement("option"); opt.value=cat+i; opt.textContent=cat+i; unitSelect.appendChild(opt);
+    }
+  }
+});
+
+// فتح صفحة تسجيل الدخول
+function openLogin(){selectedUnit=unitSelect.value;document.getElementById("loginUnit").innerText = selectedUnit? "الوحدة: "+selectedUnit:"تسجيل دخول الأدمن";document.getElementById("loginModal").style.display="flex";}
+function closeLogin(){document.getElementById("loginModal").style.display="none";}
+
+// تسجيل الدخول
+function login(){
+  const user=document.getElementById("username").value;
+  const pass=document.getElementById("password").value;
+  if(user===adminUser && pass===adminPass){
+    alert("تم تسجيل الدخول كأدمن");
+    closeLogin(); isAdmin=true; selectedUnit=null;
+    document.getElementById("userSelection").style.display="none";
+    showUnitInterface();
+  } else if(user===selectedUnit && pass==="1234"){
+    alert("تم تسجيل الدخول للوحدة "+selectedUnit);
+    closeLogin(); isAdmin=false;
+    document.getElementById("userSelection").style.display="none";
+    showUnitInterface();
+  } else alert("بيانات الدخول غير صحيحة");
+}
+
+// السماح بالضغط على Enter لتسجيل الدخول
+document.getElementById("username").addEventListener("keypress", function(e){if(e.key==="Enter") login();});
+document.getElementById("password").addEventListener("keypress", function(e){if(e.key==="Enter") login();});
+
+// واجهة الوحدة
+function showUnitInterface(){
+  document.getElementById("unitInterface").style.display="block";
+  document.getElementById("unitTitleInterface").innerText = isAdmin? "واجهة الأدمن" : "الوحدة: "+selectedUnit;
+  if(!selectedUnit && isAdmin) selectedUnit=prompt("أدخل رقم الوحدة لتعديل بياناتها (مثال: A20):");
+  if(!unitData[selectedUnit]) unitData[selectedUnit]={info:{name:"",phone:""},payments:[],construction:[],media:[],alerts:[],notifications:[],history:[],userPass:{username:selectedUnit,password:"1234"}};
+  loadUnitData();
+  toggleAdminButtons();
+}
+
+// تحميل البيانات
+function loadUnitData(){
+  const data=unitData[selectedUnit];
+  document.getElementById("ownerName").value=data.info.name;
+  document.getElementById("ownerPhone").value=data.info.phone;
+  if(isAdmin){
+    document.getElementById("unitUsername").value=data.userPass.username;
+    document.getElementById("unitPassword").value=data.userPass.password;
+  }
+}
+
+// تعديل toggleAdminButtons لحل مشكلة المستفيد
+function toggleAdminButtons(){
+  // زر الخروج يبقى ظاهر للجميع
+  document.querySelector('button[onclick="logout()"]').style.display = 'inline-block';
+  
+  // Tabs دائماً ظاهرة للجميع
+  const tabBtns = document.getElementsByClassName('tabBtn');
+  for(let i=0;i<tabBtns.length;i++){
+    tabBtns[i].style.display = 'inline-block';
+  }
+
+  // الأزرار الأخرى مخفية إذا مستفيد
+  const allButtons = document.querySelectorAll('#unitInterface button');
+  allButtons.forEach(btn => {
+    if(btn.className === 'tabBtn' || btn.onclick===logout) return; // لا نخفي Tabs وزر الخروج
+    btn.style.display = isAdmin ? 'inline-block' : 'none';
+  });
+
+  // Tab تعديل المستخدم يظهر للأدمن فقط
+  document.getElementById("userPass").style.display = isAdmin ? 'block' : 'none';
+
+  // الجداول للمستفيد للعرض فقط
+  const tables = document.querySelectorAll('table');
+  tables.forEach(tbl => {
+    const tds = tbl.querySelectorAll('td');
+    tds.forEach(td => td.contentEditable = isAdmin);
+  });
+}
+
+// Tabs
+function showTab(tabName){
+  const tabs=document.getElementsByClassName('tabContent'); for(let i=0;i<tabs.length;i++){tabs[i].style.display='none';}
+  document.getElementById(tabName).style.display='block';
+}
+
+// الخروج
+function logout(){
+  document.getElementById("unitInterface").style.display="none";
+  document.getElementById("userSelection").style.display="block";
+  categorySelect.value=""; unitSelect.innerHTML='<option value="">اختر رقم الوحدة</option>';
+  selectedUnit=""; isAdmin=false;
+  alert("تم تسجيل الخروج");
+}
+
+// إضافة صفوف
+function addRow(tableId){const table=document.getElementById(tableId); let tr=table.insertRow(); for(let i=0;i<table.rows[0].cells.length-1;i++){let td=tr.insertCell(i); if(isAdmin){td.contentEditable=true; td.className="editableCell";} else td.innerText="";} if(isAdmin){ let del=tr.insertCell(-1); let btn=document.createElement("button"); btn.innerText="حذف"; btn.className="deleteBtn"; btn.onclick=()=>{table.deleteRow(tr.rowIndex);}; del.appendChild(btn); }}
+function saveData(section){alert("تم الحفظ بنجاح - "+section);} // مؤقت
+function addMedia(){alert("رفع الملفات");}
+function addAlert(){alert("رفع الإنذارات");}
+function saveUserPass(){unitData[selectedUnit].userPass.username=document.getElementById("unitUsername").value; unitData[selectedUnit].userPass.password=document.getElementById("unitPassword").value; alert("تم حفظ اسم المستخدم وكلمة المرور");}
+</script>
+
+</body>
+</html>

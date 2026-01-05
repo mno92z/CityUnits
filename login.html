@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>تسجيل الدخول</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            text-align: center;
+            background: #f5f5f5;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            max-width: 400px;
+            margin: 80px auto;
+            border-radius: 8px;
+        }
+        input, button {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>تسجيل الدخول للوحدة السكنية</h2>
+    <p id="unitTitle"></p>
+
+    <input type="text" id="username" placeholder="اسم المستخدم">
+    <input type="password" id="password" placeholder="كلمة المرور">
+
+    <button onclick="login()">دخول</button>
+</div>
+
+<script>
+// نجيب الوحدة المختارة من الرابط
+const params = new URLSearchParams(window.location.search);
+const unit = params.get("unit");
+
+document.getElementById("unitTitle").innerText =
+    unit ? "الوحدة: " + unit : "";
+
+function login() {
+    const user = document.getElementById("username").value;
+    const pass = document.getElementById("password").value;
+
+    // تجربة بسيطة فقط
+    if (user === unit && pass === "1234") {
+        alert("تم تسجيل الدخول بنجاح");
+        // لاحقاً نوديه لصفحة الوحدة
+    } else {
+        alert("بيانات الدخول غير صحيحة");
+    }
+}
+</script>
+
+</body>
+</html>
