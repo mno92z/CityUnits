@@ -64,7 +64,7 @@
         .btn-reject { background: #dc3545; color: white; }
 
         .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .media-item { background: #eee; border-radius: 10px; height: 120px; display: flex; align-items: center; justify-content: center; position: relative; flex-direction: column; }
+        .media-item { background: #eee; border-radius: 10px; height: 120px; display: flex; align-items: center; justify-content: center; position: relative; flex-direction: column; overflow: hidden; }
         
         .fab-add { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; display: none; align-items: center; justify-content: center; }
         
@@ -190,6 +190,8 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    // 1. استيراد مكتبة التخزين
+    import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
     // إعدادات مشروعك
     const firebaseConfig = {
@@ -203,6 +205,8 @@
 
     const app = initializeApp(firebaseConfig);
     const dbRealtime = getDatabase(app);
+    const storage = getStorage(app); // 2. تعريف التخزين
+    
     let db = {}; 
     let currentUnit = null;
     let isAdmin = false;
@@ -365,15 +369,29 @@
         saveData();
     }
 
+    // 3. تعديل عرض الوسائط لعرض الصور الحقيقية
     function renderMediaGrid() {
         const g = document.getElementById('mediaGrid'); g.innerHTML = "";
         let media = db[currentUnit].media || [];
         media.forEach((m, i) => {
             let d = document.createElement('div'); d.className = 'media-item';
-            d.innerHTML = `<div class="media-icon">${m.type==='video'?'🎥':'📷'}</div><div class="media-label">${m.desc}</div>`;
+            
+            // التحقق مما إذا كان هناك رابط صورة
+            let contentHTML = '';
+            if (m.url) {
+                if (m.type === 'video') {
+                     contentHTML = `<a href="${m.url}" target="_blank" style="text-decoration:none; font-size:40px;">🎬</a>`;
+                } else {
+                     contentHTML = `<img src="${m.url}" style="width:100%; height:80px; object-fit:cover; border-radius:5px;">`;
+                }
+            } else {
+                contentHTML = `<div class="media-icon">${m.type==='video'?'🎥':'📷'}</div>`;
+            }
+
+            d.innerHTML = `${contentHTML}<div class="media-label">${m.desc}</div>`;
             if(isAdmin) {
                 let b = document.createElement('button'); b.innerHTML='&times;';
-                b.style.cssText="position:absolute;top:5px;left:5px;background:red;color:white;border:none;border-radius:50%;width:20px;height:20px;line-height:20px;padding:0";
+                b.style.cssText="position:absolute;top:5px;left:5px;background:red;color:white;border:none;border-radius:50%;width:20px;height:20px;line-height:20px;padding:0;cursor:pointer;";
                 b.onclick = () => { db[currentUnit].media.splice(i, 1); saveData(); };
                 d.appendChild(b);
             }
@@ -425,15 +443,64 @@
             title.innerText = "تبليغ";
             content.innerHTML = `<label>الرسالة</label><input type="text" id="mMsg"><label>التاريخ</label><input type="text" id="mDate" value="${today}">`;
         } else if (currentTab === 'media') {
-             title.innerText = "وسائط";
-             content.innerHTML = `<label>النوع</label><select id="mType" style="width:100%;margin-top:5px;border:1px solid #ddd;padding:10px;border-radius:8px"><option value="image">صورة</option><option value="video">فيديو</option></select><label>الوصف</label><input type="text" id="mDesc"><label>التاريخ</label><input type="text" id="mDate" value="${today}">`;
+             // 4. إضافة حقل اختيار الملف (Input File)
+             title.innerText = "رفع وسائط";
+             content.innerHTML = `
+                <label>اختر الملف</label>
+                <input type="file" id="mFile" accept="image/*,video/*">
+                <label>الوصف</label>
+                <input type="text" id="mDesc">
+                <label>التاريخ</label>
+                <input type="text" id="mDate" value="${today}">
+                <p id="uploadStatus" style="color:blue; font-size:12px; margin-top:5px;"></p>
+             `;
         }
         document.getElementById('actionModal').style.display = 'flex';
     }
 
+    // 5. تعديل دالة الحفظ لتشمل رفع الملفات
     window.confirmModal = function() {
         const date = document.getElementById('mDate').value;
         const d = db[currentUnit];
+        
+        if (currentTab === 'media') {
+            // كود خاص لرفع الصور
+            const fileInput = document.getElementById('mFile');
+            const file = fileInput.files[0];
+            const desc = document.getElementById('mDesc').value;
+            const statusText = document.getElementById('uploadStatus');
+
+            if (!file) {
+                alert("يرجى اختيار ملف أولاً");
+                return;
+            }
+
+            statusText.innerText = "جاري الرفع... يرجى الانتظار";
+            
+            // إنشاء اسم للملف ومسار
+            const fileName = Date.now() + '_' + file.name;
+            const storageRef = sRef(storage, 'units_media/' + currentUnit + '/' + fileName);
+
+            // عملية الرفع
+            uploadBytes(storageRef, file).then((snapshot) => {
+                // الحصول على الرابط
+                getDownloadURL(snapshot.ref).then((downloadURL) => {
+                    const type = file.type.startsWith('video') ? 'video' : 'image';
+                    d.media.push({type: type, desc: desc, date: date, url: downloadURL});
+                    saveData();
+                    statusText.innerText = "";
+                    closeModal();
+                });
+            }).catch((error) => {
+                console.error("Upload failed", error);
+                alert("فشل الرفع: " + error.message);
+                statusText.innerText = "";
+            });
+
+            return; // توقف هنا ولا تكمل الكود بالأسفل
+        }
+
+        // الحفظ لباقي الأقسام
         if (currentTab === 'payments') {
             const r = document.getElementById('mReceipt').value;
             const a = document.getElementById('mAmount').value;
@@ -447,9 +514,8 @@
              d.history.push([date, document.getElementById('mEvent').value, document.getElementById('mNote').value]);
         } else if (currentTab === 'notifs') {
              d.notifs.push([date, document.getElementById('mMsg').value]);
-        } else if (currentTab === 'media') {
-             d.media.push({type:document.getElementById('mType').value, desc:document.getElementById('mDesc').value, date:date});
         }
+
         saveData();
         closeModal();
     }
