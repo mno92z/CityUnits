@@ -279,20 +279,30 @@
 
     window.openUnit = function(id) {
         currentUnit = id;
+
+        // تهيئة البيانات إذا كانت الوحدة جديدة
         if (!db[id]) {
             db[id] = { info: {name:"",phone:""}, settings: {user:id, pass:"123"}, totalPrice:0, payments:[], works:[], history:[], notifs:[], media:[], visits:[] };
         }
+        // التأكد من وجود المصفوفات لتجنب الأخطاء
         ['history', 'notifs', 'media', 'visits', 'payments', 'works'].forEach(k => { if(!db[id][k]) db[id][k] = []; });
 
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('adminDashboard').style.display = 'none';
+        // --- هنا التصحيح: إجبار النظام على إخفاء الشاشات الأخرى ---
+        document.getElementById('loadingScreen').style.display = 'none'; // إخفاء التحميل
+        document.getElementById('loginScreen').style.display = 'none';   // إخفاء الدخول
+        document.getElementById('adminDashboard').style.display = 'none'; // إخفاء لوحة المربعات (هذا كان سبب المشكلة)
+        
+        // إظهار واجهة الوحدة
         document.getElementById('unitInterface').style.display = 'block';
         document.getElementById('unitInterface').className = isAdmin ? 'show-admin' : '';
         
+        // تحميل البيانات
         loadUnitData();
         showTab('info');
+        
+        // الانتقال لأعلى الصفحة
+        window.scrollTo(0, 0);
     }
-
     window.loadUnitData = function() {
         if(!db[currentUnit]) return;
         const d = db[currentUnit];
