@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>إدارة مدينة الأزهر - النظام السحابي</title>
     <style>
-        :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --white: #ffffff; --sold-bg: #e0f2f1; --sold-border: #00bfa5; }
+        :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --white: #ffffff; --sold-bg: #e0f2f1; --sold-border: #00bfa5; --danger: #d32f2f; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; -webkit-tap-highlight-color: transparent; }
         * { box-sizing: border-box; }
         button, input, select, textarea { font-size: 16px; outline: none; font-family: inherit; }
@@ -21,12 +21,16 @@
         .login-box { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
         .login-input { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; background: rgba(255,255,255,0.9); color: #333; font-weight: bold; }
         .login-btn { width: 100%; padding: 15px; background: var(--accent); color: var(--primary); font-weight: 900; border: none; border-radius: 12px; margin-top: 10px; cursor: pointer; }
+        .forgot-pass { margin-top: 15px; font-size: 13px; color: #ccc; cursor: pointer; text-decoration: underline; }
 
         /* Admin Dashboard */
         #adminDashboard { display: none; padding: 20px; }
-        .search-bar { position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 10px 0; }
+        .top-bar { position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 10px 0; display: flex; gap: 10px; flex-direction: column; }
         .search-input { width: 100%; padding: 15px; border-radius: 50px; border: 1px solid #ddd; font-size: 16px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding-bottom: 80px; }
+        
+        .super-admin-btn { background: #333; color: var(--accent); border: 1px solid var(--accent); padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: none; }
+        
+        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding-bottom: 80px; margin-top: 10px; }
         .unit-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; position: relative; }
         .unit-card.sold { border-color: var(--sold-border); background: var(--sold-bg); }
         .unit-card h3 { margin: 0; color: var(--primary); font-size: 18px; }
@@ -77,6 +81,11 @@
         .btn-confirm { flex: 2; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; }
         .btn-cancel { flex: 1; padding: 12px; background: #eee; color: #333; border: none; border-radius: 10px; font-weight: bold; }
 
+        /* Manage Admins Modal */
+        #adminsModal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:150; padding:20px; overflow-y:auto; }
+        .admin-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
+        .admin-badge { background: #333; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+
         @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
         .admin-only { display: none !important; }
@@ -96,18 +105,38 @@
         <p style="opacity:0.8;">نظام المتابعة السحابي</p>
     </div>
     <div class="login-box">
-        <input type="text" id="loginUser" class="login-input" placeholder="رقم الوحدة أو admin">
+        <input type="text" id="loginUser" class="login-input" placeholder="اسم المستخدم أو رقم الوحدة">
         <input type="password" id="loginPass" class="login-input" placeholder="كلمة المرور">
         <button onclick="handleLogin()" class="login-btn">دخول</button>
+        <div class="forgot-pass" onclick="alert('لإعادة تعيين كلمة المرور، يرجى التواصل مع المسؤول الرئيسي (Super Admin).')">نسيت كلمة المرور؟</div>
     </div>
 </div>
 
 <div id="adminDashboard">
-    <div class="search-bar">
-        <input type="text" class="search-input" placeholder="🔍 ابحث عن وحدة..." onkeyup="filterUnits(this.value)">
+    <div class="top-bar">
+        <div style="display: flex; gap:5px;">
+             <input type="text" class="search-input" placeholder="🔍 ابحث عن وحدة..." onkeyup="filterUnits(this.value)">
+             <button class="super-admin-btn" id="btnManageAdmins" onclick="openAdminsManager()">⚙️</button>
+        </div>
+        <button class="back-btn" style="background:var(--danger); width:100%;" onclick="location.reload()">تسجيل خروج</button>
     </div>
+    
     <div class="units-grid" id="unitsGrid"></div>
-    <button class="back-btn" style="background:#d32f2f; width:100%; margin-top:20px;" onclick="location.reload()">تسجيل خروج</button>
+</div>
+
+<div id="adminsModal">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2 style="margin:0">إدارة المسؤولين</h2>
+        <button onclick="closeAdminsManager()" style="background:none; border:none; font-size:20px;">✖</button>
+    </div>
+    <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-bottom:20px;">
+        <h4 style="margin-top:0;">إضافة / تعديل مسؤول</h4>
+        <input type="text" id="newAdminUser" placeholder="اسم المستخدم (Username)">
+        <input type="text" id="newAdminPass" placeholder="كلمة المرور">
+        <button class="login-btn" onclick="saveAdminUser()">حفظ المسؤول</button>
+    </div>
+    <h3>قائمة المسؤولين</h3>
+    <div id="adminsListContainer"></div>
 </div>
 
 <div id="unitInterface">
@@ -189,7 +218,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue, get, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
     import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
     const firebaseConfig = {
@@ -205,59 +234,148 @@
     const dbRealtime = getDatabase(app);
     const storage = getStorage(app);
     
-    let db = {}; 
+    let db = {}; // بيانات الوحدات
+    let adminsDb = {}; // بيانات الأدمنية
     let currentUnit = null;
     let isAdmin = false;
+    let isSuperAdmin = false;
     let currentTab = 'info';
 
     // --- دالة التبديل الإجبارية (Nuclear Switch) ---
     function switchScreen(screenId) {
-        const screens = ['loadingScreen', 'loginScreen', 'adminDashboard', 'unitInterface'];
-        
-        // إخفاء الجميع بقوة
+        const screens = ['loadingScreen', 'loginScreen', 'adminDashboard', 'unitInterface', 'adminsModal'];
         screens.forEach(id => {
             const el = document.getElementById(id);
-            if(el) {
-                el.style.cssText = "display: none !important;"; 
-            }
+            if(el) el.style.cssText = "display: none !important;"; 
         });
 
-        // إظهار الشاشة المطلوبة فقط
         const target = document.getElementById(screenId);
         if(target) {
             target.style.cssText = "display: block !important;";
-            // تصحيح خاص للوحة التحكم لأنها تستخدم Grid
-            if(screenId === 'adminDashboard') {
-                target.style.display = 'block'; 
-            }
+            if(screenId === 'adminDashboard') target.style.display = 'block'; 
         }
-        
         window.scrollTo(0, 0);
     }
 
-    // قراءة البيانات
-    const dbRef = ref(dbRealtime, 'units_db_v1');
-    onValue(dbRef, (snapshot) => {
+    // --- قراءة البيانات (وحدات + أدمنية) ---
+    
+    // 1. قراءة الوحدات
+    const unitsRef = ref(dbRealtime, 'units_db_v1');
+    onValue(unitsRef, (snapshot) => {
         const data = snapshot.val();
         db = data || {};
+        checkReady();
+    });
+
+    // 2. قراءة الأدمنية
+    const adminsRef = ref(dbRealtime, 'system_admins');
+    onValue(adminsRef, (snapshot) => {
+        const data = snapshot.val();
+        adminsDb = data || {};
         
+        // إذا لم يكن هناك أدمن رئيسي، قم بإنشائه تلقائياً
+        if (!adminsDb['admin']) {
+            set(ref(dbRealtime, 'system_admins/admin'), { pass: 'admin123', role: 'super' });
+        }
+        
+        checkReady();
+        if(isSuperAdmin) renderAdminsList(); // تحديث القائمة إذا كانت مفتوحة
+    });
+
+    function checkReady() {
         // عند التحميل لأول مرة فقط
         if (document.getElementById('loadingScreen').style.display !== 'none' && document.getElementById('loadingScreen').style.display !== 'none !important') {
              switchScreen('loginScreen');
         }
-        
         // تحديث البيانات الحية
-        if(currentUnit) {
-            loadUnitData();
-        } else if(isAdmin) {
-            // تحديث الشبكة فقط إذا كنا في لوحة التحكم
-            // هنا نتحقق إذا كانت اللوحة هي الظاهرة حالياً
-            const dash = document.getElementById('adminDashboard');
-            if(dash.style.display !== 'none' && dash.style.display !== 'none !important') {
-                renderUnitsGrid(document.querySelector('.search-input').value);
-            }
+        if(currentUnit) loadUnitData();
+        else if(isAdmin && document.getElementById('adminDashboard').style.display.indexOf('block') > -1) {
+            renderUnitsGrid(document.querySelector('.search-input').value);
         }
-    });
+    }
+
+    // --- تسجيل الدخول (المعدل) ---
+    window.handleLogin = function() {
+        const u = document.getElementById('loginUser').value.trim().toLowerCase();
+        const p = document.getElementById('loginPass').value.trim();
+        
+        // التحقق هل المستخدم من ضمن الأدمنية؟
+        if (adminsDb[u] && adminsDb[u].pass === p) {
+            isAdmin = true;
+            isSuperAdmin = (adminsDb[u].role === 'super'); // تحديد إذا كان رئيسي
+            currentUnit = null;
+            
+            // إظهار زر الإعدادات فقط للأدمن الرئيسي
+            document.getElementById('btnManageAdmins').style.display = isSuperAdmin ? 'block' : 'none';
+            
+            initAdminDashboard();
+        } 
+        // التحقق هل هو مستخدم وحدة عادية؟
+        else if (db[u] && db[u].settings && db[u].settings.pass === p) {
+            isAdmin = false; 
+            isSuperAdmin = false;
+            openUnit(u);
+        } else {
+            alert("اسم المستخدم أو كلمة المرور غير صحيحة");
+        }
+    }
+
+    // --- إدارة المسؤولين (للسوبر أدمن فقط) ---
+    window.openAdminsManager = function() {
+        if(!isSuperAdmin) return alert("ليس لديك صلاحية!");
+        switchScreen('adminsModal');
+        renderAdminsList();
+    }
+
+    window.closeAdminsManager = function() {
+        switchScreen('adminDashboard');
+    }
+
+    window.renderAdminsList = function() {
+        const container = document.getElementById('adminsListContainer');
+        container.innerHTML = "";
+        
+        Object.keys(adminsDb).forEach(username => {
+            const admin = adminsDb[username];
+            const div = document.createElement('div');
+            div.className = 'admin-list-item';
+            
+            let badge = admin.role === 'super' ? '<span class="admin-badge">رئيسي</span>' : '';
+            let deleteBtn = admin.role === 'super' ? '' : `<button onclick="deleteAdmin('${username}')" style="color:red; background:none; border:none; cursor:pointer;">🗑 حذف</button>`;
+            
+            div.innerHTML = `
+                <div><strong>${username}</strong> ${badge} <br><small>كلمة المرور: ${admin.pass}</small></div>
+                <div>${deleteBtn}</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    window.saveAdminUser = function() {
+        const u = document.getElementById('newAdminUser').value.trim().toLowerCase();
+        const p = document.getElementById('newAdminPass').value.trim();
+        
+        if(!u || !p) return alert("يرجى ملء البيانات");
+        
+        // التحقق من عدم تكرار الاسم مع الوحدات
+        if(db[u]) return alert("هذا الاسم مستخدم لوحدة، اختر اسماً آخر");
+
+        set(ref(dbRealtime, 'system_admins/' + u), {
+            pass: p,
+            role: 'editor' // الأدمن المضاف يدوياً يكون محرراً وليس رئيسياً
+        }).then(() => {
+            alert("تم الحفظ بنجاح");
+            document.getElementById('newAdminUser').value = "";
+            document.getElementById('newAdminPass').value = "";
+        });
+    }
+
+    window.deleteAdmin = function(username) {
+        if(!confirm("هل أنت متأكد من حذف هذا المسؤول؟")) return;
+        remove(ref(dbRealtime, 'system_admins/' + username));
+    }
+
+    // --------------------------------------------------------
 
     window.saveData = function() {
         if(!currentUnit) return;
@@ -269,24 +387,6 @@
         d.settings.pass = document.getElementById('uPass').value;
         set(ref(dbRealtime, 'units_db_v1/' + currentUnit), d);
     }
-    
-    window.handleLogin = function() {
-        const u = document.getElementById('loginUser').value.trim();
-        const p = document.getElementById('loginPass').value.trim();
-        
-        if (u === "admin" && p === "admin123") {
-            isAdmin = true; 
-            currentUnit = null; 
-            initAdminDashboard();
-        } else {
-            if (db[u] && db[u].settings && db[u].settings.pass === p) {
-                isAdmin = false; 
-                openUnit(u);
-            } else {
-                alert("بيانات خاطئة أو الوحدة غير مفعلة");
-            }
-        }
-    }
 
     function initAdminDashboard() {
         currentUnit = null; 
@@ -295,7 +395,6 @@
     }
 
     window.renderUnitsGrid = function(filter) {
-        // حماية إضافية: إذا كنا داخل وحدة، لا تقم برسم الشبكة
         if(currentUnit !== null) return;
 
         const grid = document.getElementById('unitsGrid'); grid.innerHTML = "";
@@ -318,7 +417,6 @@
     window.filterUnits = (val) => renderUnitsGrid(val);
 
     window.openUnit = function(id) {
-        // 1. إخفاء كل شيء فوراً
         switchScreen('unitInterface'); 
         
         currentUnit = id;
