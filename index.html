@@ -1,196 +1,6 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إدارة مدينة الأزهر - النظام السحابي</title>
-    <style>
-        :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --white: #ffffff; --sold-bg: #e0f2f1; --sold-border: #00bfa5; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; -webkit-tap-highlight-color: transparent; }
-        * { box-sizing: border-box; }
-        button, input, select, textarea { font-size: 16px; outline: none; font-family: inherit; }
-        .container { max-width: 100%; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
-        
-        /* Loading Overlay */
-        #loadingScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; transition: opacity 0.5s; }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Login */
-        #loginScreen { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(135deg, var(--primary), #00251a); color: white; text-align: center; }
-        .login-box { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
-        .login-input { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; background: rgba(255,255,255,0.9); color: #333; font-weight: bold; }
-        .login-btn { width: 100%; padding: 15px; background: var(--accent); color: var(--primary); font-weight: 900; border: none; border-radius: 12px; margin-top: 10px; cursor: pointer; }
-
-        /* Admin Dashboard */
-        #adminDashboard { display: none; padding: 20px; }
-        .search-bar { position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 10px 0; }
-        .search-input { width: 100%; padding: 15px; border-radius: 50px; border: 1px solid #ddd; font-size: 16px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding-bottom: 80px; }
-        .unit-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; position: relative; }
-        .unit-card.sold { border-color: var(--sold-border); background: var(--sold-bg); }
-        .unit-card h3 { margin: 0; color: var(--primary); font-size: 18px; }
-        .unit-card small { color: #888; font-size: 11px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .notify-dot { position: absolute; top: -5px; right: -5px; width: 15px; height: 15px; background: red; border-radius: 50%; border: 2px solid white; display: none; }
-        .has-request .notify-dot { display: block; }
-
-        /* Unit Interface */
-        #unitInterface { display: none; background: white; min-height: 100vh; padding-bottom: 80px; }
-        .unit-header { background: var(--primary); color: white; padding: 20px; border-radius: 0 0 25px 25px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
-        
-        .stats-scroll { display: flex; overflow-x: auto; gap: 15px; padding: 0 20px 20px; scrollbar-width: none; }
-        .stat-card { min-width: 150px; padding: 15px; border-radius: 15px; color: white; flex-shrink: 0; }
-        .bg-1 { background: linear-gradient(45deg, #FF9800, #F57C00); }
-        .bg-2 { background: linear-gradient(45deg, #2196F3, #1976D2); }
-        .bg-3 { background: linear-gradient(45deg, #4CAF50, #388E3C); }
-
-        .tabs-nav { display: flex; overflow-x: auto; padding: 0 10px; gap: 10px; border-bottom: 1px solid #eee; margin-bottom: 15px; scrollbar-width: none; }
-        .tab-btn { padding: 10px 15px; background: none; border: none; white-space: nowrap; color: #666; font-weight: bold; border-bottom: 3px solid transparent; font-size: 14px; }
-        .tab-btn.active { color: var(--primary); border-bottom-color: var(--accent); }
-        .tab-content { display: none; padding: 0 20px; animation: fadeIn 0.3s; }
-        
-        .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: #444; }
-
-        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; }
-        .st-pending { background: #fff3cd; color: #856404; }
-        .st-approved { background: #d4edda; color: #155724; }
-        .st-rejected { background: #f8d7da; color: #721c24; }
-        .visit-action-btn { border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin: 0 2px; }
-        .btn-approve { background: #28a745; color: white; }
-        .btn-reject { background: #dc3545; color: white; }
-
-        .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .media-item { background: #eee; border-radius: 10px; height: 120px; display: flex; align-items: center; justify-content: center; position: relative; flex-direction: column; overflow: hidden; }
-        
-        .fab-add { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; display: none; align-items: center; justify-content: center; }
-        
-        label { font-size: 13px; color: #666; font-weight: bold; margin-top: 10px; display: block; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: #fff; }
-
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px); }
-        .modal-sheet { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 25px; animation: slideUp 0.3s; }
-        .modal-btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-confirm { flex: 2; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; }
-        .btn-cancel { flex: 1; padding: 12px; background: #eee; color: #333; border: none; border-radius: 10px; font-weight: bold; }
-
-        @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
-        .admin-only { display: none !important; }
-        .show-admin .admin-only { display: block !important; }
-    </style>
-</head>
-<body>
-
-<div id="loadingScreen">
-    <div class="loader"></div>
-    <p style="margin-top:20px; font-weight:bold;">جاري تهيئة البيانات...</p>
-</div>
-
-<div id="loginScreen" style="display:none;">
-    <div style="margin-bottom: 30px;">
-        <h1 style="margin:0;">مدينة الأزهر</h1>
-        <p style="opacity:0.8;">نظام المتابعة السحابي</p>
-    </div>
-    <div class="login-box">
-        <input type="text" id="loginUser" class="login-input" placeholder="رقم الوحدة أو admin">
-        <input type="password" id="loginPass" class="login-input" placeholder="كلمة المرور">
-        <button onclick="handleLogin()" class="login-btn">دخول</button>
-    </div>
-</div>
-
-<div id="adminDashboard">
-    <div class="search-bar">
-        <input type="text" class="search-input" placeholder="🔍 ابحث عن وحدة..." onkeyup="filterUnits(this.value)">
-    </div>
-    <div class="units-grid" id="unitsGrid"></div>
-    <button class="back-btn" style="background:#d32f2f; width:100%; margin-top:20px;" onclick="location.reload()">تسجيل خروج</button>
-</div>
-
-<div id="unitInterface">
-    <div class="unit-header">
-        <div>
-            <h2 style="margin:0;" id="headerUnitTitle">...</h2>
-            <small style="opacity:0.9;" id="headerOwner">...</small>
-        </div>
-        <button class="back-btn" onclick="goBack()">رجوع</button>
-    </div>
-
-    <div class="stats-scroll">
-        <div class="stat-card bg-1"><small>المدفوع</small><h3 style="margin:5px 0" id="dispPaid">0</h3></div>
-        <div class="stat-card bg-2"><small>المتبقي</small><h3 style="margin:5px 0" id="dispRemain">0</h3></div>
-        <div class="stat-card bg-3"><small>الإنجاز</small><h3 style="margin:5px 0" id="dispProg">0%</h3></div>
-    </div>
-
-    <div class="tabs-nav">
-        <button class="tab-btn active" onclick="showTab('info')">المعلومات</button>
-        <button class="tab-btn" onclick="showTab('payments')">المالية</button>
-        <button class="tab-btn" onclick="showTab('works')">سير العمل</button>
-        <button class="tab-btn" onclick="showTab('visits')">الزيارات</button>
-        <button class="tab-btn" onclick="showTab('history')">سجل الوحدة</button>
-        <button class="tab-btn" onclick="showTab('notifs')">التبليغات</button>
-        <button class="tab-btn" onclick="showTab('media')">الوسائط</button>
-        <button class="tab-btn admin-only" onclick="showTab('settings')">الإعدادات</button>
-    </div>
-
-    <div id="info" class="tab-content" style="display:block;">
-        <label>اسم المستفيد</label><input type="text" id="ownerName" class="editable" readonly>
-        <label>رقم الهاتف</label><input type="text" id="ownerPhone" class="editable" readonly>
-        <div class="admin-only" style="margin-top:20px; background:#e0f7fa; padding:15px; border-radius:10px;">
-            <label style="color:#006064;">السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData()">
-        </div>
-        <button class="login-btn admin-only" style="margin-top:20px;" onclick="saveData()">حفظ</button>
-    </div>
-
-    <div id="payments" class="tab-content">
-        <div class="table-wrapper"><table id="payTable"><thead><tr><th>التاريخ</th><th>الوصل</th><th>المبلغ</th><th>التفاصيل</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div>
-        <div style="height:60px;"></div>
-    </div>
-
-    <div id="works" class="tab-content">
-        <div class="table-wrapper"><table id="workTable"><thead><tr><th>المرحلة</th><th>التاريخ</th><th>%</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div>
-        <div style="height:60px;"></div>
-    </div>
-
-    <div id="visits" class="tab-content">
-        <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee; margin-bottom:20px;">
-            <h3 style="margin-top:0; color:var(--primary);">طلب زيارة</h3>
-            <label>التاريخ</label><input type="date" id="reqVisitDate">
-            <label>السبب</label><input type="text" id="reqVisitReason" placeholder="...">
-            <button class="login-btn" style="margin-top:10px;" onclick="submitVisitRequest()">إرسال</button>
-        </div>
-        <h3 style="margin-bottom:10px;">السجل</h3>
-        <div class="table-wrapper"><table id="visitTable"><thead><tr><th>التاريخ</th><th>السبب</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody></tbody></table></div>
-        <div style="height:60px;"></div>
-    </div>
-
-    <div id="history" class="tab-content"><div class="table-wrapper"><table id="histTable"><thead><tr><th>التاريخ</th><th>الحدث</th><th>ملاحظات</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div><div style="height:60px;"></div></div>
-    <div id="notifs" class="tab-content"><div class="table-wrapper"><table id="notifTable"><thead><tr><th>التاريخ</th><th>التبليغ</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div><div style="height:60px;"></div></div>
-    <div id="media" class="tab-content"><div class="media-grid" id="mediaGrid"></div><div style="height:60px;"></div></div>
-
-    <div id="settings" class="tab-content">
-        <label>اسم المستخدم</label><input type="text" id="uUser"><label>كلمة المرور</label><input type="text" id="uPass">
-        <button class="login-btn" onclick="saveData()">تحديث الحساب</button>
-    </div>
-
-    <button id="fabAdd" class="fab-add admin-only" onclick="openModal()">+</button>
-</div>
-
-<div id="actionModal" class="modal-overlay">
-    <div class="modal-sheet">
-        <div class="modal-title" id="modalTitle">إضافة جديد</div>
-        <div id="modalInputs"></div> 
-        <div class="modal-btn-group"><button class="btn-confirm" onclick="confirmModal()">حفظ</button><button class="btn-cancel" onclick="closeModal()">إلغاء</button></div>
-    </div>
-</div>
-
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-    // 1. استيراد مكتبة التخزين
     import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
     // إعدادات مشروعك
@@ -205,24 +15,48 @@
 
     const app = initializeApp(firebaseConfig);
     const dbRealtime = getDatabase(app);
-    const storage = getStorage(app); // 2. تعريف التخزين
+    const storage = getStorage(app);
     
     let db = {}; 
     let currentUnit = null;
     let isAdmin = false;
     let currentTab = 'info';
 
-    // قراءة البيانات من السحابة
+    // --- دالة جديدة لمنع تداخل الشاشات نهائياً ---
+    function switchScreen(screenId) {
+        // قائمة بكل الشاشات الرئيسية في النظام
+        const screens = ['loadingScreen', 'loginScreen', 'adminDashboard', 'unitInterface'];
+        
+        // إخفاء الجميع
+        screens.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.style.display = 'none';
+        });
+
+        // إظهار الشاشة المطلوبة فقط
+        const target = document.getElementById(screenId);
+        if(target) target.style.display = 'block';
+        
+        // الصعود للأعلى
+        window.scrollTo(0, 0);
+    }
+
+    // قراءة البيانات
     const dbRef = ref(dbRealtime, 'units_db_v1');
     onValue(dbRef, (snapshot) => {
         const data = snapshot.val();
         db = data || {};
-        document.getElementById('loadingScreen').style.opacity = '0';
-        setTimeout(()=> document.getElementById('loadingScreen').style.display='none', 500);
-        document.getElementById('loginScreen').style.display = 'flex';
+        
+        // عند التحميل لأول مرة، نخفي شاشة التحميل ونظهر الدخول
+        if (document.getElementById('loadingScreen').style.display !== 'none') {
+             switchScreen('loginScreen');
+        }
         
         if(currentUnit) loadUnitData();
-        if(document.getElementById('adminDashboard').style.display === 'block') renderUnitsGrid(document.querySelector('.search-input').value);
+        // تحديث الشبكة فقط إذا كنا في شاشة الادمن
+        if(document.getElementById('adminDashboard').style.display === 'block') {
+            renderUnitsGrid(document.querySelector('.search-input').value);
+        }
     });
 
     window.saveData = function() {
@@ -241,10 +75,12 @@
         const p = document.getElementById('loginPass').value.trim();
         
         if (u === "admin" && p === "admin123") {
-            isAdmin = true; initAdminDashboard();
+            isAdmin = true; 
+            initAdminDashboard();
         } else {
             if (db[u] && db[u].settings && db[u].settings.pass === p) {
-                isAdmin = false; openUnit(u);
+                isAdmin = false; 
+                openUnit(u);
             } else {
                 alert("بيانات خاطئة أو الوحدة غير مفعلة");
             }
@@ -252,8 +88,7 @@
     }
 
     function initAdminDashboard() {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('adminDashboard').style.display = 'block';
+        switchScreen('adminDashboard'); // استخدام الدالة الجديدة
         renderUnitsGrid("");
     }
 
@@ -279,30 +114,18 @@
 
     window.openUnit = function(id) {
         currentUnit = id;
-
-        // تهيئة البيانات إذا كانت الوحدة جديدة
         if (!db[id]) {
             db[id] = { info: {name:"",phone:""}, settings: {user:id, pass:"123"}, totalPrice:0, payments:[], works:[], history:[], notifs:[], media:[], visits:[] };
         }
-        // التأكد من وجود المصفوفات لتجنب الأخطاء
         ['history', 'notifs', 'media', 'visits', 'payments', 'works'].forEach(k => { if(!db[id][k]) db[id][k] = []; });
 
-        // --- هنا التصحيح: إجبار النظام على إخفاء الشاشات الأخرى ---
-        document.getElementById('loadingScreen').style.display = 'none'; // إخفاء التحميل
-        document.getElementById('loginScreen').style.display = 'none';   // إخفاء الدخول
-        document.getElementById('adminDashboard').style.display = 'none'; // إخفاء لوحة المربعات (هذا كان سبب المشكلة)
-        
-        // إظهار واجهة الوحدة
-        document.getElementById('unitInterface').style.display = 'block';
+        switchScreen('unitInterface'); // استخدام الدالة الجديدة هنا هو الحل
         document.getElementById('unitInterface').className = isAdmin ? 'show-admin' : '';
         
-        // تحميل البيانات
         loadUnitData();
         showTab('info');
-        
-        // الانتقال لأعلى الصفحة
-        window.scrollTo(0, 0);
     }
+
     window.loadUnitData = function() {
         if(!db[currentUnit]) return;
         const d = db[currentUnit];
@@ -379,14 +202,12 @@
         saveData();
     }
 
-    // 3. تعديل عرض الوسائط لعرض الصور الحقيقية
     function renderMediaGrid() {
         const g = document.getElementById('mediaGrid'); g.innerHTML = "";
         let media = db[currentUnit].media || [];
         media.forEach((m, i) => {
             let d = document.createElement('div'); d.className = 'media-item';
             
-            // التحقق مما إذا كان هناك رابط صورة
             let contentHTML = '';
             if (m.url) {
                 if (m.type === 'video') {
@@ -453,7 +274,6 @@
             title.innerText = "تبليغ";
             content.innerHTML = `<label>الرسالة</label><input type="text" id="mMsg"><label>التاريخ</label><input type="text" id="mDate" value="${today}">`;
         } else if (currentTab === 'media') {
-             // 4. إضافة حقل اختيار الملف (Input File)
              title.innerText = "رفع وسائط";
              content.innerHTML = `
                 <label>اختر الملف</label>
@@ -468,13 +288,11 @@
         document.getElementById('actionModal').style.display = 'flex';
     }
 
-    // 5. تعديل دالة الحفظ لتشمل رفع الملفات
     window.confirmModal = function() {
         const date = document.getElementById('mDate').value;
         const d = db[currentUnit];
         
         if (currentTab === 'media') {
-            // كود خاص لرفع الصور
             const fileInput = document.getElementById('mFile');
             const file = fileInput.files[0];
             const desc = document.getElementById('mDesc').value;
@@ -487,13 +305,10 @@
 
             statusText.innerText = "جاري الرفع... يرجى الانتظار";
             
-            // إنشاء اسم للملف ومسار
             const fileName = Date.now() + '_' + file.name;
             const storageRef = sRef(storage, 'units_media/' + currentUnit + '/' + fileName);
 
-            // عملية الرفع
             uploadBytes(storageRef, file).then((snapshot) => {
-                // الحصول على الرابط
                 getDownloadURL(snapshot.ref).then((downloadURL) => {
                     const type = file.type.startsWith('video') ? 'video' : 'image';
                     d.media.push({type: type, desc: desc, date: date, url: downloadURL});
@@ -507,10 +322,9 @@
                 statusText.innerText = "";
             });
 
-            return; // توقف هنا ولا تكمل الكود بالأسفل
+            return;
         }
 
-        // الحفظ لباقي الأقسام
         if (currentTab === 'payments') {
             const r = document.getElementById('mReceipt').value;
             const a = document.getElementById('mAmount').value;
@@ -541,9 +355,7 @@
 
     window.goBack = function() {
         if(isAdmin) {
-            document.getElementById('unitInterface').style.display = 'none';
-            document.getElementById('adminDashboard').style.display = 'block';
-            renderUnitsGrid(document.querySelector('.search-input').value);
+            initAdminDashboard();
         } else location.reload();
     }
     
@@ -553,5 +365,3 @@
         if (event.key === "Enter" && document.getElementById('loginScreen').style.display !== 'none') handleLogin();
     });
 </script>
-</body>
-</html>
