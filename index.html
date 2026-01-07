@@ -20,7 +20,7 @@
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* General UI */
+        /* UI Elements */
         .btn-confirm { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .btn-cancel { width: 100%; padding: 10px; border: none; background: #eee; color: #666; margin-top: 5px; border-radius: 8px; cursor: pointer; }
         .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 20px; font-size: 14px; cursor: pointer; }
@@ -40,8 +40,7 @@
         .adm-stat.total { grid-column: span 2; background: linear-gradient(45deg, var(--primary), #00695c); color: white; }
         .adm-stat.total small { color: #b2dfdb; }
         .search-input { width: 100%; padding: 14px; border-radius: 50px; border: 1px solid #ddd; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s; }
-        .search-input:focus { border-color: var(--accent); box-shadow: 0 4px 15px rgba(0,191,165,0.2); }
-
+        
         /* Units Grid */
         .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
         .unit-card { background: white; padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; border: 2px solid transparent; transition: transform 0.2s; }
@@ -72,39 +71,34 @@
         .tab-btn.active { color: white; background: var(--primary); }
         .tab-content { display: none; padding: 0 20px; animation: fadeIn 0.3s; }
 
-        /* Tables & Lists */
         .table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #eee; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
         table { width: 100%; border-collapse: collapse; white-space: nowrap; background: white; }
         th, td { padding: 12px 15px; text-align: center; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
         th { background: #f8f9fa; color: #555; font-weight: bold; }
         
-        /* Media */
         .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .media-item { background: #fff; border-radius: 12px; height: 150px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 1px solid #eee; }
         .media-item img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Modal & Viewer */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(3px); }
         .modal-sheet { background: white; width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; padding: 25px; animation: slideUp 0.3s; max-height: 85vh; overflow-y: auto; }
         #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
         #fullImage { max-width: 95%; max-height: 80vh; border-radius: 8px; }
 
-        /* Admin & Logs Specific Styles */
         .admin-header-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .adm-tab { flex: 1; padding: 10px; border: none; background: none; font-weight: bold; color: #999; cursor: pointer; border-radius: 8px; }
         .adm-tab.active { background: #e0f2f1; color: var(--primary); }
         
         .log-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-right: 4px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: 13px; }
-        .log-item.pay { border-color: var(--bg-3); } /* دفعات */
-        .log-item.edit { border-color: var(--info); } /* تعديل */
-        .log-item.del { border-color: var(--danger); } /* حذف */
+        .log-item.pay { border-color: var(--bg-3); }
+        .log-item.edit { border-color: var(--info); }
+        .log-item.del { border-color: var(--danger); }
         .log-meta { display: flex; justify-content: space-between; color: #888; font-size: 11px; margin-bottom: 4px; }
 
         .admin-only { display: none !important; }
         .show-admin .admin-only { display: block !important; }
         .unit-interface:not(.show-admin) .editable { pointer-events: none; background: #eee; color: #777; }
         
-        /* Utils */
         .fab-add { position: fixed; bottom: 25px; left: 25px; width: 55px; height: 55px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 30px; box-shadow: 0 4px 15px rgba(0,77,64,0.4); z-index: 100; display: none; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; }
         .fab-add:active { transform: scale(0.9); }
 
@@ -253,9 +247,8 @@
     
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     let db = {}, adminsDb = {}, currentUnit = null, isAdmin = false, isSuperAdmin = false, currentTab = 'info';
-    let currentAdminName = 'system'; // اسم الأدمن المسجل دخوله
+    let currentAdminName = 'system'; 
 
-    // --- النظام الأساسي ---
     function switchScreen(id) {
         ['loadingScreen','loginScreen','adminDashboard','unitInterface','adminsModal'].forEach(s => document.getElementById(s).style.display = 'none');
         document.getElementById(id).style.display = 'block';
@@ -266,7 +259,6 @@
     }
 
     async function init() {
-        // جلب البيانات
         const { data: u } = await supabase.from('units').select('*');
         if(u) u.forEach(r => db[r.id] = r.data);
         const { data: a } = await supabase.from('admins').select('*');
@@ -274,33 +266,42 @@
         
         document.getElementById('loadingScreen').style.display = 'none';
         
-        // التحقق من الدخول المحفوظ
         const savedUser = localStorage.getItem('loggedInUser');
         if (!savedUser) switchScreen('loginScreen');
         else {
-            // محاولة استعادة الجلسة (بسيطة)
             if(adminsDb[savedUser.toLowerCase()]) {
                  document.getElementById('loginUser').value = savedUser;
-                 // نحتاج الباسوورد او نعيد التوجيه للدخول للأمان، هنا سنطلب الدخول مرة أخرى أفضل
                  switchScreen('loginScreen');
-            } else {
-                 // للمستفيدين ممكن نمشيها
-                 switchScreen('loginScreen');
-            }
+            } else switchScreen('loginScreen');
         }
     }
     init();
 
-    // --- نظام السجلات (Logs System) ---
+    // --- نظام السجلات والواتساب ---
     async function logToSystem(action, target, details) {
-        if(!isAdmin) return; // فقط الأدمن يسجل عليه اللوج
-        const { error } = await supabase.from('logs').insert({
+        if(!isAdmin) return;
+        await supabase.from('logs').insert({
             admin_name: currentAdminName,
             action: action,
             target_unit: target || 'N/A',
             details: details
         });
-        if(error) console.error("Log Error:", error);
+        calcGlobalStats(); // تحديث فوري للإحصائيات
+    }
+
+    function sendWhatsApp(phone, name, unitId, details) {
+        if (!phone) return;
+        // تصحيح الرقم
+        let p = phone.replace(/[^0-9]/g, '');
+        if (p.startsWith('0')) p = '964' + p.substring(1);
+        else if (!p.startsWith('964')) p = '964' + p;
+
+        const appLink = window.location.href.split('?')[0]; 
+        const text = `مرحباً *${name}*،\n\nتحديث بخصوص وحدتك *(${unitId})*:\n${details}\n\nيرجى مراجعة التفاصيل عبر التطبيق:\n${appLink}`;
+
+        if(confirm(`هل تريد إرسال إشعار واتساب للمستفيد؟\n\n${details}`)) {
+            window.open(`https://wa.me/${p}?text=${encodeURIComponent(text)}`, '_blank');
+        }
     }
 
     window.fetchLogs = async function() {
@@ -325,10 +326,7 @@
             
             container.innerHTML += `
             <div class="log-item ${borderClass}">
-                <div class="log-meta">
-                    <span>👤 ${log.admin_name}</span>
-                    <span>🕒 ${time}</span>
-                </div>
+                <div class="log-meta"><span>👤 ${log.admin_name}</span><span>🕒 ${time}</span></div>
                 <div style="font-weight:bold;color:var(--primary)">${log.action} <span style="color:#666;font-weight:normal">(${log.target_unit})</span></div>
                 <div style="margin-top:4px;color:#555">${log.details}</div>
             </div>`;
@@ -338,7 +336,6 @@
     window.switchAdminTab = function(tab) {
         document.querySelectorAll('.adm-tab').forEach(b => b.classList.remove('active'));
         event.target.classList.add('active');
-        
         if(tab === 'admins') {
             document.getElementById('tabAdminsContent').style.display = 'block';
             document.getElementById('tabLogsContent').style.display = 'none';
@@ -349,7 +346,6 @@
         }
     }
 
-    // --- تسجيل الدخول ---
     window.handleLogin = function() {
         const uRaw = document.getElementById('loginUser').value.trim();
         const p = document.getElementById('loginPass').value.trim();
@@ -359,9 +355,8 @@
         if (adminsDb[uAdmin] && adminsDb[uAdmin].password === p) {
             isAdmin = true;
             isSuperAdmin = (adminsDb[uAdmin].role === 'super');
-            currentAdminName = uAdmin; // حفظ اسم الأدمن
+            currentAdminName = uAdmin; 
             localStorage.setItem('loggedInUser', uAdmin);
-            
             currentUnit = null;
             document.getElementById('btnManageAdmins').style.display = isSuperAdmin ? 'block' : 'none';
             calcGlobalStats();
@@ -376,13 +371,9 @@
         } else alert("بيانات غير صحيحة");
     }
 
-    // --- Dashboard & Grid ---
     function calcGlobalStats() {
-        let totalMoney = 0;
-        let todayMoney = 0;
-        let todaySales = 0;
+        let totalMoney = 0, todayMoney = 0, todaySales = 0;
         const todayStr = new Date().toISOString().split('T')[0];
-
         Object.values(db).forEach(unit => {
             if(unit.payments) {
                 unit.payments.forEach(p => {
@@ -393,7 +384,6 @@
             }
             if(unit.saleDate === todayStr) todaySales++;
         });
-
         document.getElementById('statTotalMoney').innerText = totalMoney.toLocaleString();
         document.getElementById('statTodayMoney').innerText = todayMoney.toLocaleString();
         document.getElementById('statTodaySales').innerText = todaySales;
@@ -402,46 +392,32 @@
     window.renderUnitsGrid = function(filter) {
         if(currentUnit !== null) return;
         const grid = document.getElementById('unitsGrid'); grid.innerHTML = "";
-        
         ['A','B','C'].forEach(cat => {
             for(let i=1; i<=50; i++) {
                 let id = cat + i;
                 if(filter && !id.toLowerCase().includes(filter.toLowerCase())) continue;
-                
                 let d = db[id];
                 let isSold = d && d.info.name;
-                
                 let dotsHTML = '<div class="dots-container">';
                 if(isSold) {
                     if(d.visits && d.visits.some(v => v.status === 'pending')) dotsHTML += '<div class="dot dot-red"></div>';
-                    
                     let lastPayDate = null;
                     if(d.payments && d.payments.length > 0) lastPayDate = new Date(d.payments[d.payments.length-1][0]);
                     else if (d.saleDate) lastPayDate = new Date(d.saleDate);
-
                     if(lastPayDate) {
-                        let dueDate = new Date(lastPayDate);
-                        dueDate.setDate(dueDate.getDate() + 60); 
-                        let today = new Date();
-                        let diffTime = dueDate - today;
-                        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+                        let dueDate = new Date(lastPayDate); dueDate.setDate(dueDate.getDate() + 60); 
+                        let diffDays = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
                         if (diffDays < 0) dotsHTML += '<div class="dot dot-blue"></div>';
                         else if (diffDays <= 10) dotsHTML += '<div class="dot dot-orange"></div>';
                     }
                 }
                 dotsHTML += '</div>';
-
-                grid.innerHTML += `<div class="unit-card ${isSold?'sold':''}" onclick="openUnit('${id}')">
-                    ${dotsHTML}
-                    <h3>${id}</h3><small>${isSold ? d.info.name : 'متاح'}</small>
-                </div>`;
+                grid.innerHTML += `<div class="unit-card ${isSold?'sold':''}" onclick="openUnit('${id}')">${dotsHTML}<h3>${id}</h3><small>${isSold ? d.info.name : 'متاح'}</small></div>`;
             }
         });
     }
     window.filterUnits = (v) => renderUnitsGrid(v);
 
-    // --- Unit Logic ---
     window.openUnit = function(id) {
         switchScreen('unitInterface');
         currentUnit = id;
@@ -462,7 +438,6 @@
         document.getElementById('uPass').value = d.settings.pass;
         document.getElementById('ownerName').readOnly = !isAdmin;
         document.getElementById('ownerPhone').readOnly = !isAdmin;
-        
         renderTable('payTable', d.payments);
         renderTable('workTable', d.works);
         renderTable('histTable', d.history);
@@ -480,7 +455,6 @@
         document.getElementById('dispPaid').innerText = formatNumber(paid);
         document.getElementById('dispRemain').innerText = formatNumber(total - paid);
         document.getElementById('dispProg').innerText = d.works.length ? d.works[d.works.length-1][2] : "0%";
-
         let nextDateStr = "-";
         if (d.payments && d.payments.length > 0) {
             let lastDate = new Date(d.payments[d.payments.length-1][0]);
@@ -494,7 +468,6 @@
         document.getElementById('dispNextDue').innerText = nextDateStr;
     }
 
-    // --- Renderers ---
     function renderTable(id, rows) {
         const tb = document.getElementById(id).querySelector('tbody'); tb.innerHTML = "";
         rows.forEach((r, i) => {
@@ -527,40 +500,26 @@
         });
     }
 
-    // --- Actions & Saves ---
     window.saveData = async function(context) {
         if(!currentUnit) return;
         const d = db[currentUnit];
-        
         if(isAdmin && document.getElementById('ownerName')) {
             d.info.name = document.getElementById('ownerName').value;
             d.info.phone = document.getElementById('ownerPhone').value;
             d.totalPrice = document.getElementById('totalPrice').value.replace(/,/g,'');
             d.settings.user = document.getElementById('uUser').value;
             d.settings.pass = document.getElementById('uPass').value;
-            
             if(!d.saleDate && d.info.name) d.saleDate = new Date().toISOString().split('T')[0];
         }
-        
         const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d });
         if(error) alert(error.message);
         else {
             loadUnitData();
-            
-            // تسجيل اللوج
-            if(context === 'info') logToSystem('تحديث معلومات', currentUnit, 'تم تحديث البيانات الأساسية أو السعر');
-            else if(context === 'settings') logToSystem('تحديث حساب', currentUnit, 'تم تغيير كلمة مرور المستفيد');
-
-            // واتساب
-            if(isAdmin && d.info.phone && context === 'info') {
-                if(confirm("تم الحفظ. إرسال واتساب؟")) {
-                    let phone = d.info.phone.replace(/[^0-9]/g, '');
-                    if (phone.startsWith('0')) phone = '964' + phone.substring(1);
-                    else if (!phone.startsWith('964')) phone = '964' + phone;
-                    let msg = `مرحباً ${d.info.name}، تم تحديث بيانات وحدتك (${currentUnit}).`;
-                    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-                }
+            if(context === 'info') {
+                logToSystem('تحديث معلومات', currentUnit, 'تم تحديث البيانات الأساسية أو السعر');
+                if(isAdmin && d.info.phone) sendWhatsApp(d.info.phone, d.info.name, currentUnit, 'تم تحديث المعلومات العامة للوحدة.');
             }
+            else if(context === 'settings') logToSystem('تحديث حساب', currentUnit, 'تم تغيير كلمة مرور المستفيد');
         }
     }
 
@@ -568,9 +527,8 @@
         const d = db[currentUnit];
         const date = document.getElementById('mDate').value;
         const note = document.getElementById('mNote') ? document.getElementById('mNote').value : '';
-        let logActionType = "";
-        let logDetails = "";
-        
+        let logAction = "", logDet = "";
+
         if(currentTab === 'media' || currentTab === 'docs') {
             const file = document.getElementById('mFile').files[0];
             if(!file) return alert('اختر ملف');
@@ -582,53 +540,50 @@
             
             if(currentTab === 'media') {
                 d.media.push({type:file.type.includes('video')?'video':'image', desc:document.getElementById('mDesc').value, url:data.publicUrl, date});
-                logActionType = "رفع وسائط"; logDetails = "تم رفع صورة/فيديو";
-            }
-            else {
+                logAction = "رفع وسائط"; logDet = "تم رفع صورة/فيديو جديد";
+            } else {
                 d.docs.push({type:document.getElementById('mType').value, note, url:data.publicUrl, date});
-                logActionType = "رفع وثيقة"; logDetails = "تم رفع " + document.getElementById('mType').value;
+                logAction = "رفع وثيقة"; logDet = "تم رفع وثيقة جديدة: " + document.getElementById('mType').value;
             }
         }
         else if(currentTab === 'payments') {
             const amt = formatNumber(document.getElementById('mAmt').value);
-            d.payments.push([date, document.getElementById('mRcpt').value, amt, note]);
-            logActionType = "إضافة دفعة مالية"; logDetails = `مبلغ: ${amt}، وصل: ${document.getElementById('mRcpt').value}`;
+            const rcpt = document.getElementById('mRcpt').value;
+            d.payments.push([date, rcpt, amt, note]);
+            logAction = "إضافة دفعة"; logDet = `تم استلام دفعة مالية بمبلغ: ${amt} (رقم الوصل: ${rcpt})`;
         }
         else if(currentTab === 'works') {
             const stg = document.getElementById('mStage').value;
             const prc = document.getElementById('mPerc').value;
             d.works.push([stg, date, prc+'%']);
-            logActionType = "تحديث سير العمل"; logDetails = `مرحلة: ${stg} (${prc}%)`;
+            logAction = "تحديث عمل"; logDet = `تحديث سير العمل: مرحلة (${stg}) وصلت نسبة (${prc}%)`;
         }
         else if(currentTab === 'notifs') {
             d.notifs.push([date, document.getElementById('mMsg').value]);
-            logActionType = "إرسال تبليغ"; logDetails = document.getElementById('mMsg').value;
+            logAction = "إرسال تبليغ"; logDet = "تبليغ إداري: " + document.getElementById('mMsg').value;
         }
 
         const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d });
         if(!error) {
-            logToSystem(logActionType, currentUnit, logDetails);
+            logToSystem(logAction, currentUnit, logDet);
+            if(isAdmin && d.info.phone && logDet) sendWhatsApp(d.info.phone, d.info.name, currentUnit, logDet);
             loadUnitData();
             document.getElementById('actionModal').style.display = 'none';
         } else alert(error.message);
     }
 
-    // --- Management Functions ---
     window.delRow = async (id, i) => { 
         if(confirm('حذف؟')) { 
             const m={'payTable':'payments','workTable':'works','notifTable':'notifs','mediaGrid':'media','docsTable':'docs','visitTable':'visits'}; 
-            const section = m[id];
+            const sec = m[id];
+            const item = db[currentUnit][sec][i];
+            let det = "تم حذف عنصر من " + sec;
+            if(sec==='payments') det = `تم حذف دفعة مالية بمبلغ: ${item[2]}`;
             
-            // تسجيل الحذف قبل الحذف الفعلي (للحصول على تفاصيل)
-            const item = db[currentUnit][section][i];
-            let details = "تم حذف عنصر من " + section;
-            if(section === 'payments') details = `حذف دفعة مبلغ: ${item[2]}`;
-            
-            db[currentUnit][section].splice(i,1); 
-            
+            db[currentUnit][sec].splice(i,1); 
             const { error } = await supabase.from('units').upsert({ id: currentUnit, data: db[currentUnit] });
             if(!error) {
-                logToSystem('حذف بيانات', currentUnit, details);
+                logToSystem('حذف بيانات', currentUnit, det);
                 loadUnitData();
             }
         }
@@ -646,45 +601,21 @@
     window.submitVisitRequest = () => { 
         const date = document.getElementById('reqVisitDate').value;
         const reason = document.getElementById('reqVisitReason').value;
-        if(!date || !reason) return alert('الرجاء ملء التاريخ والسبب');
-        
+        if(!date || !reason) return alert('الرجاء ملء الحقول');
         db[currentUnit].visits.push({date, reason, status:'pending'}); 
-        saveData(); // هنا لا نسجل لوج للأدمن لأن هذا عادة يفعله المستخدم
-        alert('تم إرسال الطلب بنجاح');
-        document.getElementById('reqVisitReason').value = "";
+        const d = db[currentUnit]; 
+        supabase.from('units').upsert({ id: currentUnit, data: d }).then(()=>{
+            alert('تم إرسال الطلب');
+            document.getElementById('reqVisitReason').value = "";
+            loadUnitData();
+        });
     };
 
-    // --- UI Helpers ---
-    window.showTab = (t) => {
-        currentTab = t;
-        document.querySelectorAll('.tab-content').forEach(d => d.style.display = 'none');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(t).style.display = 'block';
-        event.target.classList.add('active');
-        document.getElementById('fabAdd').style.display = (isAdmin && ['payments','docs','works','media','notifs'].includes(t)) ? 'flex' : 'none';
-    }
-
-    window.openModal = () => {
-        const c = document.getElementById('modalInputs');
-        const t = new Date().toISOString().split('T')[0];
-        document.getElementById('actionModal').style.display = 'flex';
-        
-        if(currentTab === 'media') c.innerHTML = `<input type="file" id="mFile"><input type="text" id="mDesc" placeholder="وصف"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
-        else if(currentTab === 'docs') c.innerHTML = `<select id="mType"><option>إنذار</option><option>تأجيل</option><option>تعهد</option></select><input type="text" id="mNote" placeholder="ملاحظة"><input type="file" id="mFile"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
-        else if(currentTab === 'payments') c.innerHTML = `<input type="text" id="mRcpt" placeholder="الوصل"><input type="number" id="mAmt" placeholder="المبلغ"><input type="text" id="mNote" placeholder="تفاصيل"><input type="date" id="mDate" value="${t}">`;
-        else if(currentTab === 'works') {
-            let ops = ""; for(let i=5;i<=100;i+=5) ops+=`<option value="${i}">${i}%</option>`;
-            c.innerHTML = `<input type="text" id="mStage" placeholder="المرحلة"><select id="mPerc">${ops}</select><input type="date" id="mDate" value="${t}">`;
-        }
-        else if(currentTab === 'notifs') c.innerHTML = `<input type="text" id="mMsg" placeholder="الرسالة"><input type="date" id="mDate" value="${t}">`;
-    }
-    
     window.closeModal = () => document.getElementById('actionModal').style.display = 'none';
     window.viewImage = (u) => { document.getElementById('fullImage').src = u; document.getElementById('imageViewer').style.display = 'flex'; };
     window.downloadCurrentImage = async () => { try { const r = await fetch(document.getElementById('fullImage').src); const b = await r.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download='img.jpg'; a.click(); } catch(e){ window.open(document.getElementById('fullImage').src); } };
     window.goBack = () => isAdmin ? (switchScreen('adminDashboard'), renderUnitsGrid("")) : location.reload();
     
-    // --- Admin Management ---
     window.openAdminsManager = () => { if(isSuperAdmin) { switchScreen('adminsModal'); switchAdminTab('admins'); renderAdminsList(); } else alert('صلاحية مرفوضة'); };
     window.closeAdminsManager = () => switchScreen('adminDashboard');
     window.renderAdminsList = () => { 
@@ -715,7 +646,6 @@
     
     function formatNumber(n) { return n ? Number(String(n).replace(/,/g,'')).toLocaleString('en-US') : "0"; }
 
-    // --- Enter Key ---
     document.addEventListener("keyup", function(event) {
         if (event.key === "Enter") {
             if (document.getElementById('loginScreen').style.display !== 'none') handleLogin();
