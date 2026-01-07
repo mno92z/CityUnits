@@ -4,50 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>إدارة مدينة الأزهر</title>
+    
     <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#004d40">
+
     <style>
-        :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --danger: #d32f2f; --warning: #ff9800; --info: #2196f3; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
+        /* --- التصميم الأصلي الكلاسيكي --- */
+        :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --white: #ffffff; --sold-bg: #e0f2f1; --sold-border: #00bfa5; --danger: #d32f2f; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; -webkit-tap-highlight-color: transparent; }
         * { box-sizing: border-box; }
         button, input, select, textarea { font-size: 16px; outline: none; font-family: inherit; }
         
-        #loadingScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; }
+        #loadingScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; transition: opacity 0.5s; }
         .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Login */
+        #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
+        #fullImage { max-width: 95%; max-height: 80vh; border-radius: 5px; box-shadow: 0 0 20px rgba(255,255,255,0.1); object-fit: contain; }
+        .viewer-btn { position: absolute; top: 20px; color: white; font-size: 24px; cursor: pointer; background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10001; }
+        .close-viewer { right: 20px; } .download-btn { left: 20px; }
+
         #loginScreen { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(135deg, var(--primary), #00251a); color: white; text-align: center; }
         .login-box { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
         .login-input { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; background: rgba(255,255,255,0.9); font-weight: bold; }
         .login-btn { width: 100%; padding: 15px; background: var(--accent); color: var(--primary); font-weight: 900; border: none; border-radius: 12px; margin-top: 10px; cursor: pointer; }
 
-        /* Dashboard */
         #adminDashboard { display: none; padding: 20px; padding-bottom: 80px; }
-        .top-bar { margin-bottom: 20px; display:flex; flex-direction:column; gap:10px; }
+        .top-bar { margin-bottom: 20px; }
         .search-input { width: 100%; padding: 15px; border-radius: 50px; border: 1px solid #ddd; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .admin-stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .adm-stat { background: white; padding: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .adm-stat.total { grid-column: span 2; background: var(--primary); color: white; }
-        .adm-stat h3 { margin: 5px 0; font-size: 16px; }
-        .adm-stat small { font-size: 10px; opacity: 0.8; }
+        .super-admin-btn { background: #333; color: var(--accent); border: 1px solid var(--accent); padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: none; }
 
-        /* Units */
-        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
-        .unit-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .unit-card.sold { border: 2px solid var(--accent); background: #e0f2f1; }
-        .unit-card h3 { margin: 0; color: var(--primary); }
+        /* إحصائيات بسيطة ومرتبة */
+        .admin-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
+        .adm-stat { background: white; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #eee; }
+        .adm-stat h3 { margin: 5px 0; font-size: 14px; color: var(--primary); }
+        .adm-stat small { font-size: 10px; color: #666; }
+
+        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+        .unit-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
+        .unit-card.sold { border-color: var(--sold-border); background: var(--sold-bg); }
+        .unit-card h3 { margin: 0; color: var(--primary); font-size: 18px; }
         .unit-card small { color: #888; font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .dots-container { position: absolute; top: -5px; right: -5px; display: flex; gap: 2px; }
+        
+        .dots-container { position: absolute; top: -5px; right: -5px; display: flex; gap: 3px; }
         .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; }
-        .dot-red { background: var(--danger); }
-        .dot-blue { background: var(--info); }
-        .dot-orange { background: var(--warning); }
+        .dot-red { background: var(--danger); } .dot-blue { background: #2196F3; } .dot-orange { background: #FF9800; }
 
-        /* Unit Interface */
         #unitInterface { display: none; padding-bottom: 80px; }
         .unit-header { background: var(--primary); color: white; padding: 20px; border-radius: 0 0 25px 25px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; }
+        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
+        
         .stats-scroll { display: flex; overflow-x: auto; gap: 15px; padding: 0 20px 20px; scrollbar-width: none; }
         .stat-card { min-width: 150px; padding: 15px; border-radius: 15px; color: white; flex-shrink: 0; }
         .bg-1 { background: linear-gradient(45deg, #FF9800, #F57C00); }
@@ -55,35 +63,41 @@
         .bg-3 { background: linear-gradient(45deg, #4CAF50, #388E3C); }
         .bg-4 { background: linear-gradient(45deg, #607D8B, #455A64); }
 
-        /* Tabs */
         .tabs-nav { display: flex; overflow-x: auto; padding: 0 10px; gap: 10px; border-bottom: 1px solid #eee; margin-bottom: 15px; scrollbar-width: none; }
-        .tab-btn { padding: 10px 15px; background: none; border: none; white-space: nowrap; color: #666; font-weight: bold; border-bottom: 3px solid transparent; }
+        .tab-btn { padding: 10px 15px; background: none; border: none; white-space: nowrap; color: #666; font-weight: bold; border-bottom: 3px solid transparent; font-size: 14px; }
         .tab-btn.active { color: var(--primary); border-bottom-color: var(--accent); }
         .tab-content { display: none; padding: 0 20px; animation: fadeIn 0.3s; }
 
-        /* Table & Media */
         .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; }
         table { width: 100%; border-collapse: collapse; white-space: nowrap; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; color: #444; }
-        
+
+        /* Media Grid Fixed */
         .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .media-item { background: #fff; border-radius: 10px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 1px solid #ddd; }
+        .media-item { background: #fff; border-radius: 10px; height: 160px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 1px solid #ddd; }
         .media-item img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Modals & Utils */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; }
-        .modal-sheet { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 25px; animation: slideUp 0.3s; }
-        #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
-        #fullImage { max-width: 95%; max-height: 80vh; border-radius: 5px; }
+        .fab-add { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; display: none; align-items: center; justify-content: center; }
         
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px); }
+        .modal-sheet { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 25px; animation: slideUp 0.3s; }
+        .modal-btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-confirm { flex: 2; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; }
+        .btn-cancel { flex: 1; padding: 12px; background: #eee; color: #333; border: none; border-radius: 10px; font-weight: bold; }
+
+        label { font-size: 13px; color: #666; font-weight: bold; margin-top: 10px; display: block; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: #fff; }
+
+        /* ستايل السجل */
+        .log-item { padding: 10px; border-bottom: 1px solid #eee; background: #fff; margin-bottom: 5px; border-radius: 5px; }
+        .log-meta { font-size: 11px; color: #888; margin-bottom: 3px; display: flex; justify-content: space-between; }
+        .log-txt { font-size: 14px; font-weight: bold; color: #333; }
+
         .admin-only { display: none !important; }
         .show-admin .admin-only { display: block !important; }
         .unit-interface:not(.show-admin) .editable { pointer-events: none; background: #eee; }
-        .fab-add { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; display: none; align-items: center; justify-content: center; }
-        
-        #adminsModal { display: none; position: fixed; inset:0; background:white; z-index:150; padding:20px; overflow-y:auto; }
-        
+
         @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
     </style>
@@ -93,8 +107,8 @@
 <div id="loadingScreen"><div class="loader"></div><p style="margin-top:20px;font-weight:bold">جاري التحميل...</p></div>
 
 <div id="imageViewer">
-    <div style="position:absolute;top:20px;right:20px;color:white;font-size:30px;cursor:pointer" onclick="document.getElementById('imageViewer').style.display='none'">×</div>
-    <div style="position:absolute;top:20px;left:20px;color:white;font-size:30px;cursor:pointer" onclick="downloadCurrentImage()">⬇</div>
+    <div class="viewer-btn close-viewer" onclick="document.getElementById('imageViewer').style.display='none'">×</div>
+    <div class="viewer-btn download-btn" onclick="downloadCurrentImage()">⬇</div>
     <img id="fullImage" src="">
 </div>
 
@@ -113,30 +127,37 @@
 <div id="adminDashboard">
     <div class="top-bar">
         <div class="admin-stats-grid">
-            <div class="adm-stat total"><small>الإيرادات الكلية</small><h3 id="statTotalMoney">0</h3></div>
+            <div class="adm-stat"><small>الإيرادات</small><h3 id="statTotalMoney">0</h3></div>
             <div class="adm-stat"><small>مقبوضات اليوم</small><h3 id="statTodayMoney">0</h3></div>
-            <div class="adm-stat"><small>مبيعات اليوم</small><h3 id="statTodaySales">0</h3></div>
+            <div class="adm-stat"><small>المبيعات اليوم</small><h3 id="statTodaySales">0</h3></div>
         </div>
-        <div style="display: flex; gap:5px;">
-             <input type="text" class="search-input" placeholder="🔍 ابحث عن وحدة..." onkeyup="filterUnits(this.value)">
-             <button onclick="openAdminsManager()" style="background:#333;color:#00bfa5;border:none;border-radius:10px;padding:0 15px;font-size:20px;display:none" id="btnManageAdmins">⚙️</button>
+        <div style="display:flex; gap:5px">
+            <input type="text" class="search-input" placeholder="🔍 بحث..." onkeyup="filterUnits(this.value)">
+            <button class="super-admin-btn" id="btnLogs" onclick="openLogsModal()" style="display:none;background:#607D8B">📋</button>
+            <button class="super-admin-btn" id="btnManageAdmins" onclick="openAdminsManager()" style="display:none">⚙️</button>
         </div>
-        <button style="background:#d32f2f;color:white;width:100%;border:none;padding:10px;border-radius:10px;margin-top:10px" onclick="location.reload()">خروج</button>
+        <button class="back-btn" style="background:var(--danger);width:100%;margin-top:10px" onclick="location.reload()">تسجيل خروج</button>
     </div>
     <div class="units-grid" id="unitsGrid"></div>
 </div>
 
-<div id="adminsModal">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2 style="margin:0">إدارة المسؤولين</h2>
-        <button onclick="document.getElementById('adminsModal').style.display='none'; switchScreen('adminDashboard')" style="background:none; border:none; font-size:20px;">✖</button>
+<div id="logsModal" class="modal-overlay">
+    <div class="modal-sheet">
+        <div style="display:flex;justify-content:space-between;"><h3>سجل النشاطات</h3><button onclick="document.getElementById('logsModal').style.display='none'" style="background:none;border:none;font-size:20px">×</button></div>
+        <div id="logsContainer" style="max-height:60vh;overflow-y:auto;margin-top:10px;background:#f9f9f9;padding:10px;border-radius:10px">جاري التحميل...</div>
+        <button class="btn-cancel" style="width:100%;margin-top:10px" onclick="document.getElementById('logsModal').style.display='none'">إغلاق</button>
     </div>
-    <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-bottom:20px;">
-        <h4 style="margin-top:0;">إضافة مسؤول</h4>
-        <input type="text" id="newAdminUser" placeholder="اسم المستخدم"><input type="text" id="newAdminPass" placeholder="كلمة المرور">
-        <button class="login-btn" onclick="saveAdminUser()">حفظ</button>
+</div>
+
+<div id="adminsModal" class="modal-overlay">
+    <div class="modal-sheet">
+        <div style="display:flex;justify-content:space-between;"><h3>المسؤولين</h3><button onclick="document.getElementById('adminsModal').style.display='none'" style="background:none;border:none;font-size:20px">×</button></div>
+        <div style="background:#f0f0f0;padding:10px;border-radius:10px;margin-bottom:10px">
+            <input type="text" id="newAdminUser" placeholder="اسم المستخدم"><input type="text" id="newAdminPass" placeholder="كلمة المرور">
+            <button class="btn-confirm" onclick="saveAdminUser()">حفظ</button>
+        </div>
+        <div id="adminsListContainer"></div>
     </div>
-    <div id="adminsListContainer"></div>
 </div>
 
 <div id="unitInterface" class="unit-interface">
@@ -146,10 +167,10 @@
     </div>
 
     <div class="stats-scroll">
-        <div class="stat-card bg-1"><small>المدفوع</small><h3 id="dispPaid">0</h3></div>
-        <div class="stat-card bg-2"><small>المتبقي</small><h3 id="dispRemain">0</h3></div>
-        <div class="stat-card bg-3"><small>الإنجاز</small><h3 id="dispProg">0%</h3></div>
-        <div class="stat-card bg-4"><small>الاستحقاق</small><h3 id="dispNextDue">-</h3></div>
+        <div class="stat-card bg-1"><small>المدفوع</small><h3 style="margin:5px 0" id="dispPaid">0</h3></div>
+        <div class="stat-card bg-2"><small>المتبقي</small><h3 style="margin:5px 0" id="dispRemain">0</h3></div>
+        <div class="stat-card bg-3"><small>الإنجاز</small><h3 style="margin:5px 0" id="dispProg">0%</h3></div>
+        <div class="stat-card bg-4"><small>الاستحقاق</small><h3 style="margin:5px 0; font-size:16px;" id="dispNextDue">-</h3></div>
     </div>
 
     <div class="tabs-nav">
@@ -167,29 +188,28 @@
     <div id="info" class="tab-content" style="display:block;">
         <label>المستفيد</label><input type="text" id="ownerName" class="editable">
         <label>الهاتف</label><input type="text" id="ownerPhone" class="editable">
-        <div class="admin-only" style="margin-top:20px; background:#e0f7fa; padding:15px; border-radius:10px;">
-            <label style="color:#006064;">السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData('price')">
+        <div class="admin-only" style="margin-top:20px;background:#e0f7fa;padding:15px;border-radius:10px">
+            <label>السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData('price')">
         </div>
-        <button class="login-btn admin-only" style="margin-top:20px;" onclick="saveData('info')">حفظ (واتساب)</button>
+        <button class="btn-confirm admin-only" style="margin-top:20px" onclick="saveData('info')">حفظ التعديلات</button>
     </div>
 
-    <div id="payments" class="tab-content"><div class="table-wrapper"><table id="payTable"><thead><tr><th>التاريخ</th><th>الوصل</th><th>المبلغ</th><th>التفاصيل</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
-    <div id="docs" class="tab-content"><div class="table-wrapper"><table id="docsTable"><thead><tr><th>تاريخ</th><th>نوع</th><th>ملاحظات</th><th>ملف</th><th></th></tr></thead><tbody></tbody></table></div></div>
-    <div id="works" class="tab-content"><div class="table-wrapper"><table id="workTable"><thead><tr><th>مرحلة</th><th>التاريخ</th><th>%</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="payments" class="tab-content"><div class="table-wrapper"><table id="payTable"><thead><tr><th>تاريخ</th><th>وصل</th><th>مبلغ</th><th>تفاصيل</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="docs" class="tab-content"><div class="table-wrapper"><table id="docsTable"><thead><tr><th>تاريخ</th><th>نوع</th><th>ملاحظة</th><th>ملف</th><th></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="works" class="tab-content"><div class="table-wrapper"><table id="workTable"><thead><tr><th>مرحلة</th><th>تاريخ</th><th>%</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
     <div id="visits" class="tab-content">
-        <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee; margin-bottom:20px;">
-            <h3 style="margin-top:0;">طلب زيارة</h3>
-            <input type="date" id="reqVisitDate"><input type="text" id="reqVisitReason" placeholder="السبب">
-            <button class="login-btn" style="margin-top:10px;" onclick="submitVisitRequest()">إرسال</button>
+        <div style="background:white;padding:15px;border-radius:10px;border:1px solid #eee;margin-bottom:15px">
+            <h4 style="margin:0">طلب زيارة</h4><input type="date" id="reqVisitDate"><input type="text" id="reqVisitReason" placeholder="السبب">
+            <button class="btn-confirm" style="margin-top:10px" onclick="submitVisitRequest()">إرسال</button>
         </div>
         <div class="table-wrapper"><table id="visitTable"><thead><tr><th>تاريخ</th><th>سبب</th><th>حالة</th><th></th></tr></thead><tbody></tbody></table></div>
     </div>
     <div id="history" class="tab-content"><div class="table-wrapper"><table id="histTable"><thead><tr><th>تاريخ</th><th>حدث</th><th>ملاحظات</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
-    <div id="notifs" class="tab-content"><div class="table-wrapper"><table id="notifTable"><thead><tr><th>تاريخ</th><th>التبليغ</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="notifs" class="tab-content"><div class="table-wrapper"><table id="notifTable"><thead><tr><th>تاريخ</th><th>رسالة</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
     <div id="media" class="tab-content"><div class="media-grid" id="mediaGrid"></div></div>
     <div id="settings" class="tab-content">
         <label>يوزر المستفيد</label><input type="text" id="uUser"><label>باسورد المستفيد</label><input type="text" id="uPass">
-        <button class="login-btn" onclick="saveData('settings')">تحديث</button>
+        <button class="btn-confirm" onclick="saveData('settings')">تحديث</button>
     </div>
 
     <button id="fabAdd" class="fab-add admin-only" onclick="openModal()">+</button>
@@ -197,12 +217,9 @@
 
 <div id="actionModal" class="modal-overlay">
     <div class="modal-sheet">
-        <h3 id="modalTitle" style="margin-top:0">إضافة</h3>
+        <h3 id="modalTitle" style="margin-top:0">إضافة جديد</h3>
         <div id="modalInputs"></div> 
-        <div style="display:flex;gap:10px;margin-top:20px">
-            <button style="flex:2;padding:12px;background:var(--primary);color:white;border:none;border-radius:10px" onclick="confirmModal()">حفظ</button>
-            <button style="flex:1;padding:12px;background:#eee;color:#333;border:none;border-radius:10px" onclick="document.getElementById('actionModal').style.display='none'">إلغاء</button>
-        </div>
+        <div class="modal-btn-group"><button class="btn-confirm" onclick="confirmModal()">حفظ</button><button class="btn-cancel" onclick="document.getElementById('actionModal').style.display='none'">إلغاء</button></div>
     </div>
 </div>
 
@@ -214,10 +231,10 @@
     
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     let db = {}, adminsDb = {}, currentUnit = null, isAdmin = false, isSuperAdmin = false, currentTab = 'info';
-    let editingIndex = -1;
+    let currentAdminName = 'system', editingIndex = -1;
 
     function switchScreen(id) {
-        ['loadingScreen','loginScreen','adminDashboard','unitInterface','adminsModal'].forEach(s => document.getElementById(s).style.display = 'none');
+        ['loadingScreen','loginScreen','adminDashboard','unitInterface','adminsModal','logsModal'].forEach(s => document.getElementById(s).style.display = 'none');
         document.getElementById(id).style.display = 'block';
         if(id==='unitInterface') {
             const ui = document.getElementById('unitInterface');
@@ -231,39 +248,64 @@
             if(u) u.forEach(r => db[r.id] = r.data);
             const { data: a } = await supabase.from('admins').select('*');
             if(a) a.forEach(r => adminsDb[r.username] = r);
-            
             document.getElementById('loadingScreen').style.display = 'none';
-            const savedUser = localStorage.getItem('loggedInUser');
-            // إصلاح مشكلة التعليق: إذا كان مسجل دخول، حوله لشاشة الدخول (أو الداشبورد) فوراً
-            if (savedUser) switchScreen('loginScreen');
+            if(localStorage.getItem('loggedInUser')) switchScreen('loginScreen'); // يطلب الدخول دائما
             else switchScreen('loginScreen');
         } catch(e) { alert("خطأ في الاتصال"); }
     }
     init();
+
+    // --- سجلات وواتساب ---
+    async function logToSystem(action, target, details) {
+        if(!isAdmin) return;
+        await supabase.from('logs').insert({ admin_name: currentAdminName, action: action, target_unit: target||'N/A', details: details });
+        calcGlobalStats();
+    }
+
+    function sendWhatsApp(phone, name, details) {
+        if(!phone) return;
+        let p = phone.replace(/[^0-9]/g, '');
+        if(p.startsWith('0')) p='964'+p.substring(1); else if(!p.startsWith('964')) p='964'+p;
+        let msg = `مرحباً ${name}،\n\nتحديث بخصوص وحدتك:\n${details}\n\nالتفاصيل في التطبيق: ${window.location.href.split('?')[0]}`;
+        window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    window.openLogsModal = async function() {
+        document.getElementById('logsModal').style.display = 'flex';
+        const c = document.getElementById('logsContainer');
+        c.innerHTML = 'جاري التحميل...';
+        const { data } = await supabase.from('logs').select('*').order('created_at', { ascending: false }).limit(50);
+        c.innerHTML = "";
+        if(!data || !data.length) c.innerHTML = "<p>لا توجد سجلات</p>";
+        else data.forEach(log => {
+            const t = new Date(log.created_at).toLocaleString('ar-EG');
+            c.innerHTML += `<div class="log-item"><div class="log-meta"><span>${log.admin_name}</span><span>${t}</span></div><div class="log-txt">${log.action} (${log.target_unit})</div><div>${log.details}</div></div>`;
+        });
+    }
 
     window.handleLogin = function() {
         const u = document.getElementById('loginUser').value.trim().toLowerCase();
         const p = document.getElementById('loginPass').value.trim();
         const uUp = u.toUpperCase();
 
-        if(adminsDb[u] && adminsDb[u].password === p) {
-            isAdmin = true;
-            isSuperAdmin = (adminsDb[u].role === 'super');
-            localStorage.setItem('loggedInUser', u);
+        if (adminsDb[u] && adminsDb[u].password === p) {
+            isAdmin = true; isSuperAdmin = (adminsDb[u].role === 'super');
+            currentAdminName = u; localStorage.setItem('loggedInUser', u);
             currentUnit = null;
             document.getElementById('btnManageAdmins').style.display = isSuperAdmin ? 'block' : 'none';
+            document.getElementById('btnLogs').style.display = isSuperAdmin ? 'block' : 'none';
             calcGlobalStats();
             switchScreen('adminDashboard');
             renderUnitsGrid("");
-        } else if(db[uUp]) {
-            if(db[uUp].settings && db[uUp].settings.pass === p) {
+        } else if (db[uUp]) {
+            if (db[uUp].settings && db[uUp].settings.pass === p) {
                 isAdmin = false; isSuperAdmin = false;
+                currentAdminName = 'User';
                 openUnit(uUp);
             } else alert("كلمة المرور خطأ");
         } else alert("بيانات خاطئة");
     }
 
-    // --- Dashboard logic ---
     function calcGlobalStats() {
         let tM=0, tD=0, tS=0; const today=new Date().toISOString().split('T')[0];
         Object.values(db).forEach(u => {
@@ -276,7 +318,7 @@
     }
 
     window.renderUnitsGrid = function(filter) {
-        if(currentUnit!==null) return;
+        if(currentUnit !== null) return;
         const grid = document.getElementById('unitsGrid'); grid.innerHTML = "";
         ['A','B','C'].forEach(cat => {
             for(let i=1; i<=50; i++) {
@@ -291,8 +333,7 @@
                     if(lastPayDate) {
                         let due=new Date(lastPayDate); due.setDate(due.getDate()+60);
                         let diff=Math.ceil((due-new Date())/(1000*60*60*24));
-                        if(diff<0) dots+='<div class="dot dot-blue"></div>';
-                        else if(diff<=10) dots+='<div class="dot dot-orange"></div>';
+                        if(diff<0) dots+='<div class="dot dot-blue"></div>'; else if(diff<=10) dots+='<div class="dot dot-orange"></div>';
                     }
                 }
                 dots+='</div>';
@@ -302,7 +343,6 @@
     }
     window.filterUnits=(v)=>renderUnitsGrid(v);
 
-    // --- Unit Logic ---
     window.openUnit = function(id) {
         switchScreen('unitInterface'); currentUnit = id;
         if(!db[id]) db[id] = { info:{name:"",phone:""}, settings:{user:id, pass:"123"}, totalPrice:0, payments:[], works:[], history:[], notifs:[], media:[], visits:[], docs:[] };
@@ -321,32 +361,44 @@
         document.getElementById('uPass').value = d.settings.pass;
         document.getElementById('ownerName').readOnly = !isAdmin;
         document.getElementById('ownerPhone').readOnly = !isAdmin;
-        renderTable('payTable', d.payments);
-        renderTable('workTable', d.works);
-        renderTable('histTable', d.history);
-        renderTable('notifTable', d.notifs);
-        renderVisitsTable(d.visits);
-        renderMediaGrid(d.media);
-        renderDocsTable(d.docs);
+        renderTable('payTable', d.payments); renderTable('workTable', d.works); renderTable('histTable', d.history);
+        renderTable('notifTable', d.notifs); renderVisitsTable(d.visits); renderMediaGrid(d.media); renderDocsTable(d.docs);
         calcStats();
+    }
+
+    function calcStats() {
+        const d = db[currentUnit];
+        let total = parseFloat(String(d.totalPrice).replace(/,/g,'')) || 0;
+        let paid = (d.payments||[]).reduce((a,c) => a + (parseFloat(String(c[2]).replace(/,/g,''))||0), 0);
+        document.getElementById('dispPaid').innerText = formatNumber(paid);
+        document.getElementById('dispRemain').innerText = formatNumber(total - paid);
+        document.getElementById('dispProg').innerText = d.works.length ? d.works[d.works.length-1][2] : "0%";
+        let next = "-";
+        if(d.payments && d.payments.length>0) {
+            let last = new Date(d.payments[d.payments.length-1][0]);
+            last.setDate(last.getDate()+60); next = last.toLocaleDateString('en-GB');
+        } else if(d.saleDate) {
+            let s = new Date(d.saleDate); s.setDate(s.getDate()+60); next = s.toLocaleDateString('en-GB');
+        }
+        document.getElementById('dispNextDue').innerText = next;
     }
 
     function renderTable(id, rows) {
         const tb = document.getElementById(id).querySelector('tbody'); tb.innerHTML = "";
-        rows.forEach((r, i) => {
-            let tr = `<tr>${r.map(c=>`<td>${c}</td>`).join('')}${isAdmin ? `<td>${id==='payTable'?`<button onclick="editRow(${i})" style="color:blue;background:none;border:none;cursor:pointer">✎</button>`:''}<button onclick="delRow('${id}',${i})" style="color:red;background:none;border:none;cursor:pointer">✖</button></td>` : ''}</tr>`;
-            tb.innerHTML += tr;
+        (rows||[]).forEach((r, i) => {
+            let tr = tb.insertRow();
+            r.forEach(c => tr.insertCell().innerText = c);
+            if(isAdmin) {
+                let btns = `<button onclick="delRow('${id}',${i})" style="color:red;border:none;background:none;font-size:18px;cursor:pointer">✖</button>`;
+                if(id==='payTable') btns = `<button onclick="editRow(${i})" style="color:blue;border:none;background:none;font-size:18px;cursor:pointer">✎</button>` + btns;
+                tr.insertCell().innerHTML = btns;
+            }
         });
     }
 
-    // --- الواتساب الذكي ---
-    function sendWhatsApp(phone, name, details) {
-        if(!phone) return;
-        let p = phone.replace(/[^0-9]/g, '');
-        if(p.startsWith('0')) p='964'+p.substring(1); else if(!p.startsWith('964')) p='964'+p;
-        let msg = `مرحباً ${name}،\n${details}\nالتفاصيل في التطبيق: ${window.location.href.split('?')[0]}`;
-        window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank');
-    }
+    function renderDocsTable(docs) { const tb=document.getElementById('docsTable').querySelector('tbody'); tb.innerHTML=""; (docs||[]).forEach((d,i)=>{ tb.innerHTML+=`<tr><td>${d.date}</td><td>${d.type}</td><td>${d.note}</td><td><button onclick="viewImage('${d.url}')" style="color:blue;border:none;background:none">عرض</button></td>${isAdmin?`<td><button onclick="delRow('docsTable',${i})" style="color:red;border:none;background:none">✖</button></td>`:''}</tr>`; }); }
+    function renderVisitsTable(visits) { const tb=document.getElementById('visitTable').querySelector('tbody'); tb.innerHTML=""; (visits||[]).forEach((v,i)=>{ let act=isAdmin?(v.status==='pending'?`<button class="visit-action-btn btn-approve" onclick="setVisitStatus(${i},'approved')">✔</button><button class="visit-action-btn btn-reject" onclick="setVisitStatus(${i},'rejected')">✖</button>`:`<button onclick="delRow('visitTable',${i})" style="color:red;border:none">حذف</button>`):'-'; tb.innerHTML+=`<tr><td>${v.date}</td><td>${v.reason}</td><td><span class="status-badge st-${v.status}">${v.status}</span></td><td>${act}</td></tr>`; }); }
+    function renderMediaGrid(media) { const g=document.getElementById('mediaGrid'); g.innerHTML=""; (media||[]).forEach((m,i)=>{ let c=m.type==='video'?'🎬':`<img src="${m.url}" onclick="viewImage('${m.url}')">`; g.innerHTML+=`<div class="media-item">${c}${isAdmin?`<button onclick="delRow('mediaGrid',${i})" style="position:absolute;top:5px;left:5px;background:red;color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer">×</button>`:''}</div>`; }); }
 
     window.saveData = async function(context) {
         if(!currentUnit) return;
@@ -363,13 +415,13 @@
         if(error) alert(error.message);
         else {
             loadUnitData(); calcGlobalStats();
-            if(context==='info' && isAdmin && d.info.phone) {
-                if(confirm("تم الحفظ. إرسال واتساب؟")) sendWhatsApp(d.info.phone, d.info.name, "تم تحديث المعلومات العامة للوحدة.");
+            if(context==='info') {
+                logToSystem('تحديث معلومات', currentUnit, 'تحديث بيانات');
+                if(isAdmin && d.info.phone && confirm("إرسال واتساب؟")) sendWhatsApp(d.info.phone, d.info.name, "تم تحديث المعلومات.");
             }
         }
     }
 
-    // --- Modal & Actions ---
     window.openModal = () => {
         editingIndex = -1;
         const c = document.getElementById('modalInputs');
@@ -380,10 +432,8 @@
         if(currentTab === 'media') c.innerHTML = `<input type="file" id="mFile"><input type="text" id="mDesc" placeholder="وصف"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
         else if(currentTab === 'docs') c.innerHTML = `<select id="mType"><option>إنذار</option><option>تأجيل</option><option>تعهد</option></select><input type="text" id="mNote" placeholder="ملاحظة"><input type="file" id="mFile"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
         else if(currentTab === 'payments') c.innerHTML = `<input type="text" id="mRcpt" placeholder="الوصل"><input type="number" id="mAmt" placeholder="المبلغ"><input type="text" id="mNote" placeholder="تفاصيل"><input type="date" id="mDate" value="${t}">`;
-        else if(currentTab === 'works') {
-            let ops=""; for(let i=5;i<=100;i+=5) ops+=`<option value="${i}">${i}%</option>`;
-            c.innerHTML = `<input type="text" id="mStage" placeholder="المرحلة"><select id="mPerc">${ops}</select><input type="date" id="mDate" value="${t}">`;
-        } else if(currentTab === 'notifs') c.innerHTML = `<input type="text" id="mMsg" placeholder="الرسالة"><input type="date" id="mDate" value="${t}">`;
+        else if(currentTab === 'works') { let ops=""; for(let i=5;i<=100;i+=5) ops+=`<option value="${i}">${i}%</option>`; c.innerHTML = `<input type="text" id="mStage" placeholder="المرحلة"><select id="mPerc">${ops}</select><input type="date" id="mDate" value="${t}">`; } 
+        else if(currentTab === 'notifs') c.innerHTML = `<input type="text" id="mMsg" placeholder="الرسالة"><input type="date" id="mDate" value="${t}">`;
     }
 
     window.editRow = function(i) {
@@ -401,7 +451,7 @@
         const d = db[currentUnit];
         const date = document.getElementById('mDate').value;
         const note = document.getElementById('mNote') ? document.getElementById('mNote').value : '';
-        let whatsappMsg = "";
+        let logDet = "", logAction = "";
 
         if(currentTab==='media'||currentTab==='docs') {
             const file = document.getElementById('mFile').files[0];
@@ -411,101 +461,47 @@
             const { error } = await supabase.storage.from('media').upload(name, file);
             if(error) return alert(error.message);
             const url = supabase.storage.from('media').getPublicUrl(name).data.publicUrl;
-            if(currentTab==='media') d.media.push({type:file.type.includes('video')?'video':'image', desc:document.getElementById('mDesc').value, url, date});
-            else { d.docs.push({type:document.getElementById('mType').value, note, url, date}); whatsappMsg="تم رفع وثيقة جديدة."; }
+            if(currentTab==='media') { d.media.push({type:file.type.includes('video')?'video':'image', desc:document.getElementById('mDesc').value, url, date}); logAction="رفع وسائط"; logDet="وسائط جديدة"; }
+            else { d.docs.push({type:document.getElementById('mType').value, note, url, date}); logAction="رفع وثيقة"; logDet=document.getElementById('mType').value; }
         }
         else if(currentTab==='payments') {
             const amt = formatNumber(document.getElementById('mAmt').value);
             const rcpt = document.getElementById('mRcpt').value;
             const newP = [date, rcpt, amt, note];
-            if(editingIndex > -1) d.payments[editingIndex] = newP;
-            else { d.payments.push(newP); whatsappMsg=`تم استلام دفعة: ${amt} (وصل: ${rcpt})`; }
+            if(editingIndex > -1) { d.payments[editingIndex] = newP; logAction="تعديل دفعة"; logDet=`وصل ${rcpt}`; }
+            else { d.payments.push(newP); logAction="إضافة دفعة"; logDet=`مبلغ ${amt}`; }
         }
-        else if(currentTab==='works') d.works.push([document.getElementById('mStage').value, date, document.getElementById('mPerc').value+'%']);
-        else if(currentTab==='notifs') { d.notifs.push([date, document.getElementById('mMsg').value]); whatsappMsg=document.getElementById('mMsg').value; }
+        else if(currentTab==='works') { d.works.push([document.getElementById('mStage').value, date, document.getElementById('mPerc').value+'%']); logAction="تحديث عمل"; logDet=document.getElementById('mStage').value; }
+        else if(currentTab==='notifs') { d.notifs.push([date, document.getElementById('mMsg').value]); logAction="تبليغ"; logDet=document.getElementById('mMsg').value; }
 
         const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d });
         if(!error) {
+            logToSystem(logAction, currentUnit, logDet);
+            if(isAdmin && d.info.phone && editingIndex===-1 && logAction!=="رفع وسائط") {
+                if(confirm("إرسال واتساب؟")) sendWhatsApp(d.info.phone, d.info.name, logDet);
+            }
             loadUnitData(); calcGlobalStats();
             document.getElementById('actionModal').style.display = 'none';
-            if(isAdmin && d.info.phone && whatsappMsg && editingIndex===-1) {
-                if(confirm("إرسال واتساب؟")) sendWhatsApp(d.info.phone, d.info.name, whatsappMsg);
-            }
         } else alert(error.message);
     }
 
-    // --- Helpers & Other Tables ---
-    window.delRow = async (id, i) => { 
-        if(confirm('حذف؟')) { 
-            const m={'payTable':'payments','workTable':'works','notifTable':'notifs','mediaGrid':'media','docsTable':'docs','visitTable':'visits'}; 
-            db[currentUnit][m[id]].splice(i,1);
-            await supabase.from('units').upsert({ id: currentUnit, data: db[currentUnit] });
-            loadUnitData(); calcGlobalStats();
-        }
-    }
-    window.setVisitStatus = async (i, s) => { db[currentUnit].visits[i].status = s; saveData(); }
-    
-    function renderDocsTable(docs) {
-        const tb = document.getElementById('docsTable').querySelector('tbody'); tb.innerHTML = "";
-        (docs||[]).forEach((d, i) => {
-            tb.innerHTML += `<tr><td>${d.date}</td><td>${d.type}</td><td>${d.note}</td><td><button onclick="viewImage('${d.url}')" style="color:blue;border:none;background:none">عرض</button></td>${isAdmin?`<td><button onclick="delRow('docsTable',${i})" style="color:red;border:none;background:none">✖</button></td>`:''}</tr>`;
-        });
-    }
-    function renderMediaGrid(media) {
-        const g = document.getElementById('mediaGrid'); g.innerHTML = "";
-        (media||[]).forEach((m, i) => {
-            let c = m.type==='video' ? '🎬' : `<img src="${m.url}" onclick="viewImage('${m.url}')">`;
-            g.innerHTML += `<div class="media-item">${c}${isAdmin?`<button onclick="delRow('mediaGrid',${i})" style="position:absolute;top:5px;left:5px;background:red;color:white;border:none;width:20px;height:20px;border-radius:50%">×</button>`:''}</div>`;
-        });
-    }
-    function renderVisitsTable(visits) {
-        const tb = document.getElementById('visitTable').querySelector('tbody'); tb.innerHTML = "";
-        (visits||[]).forEach((v, i) => {
-            let act = isAdmin ? (v.status==='pending' ? `<button class="visit-action-btn btn-approve" onclick="setVisitStatus(${i},'approved')">✔</button><button class="visit-action-btn btn-reject" onclick="setVisitStatus(${i},'rejected')">✖</button>` : `<button onclick="delRow('visitTable',${i})" style="color:red;border:none;background:none">حذف</button>`) : '-';
-            tb.innerHTML += `<tr><td>${v.date}</td><td>${v.reason}</td><td><span class="status-badge st-${v.status}">${v.status}</span></td><td>${act}</td></tr>`;
-        });
-    }
-    function calcStats() {
-        const d = db[currentUnit];
-        let total = parseFloat(String(d.totalPrice).replace(/,/g,'')) || 0;
-        let paid = (d.payments||[]).reduce((a,c) => a + (parseFloat(String(c[2]).replace(/,/g,''))||0), 0);
-        document.getElementById('dispPaid').innerText = formatNumber(paid);
-        document.getElementById('dispRemain').innerText = formatNumber(total - paid);
-        document.getElementById('dispProg').innerText = d.works.length ? d.works[d.works.length-1][2] : "0%";
-        
-        let next = "-";
-        if(d.payments && d.payments.length>0) {
-            let last = new Date(d.payments[d.payments.length-1][0]);
-            last.setDate(last.getDate()+60);
-            next = last.toLocaleDateString('en-GB');
-        } else if(d.saleDate) {
-            let s = new Date(d.saleDate); s.setDate(s.getDate()+60); next = s.toLocaleDateString('en-GB');
-        }
-        document.getElementById('dispNextDue').innerText = next;
-    }
-
-    // --- Tabs & UI ---
-    window.showTab = (t) => {
-        currentTab = t;
-        document.querySelectorAll('.tab-content').forEach(d => d.style.display = 'none');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(t).style.display = 'block';
-        event.target.classList.add('active');
-        document.getElementById('fabAdd').style.display = (isAdmin && ['payments','docs','works','media','notifs'].includes(t)) ? 'flex' : 'none';
-    }
+    // --- Helpers ---
+    window.delRow = async (id, i) => { if(confirm('حذف؟')) { const m={'payTable':'payments','workTable':'works','notifTable':'notifs','mediaGrid':'media','docsTable':'docs','visitTable':'visits'}; const sec=id==='visitTable'?'visits':m[id]; let det="حذف من "+sec; if(sec==='payments') det=`حذف دفعة ${db[currentUnit].payments[i][2]}`; db[currentUnit][sec].splice(i,1); await supabase.from('units').upsert({ id: currentUnit, data: db[currentUnit] }); logToSystem('حذف', currentUnit, det); loadUnitData(); calcGlobalStats(); } }
+    window.setVisitStatus = async (i, s) => { db[currentUnit].visits[i].status=s; saveData(); }
+    window.showTab = (t) => { currentTab = t; document.querySelectorAll('.tab-content').forEach(d => d.style.display = 'none'); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(t).style.display = 'block'; event.target.classList.add('active'); document.getElementById('fabAdd').style.display = (isAdmin && ['payments','docs','works','media','notifs'].includes(t)) ? 'flex' : 'none'; }
     window.viewImage = (u) => { document.getElementById('fullImage').src = u; document.getElementById('imageViewer').style.display = 'flex'; };
     window.downloadCurrentImage = async () => { try { const r = await fetch(document.getElementById('fullImage').src); const b = await r.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download='img.jpg'; a.click(); } catch(e){ window.open(document.getElementById('fullImage').src); } };
     window.goBack = () => isAdmin ? (switchScreen('adminDashboard'), renderUnitsGrid("")) : location.reload();
     window.openAdminsManager = () => { if(isSuperAdmin) { switchScreen('adminsModal'); renderAdminsList(); } else alert('صلاحية مرفوضة'); };
-    window.closeAdminsManager = () => switchScreen('adminDashboard');
     window.renderAdminsList = () => { const c = document.getElementById('adminsListContainer'); c.innerHTML=''; Object.keys(adminsDb).forEach(u => c.innerHTML += `<div class="admin-list-item"><b>${u}</b> <button onclick="deleteAdmin('${u}')" style="color:red;border:none">🗑</button></div>`); };
-    window.saveAdminUser = async () => { const u = document.getElementById('newAdminUser').value.toLowerCase(); const p = document.getElementById('newAdminPass').value; await supabase.from('admins').upsert({username:u, password:p, role:'editor'}); adminsDb[u]={username:u,password:p,role:'editor'}; renderAdminsList(); alert('تم'); };
-    window.deleteAdmin = async (u) => { if(confirm('حذف؟')) { await supabase.from('admins').delete().eq('username',u); delete adminsDb[u]; renderAdminsList(); } };
+    window.saveAdminUser = async () => { const u = document.getElementById('newAdminUser').value.toLowerCase(); const p = document.getElementById('newAdminPass').value; await supabase.from('admins').upsert({username:u, password:p, role:'editor'}); adminsDb[u]={username:u,password:p,role:'editor'}; logToSystem('أدمن', 'نظام', `تعديل/إضافة ${u}`); renderAdminsList(); alert('تم'); };
+    window.deleteAdmin = async (u) => { if(confirm('حذف؟')) { await supabase.from('admins').delete().eq('username',u); delete adminsDb[u]; logToSystem('أدمن', 'نظام', `حذف ${u}`); renderAdminsList(); } };
     function formatNumber(n) { return n ? Number(String(n).replace(/,/g,'')).toLocaleString('en-US') : "0"; }
     
     document.addEventListener("keyup", function(event) { if (event.key === "Enter") {
         if (document.getElementById('loginScreen').style.display !== 'none') handleLogin();
         else if (document.getElementById('actionModal').style.display === 'flex') confirmModal();
+        else if (document.getElementById('adminsModal').style.display === 'flex') saveAdminUser();
     }});
 </script>
 </body>
