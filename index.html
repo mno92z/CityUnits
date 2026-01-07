@@ -110,7 +110,7 @@
         @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
         
-        /* كلاسات التحكم بالظهور (أهم جزء) */
+        /* كلاسات التحكم بالظهور */
         .admin-only { display: none !important; }
         .show-admin .admin-only { display: block !important; }
         /* عند العرض للمستفيد، الحقول تكون للقراءة فقط شكلياً */
@@ -614,7 +614,12 @@
         } else if(currentTab === 'payments') {
             content.innerHTML = `<input type="text" id="mRcpt" placeholder="رقم الوصل"><input type="number" id="mAmt" placeholder="المبلغ"><input type="text" id="mNote" placeholder="تفاصيل"><input type="date" id="mDate" value="${today}">`;
         } else if(currentTab === 'works') {
-             content.innerHTML = `<input type="text" id="mStage" placeholder="المرحلة (مثلاً: صب السقف)"><input type="number" id="mPerc" placeholder="نسبة الإنجاز %"><input type="date" id="mDate" value="${today}">`;
+             // إنشاء قائمة منسدلة بالنسب المئوية
+             let options = "";
+             for(let i=5; i<=100; i+=5) {
+                 options += `<option value="${i}">${i}%</option>`;
+             }
+             content.innerHTML = `<label>المرحلة</label><input type="text" id="mStage" placeholder="المرحلة (مثلاً: صب السقف)"><label>نسبة الإنجاز</label><select id="mPerc" style="width:100%;margin-top:5px;border:1px solid #ddd;padding:10px;border-radius:8px">${options}</select><input type="date" id="mDate" value="${today}">`;
         } else if(currentTab === 'notifs') {
              content.innerHTML = `<input type="text" id="mMsg" placeholder="نص التبليغ"><input type="date" id="mDate" value="${today}">`;
         } else if (currentTab === 'history') {
@@ -663,8 +668,8 @@
         }
 
         if (currentTab === 'payments') {
-            const r = document.getElementById('mReceipt').value;
-            const a = document.getElementById('mAmount').value;
+            const r = document.getElementById('mRcpt').value;
+            const a = document.getElementById('mAmt').value;
             const n = document.getElementById('mNote').value;
             if(!a) return; d.payments.push([date, r||"-", formatNumber(a), n]);
         } else if (currentTab === 'works') {
