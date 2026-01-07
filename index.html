@@ -11,101 +11,117 @@
     <meta name="theme-color" content="#004d40">
 
     <style>
-        :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --danger: #d32f2f; --warning: #ff9800; --info: #2196f3; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; -webkit-tap-highlight-color: transparent; }
+        :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --danger: #d32f2f; --warning: #ff9800; --info: #2196f3; --text: #2c3e50; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); -webkit-tap-highlight-color: transparent; }
         * { box-sizing: border-box; }
         button, input, select, textarea { font-size: 16px; outline: none; font-family: inherit; }
         
         #loadingScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* عارض الصور */
-        #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
-        #fullImage { max-width: 95%; max-height: 80vh; border-radius: 5px; object-fit: contain; }
-        
-        /* تسجيل الدخول */
+        /* General UI */
+        .btn-confirm { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .btn-cancel { width: 100%; padding: 10px; border: none; background: #eee; color: #666; margin-top: 5px; border-radius: 8px; cursor: pointer; }
+        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 20px; font-size: 14px; cursor: pointer; }
+
+        /* Login */
         #loginScreen { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(135deg, var(--primary), #00251a); color: white; text-align: center; }
         .login-box { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
-        .login-input { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; background: rgba(255,255,255,0.9); font-weight: bold; }
+        .login-input { width: 100%; padding: 14px; margin: 10px 0; border: none; border-radius: 10px; background: rgba(255,255,255,0.95); font-weight: bold; color: #333; }
         .login-btn { width: 100%; padding: 15px; background: var(--accent); color: var(--primary); font-weight: 900; border: none; border-radius: 12px; margin-top: 10px; cursor: pointer; }
 
-        /* لوحة التحكم */
-        #adminDashboard { display: none; padding: 20px; padding-bottom: 80px; }
+        /* Dashboard */
+        #adminDashboard { display: none; padding: 15px; padding-bottom: 80px; }
         .top-bar { margin-bottom: 20px; }
-        .search-input { width: 100%; padding: 15px; border-radius: 50px; border: 1px solid #ddd; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        
         .admin-stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        .adm-stat { background: white; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .adm-stat { background: white; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .adm-stat h3 { margin: 5px 0; color: var(--primary); font-size: 18px; }
-        .adm-stat small { color: #888; font-size: 11px; }
-        .adm-stat.total { grid-column: span 2; background: linear-gradient(45deg, var(--primary), #00796b); color: white; }
-        .adm-stat.total h3 { color: white; font-size: 24px; }
-        .adm-stat.total small { color: #e0f2f1; }
-
-        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
-        .unit-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; border: 2px solid transparent; }
-        .unit-card.sold { border-color: var(--accent); background: #e0f2f1; }
-        .unit-card h3 { margin: 0; color: var(--primary); }
-        .unit-card small { color: #888; font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .adm-stat small { color: #7f8c8d; font-size: 11px; font-weight: bold; }
+        .adm-stat.total { grid-column: span 2; background: linear-gradient(45deg, var(--primary), #00695c); color: white; }
+        .adm-stat.total small { color: #b2dfdb; }
+        .search-input { width: 100%; padding: 14px; border-radius: 50px; border: 1px solid #ddd; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s; }
         
-        .dots-container { position: absolute; top: -5px; right: -5px; display: flex; gap: 3px; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; }
+        /* Units Grid */
+        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+        .unit-card { background: white; padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; border: 2px solid transparent; transition: transform 0.2s; }
+        .unit-card:active { transform: scale(0.96); }
+        .unit-card.sold { border-color: var(--accent); background: #e0f2f1; }
+        .unit-card h3 { margin: 0; color: var(--primary); font-size: 17px; }
+        .unit-card small { color: #7f8c8d; font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+        
+        .dots-container { position: absolute; top: 4px; right: 4px; display: flex; gap: 3px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid white; }
         .dot-red { background: var(--danger); }
         .dot-blue { background: var(--info); }
         .dot-orange { background: var(--warning);}
 
-        /* واجهة الوحدة */
+        /* Unit Interface */
         #unitInterface { display: none; padding-bottom: 80px; }
-        .unit-header { background: var(--primary); color: white; padding: 20px; border-radius: 0 0 25px 25px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; }
+        .unit-header { background: var(--primary); color: white; padding: 20px 20px 30px; border-radius: 0 0 30px 30px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,77,64,0.3); }
         
-        .stats-scroll { display: flex; overflow-x: auto; gap: 15px; padding: 0 20px 20px; scrollbar-width: none; }
-        .stat-card { min-width: 150px; padding: 15px; border-radius: 15px; color: white; flex-shrink: 0; }
+        .stats-scroll { display: flex; overflow-x: auto; gap: 12px; padding: 0 20px 20px; scrollbar-width: none; }
+        .stat-card { min-width: 140px; padding: 15px; border-radius: 15px; color: white; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .bg-1 { background: linear-gradient(45deg, #FF9800, #F57C00); }
         .bg-2 { background: linear-gradient(45deg, #2196F3, #1976D2); }
         .bg-3 { background: linear-gradient(45deg, #4CAF50, #388E3C); }
         .bg-4 { background: linear-gradient(45deg, #607D8B, #455A64); }
 
-        .tabs-nav { display: flex; overflow-x: auto; padding: 0 10px; gap: 10px; border-bottom: 1px solid #eee; margin-bottom: 15px; scrollbar-width: none; }
-        .tab-btn { padding: 10px 15px; background: none; border: none; white-space: nowrap; color: #666; font-weight: bold; border-bottom: 3px solid transparent; }
-        .tab-btn.active { color: var(--primary); border-bottom-color: var(--accent); }
+        .tabs-nav { display: flex; overflow-x: auto; padding: 0 10px; gap: 5px; border-bottom: 1px solid #eee; margin-bottom: 15px; scrollbar-width: none; }
+        .tab-btn { padding: 10px 15px; background: none; border: none; white-space: nowrap; color: #7f8c8d; font-weight: 600; font-size: 14px; border-radius: 20px; transition: 0.3s; }
+        .tab-btn.active { color: white; background: var(--primary); }
         .tab-content { display: none; padding: 0 20px; animation: fadeIn 0.3s; }
 
-        .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: #444; }
-
+        .table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #eee; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+        table { width: 100%; border-collapse: collapse; white-space: nowrap; background: white; }
+        th, td { padding: 12px 15px; text-align: center; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        th { background: #f8f9fa; color: #555; font-weight: bold; }
+        
+        /* Media Grid Fixed */
         .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .media-item { background: #fff; border-radius: 10px; height: 160px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .media-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+        .media-item { 
+            background: #fff; border-radius: 12px; 
+            aspect-ratio: 1; /* مربع */
+            display: flex; align-items: center; justify-content: center; 
+            position: relative; overflow: hidden; border: 1px solid #eee;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .media-item img { width: 100%; height: 100%; object-fit: cover; }
 
-        .fab-add { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; display: none; align-items: center; justify-content: center; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(3px); }
+        .modal-sheet { background: white; width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; padding: 25px; animation: slideUp 0.3s; max-height: 85vh; overflow-y: auto; }
+        #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
+        #fullImage { max-width: 95%; max-height: 80vh; border-radius: 8px; }
 
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; }
-        .modal-sheet { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 25px; animation: slideUp 0.3s; }
-        .btn-confirm { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; }
-        .btn-cancel { width: 100%; padding: 10px; border: none; background: #eee; color: #666; margin-top: 5px; border-radius: 10px; }
-
-        label { font-size: 13px; color: #666; font-weight: bold; margin-top: 10px; display: block; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
-
-        .log-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-        .log-time { color: #888; font-size: 11px; float: left; }
-        .log-user { color: var(--primary); font-weight: bold; }
+        .admin-header-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .adm-tab { flex: 1; padding: 10px; border: none; background: none; font-weight: bold; color: #999; cursor: pointer; border-radius: 8px; }
+        .adm-tab.active { background: #e0f2f1; color: var(--primary); }
+        
+        .log-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-right: 4px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: 13px; }
+        .log-item.pay { border-color: var(--bg-3); }
+        .log-item.edit { border-color: var(--info); }
+        .log-item.del { border-color: var(--danger); }
+        .log-meta { display: flex; justify-content: space-between; color: #888; font-size: 11px; margin-bottom: 4px; }
 
         .admin-only { display: none !important; }
         .show-admin .admin-only { display: block !important; }
-        .unit-interface:not(.show-admin) .editable { pointer-events: none; background: #eee; }
+        .unit-interface:not(.show-admin) .editable { pointer-events: none; background: #eee; color: #777; }
         
+        /* Action Buttons in Table */
+        .btn-act { border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; margin: 0 2px; font-weight: bold; }
+        .btn-edit { background: #e3f2fd; color: #1976D2; }
+        .btn-del { background: #ffebee; color: #c62828; }
+
+        .fab-add { position: fixed; bottom: 25px; left: 25px; width: 55px; height: 55px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 30px; box-shadow: 0 4px 15px rgba(0,77,64,0.4); z-index: 100; display: none; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; }
+        .fab-add:active { transform: scale(0.9); }
+
         @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
     </style>
 </head>
 <body>
 
-<div id="loadingScreen"><div class="loader"></div><p style="margin-top:20px;font-weight:bold">جاري التحميل...</p></div>
+<div id="loadingScreen"><div class="loader"></div><p style="margin-top:20px;font-weight:bold;color:#555">جاري التحميل...</p></div>
 
 <div id="imageViewer">
     <div style="position:absolute;top:20px;right:20px;color:white;font-size:30px;cursor:pointer" onclick="document.getElementById('imageViewer').style.display='none'">×</div>
@@ -115,13 +131,13 @@
 
 <div id="loginScreen">
     <div style="margin-bottom: 30px;">
-        <h1 style="margin:0;">مدينة الأزهر</h1>
-        <p style="opacity:0.8;">نظام المتابعة السحابي</p>
+        <h1 style="margin:0;font-size:2.5em">مدينة الأزهر</h1>
+        <p style="opacity:0.8; letter-spacing:1px">نظام الإدارة الشامل</p>
     </div>
     <div class="login-box">
         <input type="text" id="loginUser" class="login-input" placeholder="اسم المستخدم">
         <input type="password" id="loginPass" class="login-input" placeholder="كلمة المرور">
-        <button onclick="handleLogin()" class="login-btn">دخول</button>
+        <button onclick="handleLogin()" class="login-btn">تسجيل الدخول</button>
     </div>
 </div>
 
@@ -132,19 +148,19 @@
             <div class="adm-stat"><small>مقبوضات اليوم</small><h3 id="statTodayMoney">0</h3></div>
             <div class="adm-stat"><small>مبيعات اليوم</small><h3 id="statTodaySales">0</h3></div>
         </div>
-        <div style="display:flex; gap:5px">
-            <input type="text" class="search-input" placeholder="🔍 بحث..." onkeyup="filterUnits(this.value)">
+        <div style="display:flex; gap:10px">
+            <input type="text" class="search-input" placeholder="🔍 ابحث برقم الوحدة أو الاسم..." onkeyup="filterUnits(this.value)">
             <button class="super-admin-btn" id="btnLogs" onclick="openLogsModal()" style="background:#455A64;color:white;border:none;border-radius:10px;padding:0 15px;display:none;font-size:20px">📋</button>
             <button class="super-admin-btn" id="btnManageAdmins" onclick="openAdminsManager()" style="background:#333;color:var(--accent);border:none;border-radius:10px;padding:0 15px;display:none;font-size:20px">⚙️</button>
         </div>
-        <button class="back-btn" style="background:var(--danger);width:100%;margin-top:10px" onclick="location.reload()">خروج</button>
+        <button class="back-btn" style="background:var(--danger);width:100%;margin-top:15px;border-radius:10px;padding:12px" onclick="location.reload()">تسجيل خروج</button>
     </div>
     <div class="units-grid" id="unitsGrid"></div>
 </div>
 
 <div id="adminsModal" class="modal-overlay" style="align-items:center;">
     <div class="modal-sheet" style="border-radius:20px;">
-        <div style="display:flex;justify-content:space-between;"><h2>المسؤولين</h2><button onclick="closeModal()" style="background:none;border:none;font-size:20px">×</button></div>
+        <div style="display:flex;justify-content:space-between;"><h2>المسؤولين</h2><button onclick="document.getElementById('adminsModal').style.display='none'" style="background:none;border:none;font-size:20px">×</button></div>
         <input type="text" id="newAdminUser" placeholder="اسم المستخدم"><input type="text" id="newAdminPass" placeholder="كلمة المرور">
         <button class="btn-confirm" onclick="saveAdminUser()">حفظ</button>
         <div id="adminsListContainer" style="margin-top:20px;max-height:200px;overflow-y:auto"></div>
@@ -161,7 +177,7 @@
 
 <div id="unitInterface" class="unit-interface">
     <div class="unit-header">
-        <div><h2 style="margin:0;" id="headerUnitTitle">...</h2><small id="headerOwner">...</small></div>
+        <div><h2 style="margin:0;" id="headerUnitTitle">...</h2><small id="headerOwner" style="opacity:0.9">...</small></div>
         <button class="back-btn" onclick="goBack()">رجوع</button>
     </div>
 
@@ -187,8 +203,8 @@
     <div id="info" class="tab-content" style="display:block;">
         <label>المستفيد</label><input type="text" id="ownerName" class="editable">
         <label>الهاتف</label><input type="text" id="ownerPhone" class="editable">
-        <div class="admin-only" style="margin-top:20px;background:#e0f7fa;padding:15px;border-radius:10px">
-            <label>السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData('price')">
+        <div class="admin-only" style="margin-top:20px;background:#e0f7fa;padding:15px;border-radius:10px;border:1px solid #b2dfdb">
+            <label style="color:#00695c">السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData('price')">
         </div>
         <button class="btn-confirm admin-only" style="margin-top:20px" onclick="saveData('info')">حفظ التعديلات (مع واتساب)</button>
     </div>
@@ -198,8 +214,10 @@
     <div id="works" class="tab-content"><div class="table-wrapper"><table id="workTable"><thead><tr><th>مرحلة</th><th>تاريخ</th><th>%</th><th></th></tr></thead><tbody></tbody></table></div></div>
     <div id="visits" class="tab-content">
         <div style="background:white;padding:15px;border-radius:10px;border:1px solid #eee;margin-bottom:15px">
-            <h4 style="margin:0">طلب زيارة</h4><input type="date" id="reqVisitDate"><input type="text" id="reqVisitReason" placeholder="السبب">
-            <button class="btn-confirm" onclick="submitVisitRequest()">إرسال</button>
+            <h4 style="margin:0;color:var(--primary)">تقديم طلب زيارة</h4>
+            <input type="date" id="reqVisitDate" style="margin-bottom:5px">
+            <input type="text" id="reqVisitReason" placeholder="سبب الزيارة">
+            <button class="btn-confirm" onclick="submitVisitRequest()">إرسال الطلب</button>
         </div>
         <div class="table-wrapper"><table id="visitTable"><thead><tr><th>تاريخ</th><th>سبب</th><th>حالة</th><th></th></tr></thead><tbody></tbody></table></div>
     </div>
@@ -208,7 +226,7 @@
     <div id="media" class="tab-content"><div class="media-grid" id="mediaGrid"></div></div>
     <div id="settings" class="tab-content">
         <label>يوزر المستفيد</label><input type="text" id="uUser"><label>باسورد المستفيد</label><input type="text" id="uPass">
-        <button class="btn-confirm" onclick="saveData('settings')">تحديث</button>
+        <button class="btn-confirm" onclick="saveData('settings')">تحديث الحساب</button>
     </div>
 
     <button id="fabAdd" class="fab-add admin-only" onclick="openModal()">+</button>
@@ -216,9 +234,9 @@
 
 <div id="actionModal" class="modal-overlay">
     <div class="modal-sheet">
-        <h3 id="modalTitle" style="margin-top:0">إضافة</h3>
+        <h3 id="modalTitle" style="margin-top:0; color:var(--primary)">إضافة جديد</h3>
         <div id="modalInputs"></div> 
-        <div class="modal-btn-group"><button class="btn-confirm" onclick="confirmModal()">حفظ وإشعار</button><button class="btn-cancel" onclick="closeModal()">إلغاء</button></div>
+        <div class="modal-btn-group"><button class="btn-confirm" onclick="confirmModal()">حفظ</button><button class="btn-cancel" onclick="closeModal()">إلغاء</button></div>
     </div>
 </div>
 
@@ -232,6 +250,7 @@
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     let db = {}, adminsDb = {}, currentUnit = null, isAdmin = false, isSuperAdmin = false, currentTab = 'info';
     let currentAdminName = 'system'; 
+    let editingIndex = -1; // متغير لحفظ رقم السطر المراد تعديله
 
     function switchScreen(id) {
         ['loadingScreen','loginScreen','adminDashboard','unitInterface','adminsModal','logsModal'].forEach(s => document.getElementById(s).style.display = 'none');
@@ -249,6 +268,7 @@
         if(a) a.forEach(r => adminsDb[r.username] = r);
         
         document.getElementById('loadingScreen').style.display = 'none';
+        
         const savedUser = localStorage.getItem('loggedInUser');
         if (!savedUser) switchScreen('loginScreen');
         else {
@@ -274,16 +294,16 @@
 
     function sendWhatsApp(phone, name, unitId, details) {
         if (!phone) return;
-        let p = phone.replace(/[^0-9]/g, '');
+        // تصحيح الرقم بدقة
+        let p = phone.toString().replace(/[^0-9]/g, ''); // حذف أي رمز ليس رقماً
         if (p.startsWith('0')) p = '964' + p.substring(1);
         else if (!p.startsWith('964')) p = '964' + p;
 
         const appLink = window.location.href.split('?')[0]; 
         const text = `مرحباً *${name}*،\n\nتحديث بخصوص وحدتك *(${unitId})*:\n${details}\n\nيرجى مراجعة التفاصيل عبر التطبيق:\n${appLink}`;
 
-        if(confirm(`هل تريد إرسال إشعار واتساب للمستفيد؟\n\n${details}`)) {
-            window.open(`https://wa.me/${p}?text=${encodeURIComponent(text)}`, '_blank');
-        }
+        // فتح الواتساب مباشرة بعد التاكيد
+        window.open(`https://wa.me/${p}?text=${encodeURIComponent(text)}`, '_blank');
     }
 
     window.openLogsModal = async function() {
@@ -412,6 +432,8 @@
         document.getElementById('dispPaid').innerText = formatNumber(paid);
         document.getElementById('dispRemain').innerText = formatNumber(total - paid);
         document.getElementById('dispProg').innerText = d.works.length ? d.works[d.works.length-1][2] : "0%";
+        
+        // حساب الاستحقاق القادم
         let nextDateStr = "-";
         if (d.payments && d.payments.length > 0) {
             let lastDate = new Date(d.payments[d.payments.length-1][0]);
@@ -428,7 +450,10 @@
     function renderTable(id, rows) {
         const tb = document.getElementById(id).querySelector('tbody'); tb.innerHTML = "";
         rows.forEach((r, i) => {
-            let tr = `<tr>${r.map(c=>`<td>${c}</td>`).join('')}${isAdmin ? `<td><button onclick="delRow('${id}',${i})" style="color:red;border:none;background:none">🗑</button></td>` : ''}</tr>`;
+            let tr = `<tr>${r.map(c=>`<td>${c}</td>`).join('')}${isAdmin ? `<td>
+                ${id==='payTable' ? `<button class="btn-act btn-edit" onclick="editRow(${i})">✎</button>` : ''}
+                <button class="btn-act btn-del" onclick="delRow('${id}',${i})">✖</button>
+            </td>` : ''}</tr>`;
             tb.innerHTML += tr;
         });
     }
@@ -437,14 +462,14 @@
         const tb = document.getElementById('docsTable').querySelector('tbody'); tb.innerHTML = "";
         docs.forEach((d, i) => {
             let link = `<button onclick="viewImage('${d.url}')" style="background:none;color:blue;border:none;text-decoration:underline;cursor:pointer">عرض</button>`;
-            tb.innerHTML += `<tr><td>${d.date}</td><td>${d.type}</td><td>${d.note}</td><td>${link}</td>${isAdmin ? `<td><button onclick="delRow('docsTable',${i})" style="color:red;border:none">🗑</button></td>` : ''}</tr>`;
+            tb.innerHTML += `<tr><td>${d.date}</td><td>${d.type}</td><td>${d.note}</td><td>${link}</td>${isAdmin ? `<td><button class="btn-act btn-del" onclick="delRow('docsTable',${i})">✖</button></td>` : ''}</tr>`;
         });
     }
     
     function renderVisitsTable(visits) {
         const tb = document.getElementById('visitTable').querySelector('tbody'); tb.innerHTML = "";
         visits.forEach((v, i) => {
-            let act = isAdmin ? (v.status==='pending' ? `<button onclick="setVisit(${i},'approved')">✔</button><button onclick="setVisit(${i},'rejected')">✖</button>` : `<button onclick="delRow('visitTable',${i})" style="color:red;border:none">🗑</button>`) : '-';
+            let act = isAdmin ? (v.status==='pending' ? `<button onclick="setVisit(${i},'approved')">✔</button><button onclick="setVisit(${i},'rejected')">✖</button>` : `<button class="btn-act btn-del" onclick="delRow('visitTable',${i})">✖</button>`) : '-';
             tb.innerHTML += `<tr><td>${v.date}</td><td>${v.reason}</td><td>${v.status}</td><td>${act}</td></tr>`;
         });
     }
@@ -472,9 +497,14 @@
         if(error) alert(error.message);
         else {
             loadUnitData();
+            calcGlobalStats(); // تحديث فوري
             if(context === 'info') {
                 logToSystem('تحديث معلومات', currentUnit, 'تم تحديث البيانات الأساسية أو السعر');
-                if(isAdmin && d.info.phone) sendWhatsApp(d.info.phone, d.info.name, currentUnit, 'تم تحديث المعلومات العامة للوحدة.');
+                if(isAdmin && d.info.phone) {
+                    if(confirm("تم الحفظ. هل تريد إرسال إشعار واتساب للمستفيد؟")) {
+                        sendWhatsApp(d.info.phone, d.info.name, currentUnit, 'تم تحديث المعلومات العامة للوحدة.');
+                    }
+                }
             }
             else if(context === 'settings') logToSystem('تحديث حساب', currentUnit, 'تم تغيير كلمة مرور المستفيد');
         }
@@ -486,7 +516,7 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(t).style.display = 'block';
         
-        // إعادة تفعيل الزر النشط بالطريقة القديمة المضمونة
+        // تفعيل الزر النشط
         const btns = document.querySelectorAll('.tab-btn');
         for(let i=0; i<btns.length; i++) {
             if(btns[i].getAttribute('onclick').includes("'" + t + "'")) {
@@ -494,14 +524,15 @@
                 break;
             }
         }
-
         document.getElementById('fabAdd').style.display = (isAdmin && ['payments','docs','works','media','notifs'].includes(t)) ? 'flex' : 'none';
     }
 
     window.openModal = () => {
+        editingIndex = -1; // reset editing
         const c = document.getElementById('modalInputs');
         const t = new Date().toISOString().split('T')[0];
         document.getElementById('actionModal').style.display = 'flex';
+        document.getElementById('modalTitle').innerText = "إضافة جديد";
         
         if(currentTab === 'media') c.innerHTML = `<input type="file" id="mFile"><input type="text" id="mDesc" placeholder="وصف"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
         else if(currentTab === 'docs') c.innerHTML = `<select id="mType"><option>إنذار</option><option>تأجيل</option><option>تعهد</option></select><input type="text" id="mNote" placeholder="ملاحظة"><input type="file" id="mFile"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
@@ -511,6 +542,17 @@
             c.innerHTML = `<input type="text" id="mStage" placeholder="المرحلة"><select id="mPerc">${ops}</select><input type="date" id="mDate" value="${t}">`;
         }
         else if(currentTab === 'notifs') c.innerHTML = `<input type="text" id="mMsg" placeholder="الرسالة"><input type="date" id="mDate" value="${t}">`;
+    }
+
+    window.editRow = function(index) {
+        editingIndex = index;
+        const item = db[currentUnit].payments[index];
+        openModal();
+        document.getElementById('modalTitle').innerText = "تعديل الوصل";
+        document.getElementById('mDate').value = item[0];
+        document.getElementById('mRcpt').value = item[1];
+        document.getElementById('mAmt').value = item[2].replace(/,/g,'');
+        document.getElementById('mNote').value = item[3];
     }
 
     window.confirmModal = async () => {
@@ -539,8 +581,15 @@
         else if(currentTab === 'payments') {
             const amt = formatNumber(document.getElementById('mAmt').value);
             const rcpt = document.getElementById('mRcpt').value;
-            d.payments.push([date, rcpt, amt, note]);
-            logAction = "إضافة دفعة"; logDet = `تم استلام دفعة مالية بمبلغ: ${amt} (رقم الوصل: ${rcpt})`;
+            const newPayment = [date, rcpt, amt, note];
+            
+            if(editingIndex > -1) {
+                d.payments[editingIndex] = newPayment;
+                logAction = "تعديل دفعة"; logDet = `تم تعديل الدفعة (وصل: ${rcpt})`;
+            } else {
+                d.payments.push(newPayment);
+                logAction = "إضافة دفعة"; logDet = `تم استلام دفعة مالية بمبلغ: ${amt} (رقم الوصل: ${rcpt})`;
+            }
         }
         else if(currentTab === 'works') {
             const stg = document.getElementById('mStage').value;
@@ -556,9 +605,15 @@
         const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d });
         if(!error) {
             logToSystem(logAction, currentUnit, logDet);
-            if(isAdmin && d.info.phone && logDet) sendWhatsApp(d.info.phone, d.info.name, currentUnit, logDet);
+            // واتساب فقط في حالة الإضافة الجديدة أو الرفع، وليس التعديل الصغير
+            if(isAdmin && d.info.phone && logDet && editingIndex === -1) {
+                if(confirm("تم الحفظ. هل تريد إرسال إشعار واتساب للمستفيد؟")) {
+                    sendWhatsApp(d.info.phone, d.info.name, currentUnit, logDet);
+                }
+            }
             loadUnitData();
-            document.getElementById('actionModal').style.display = 'none';
+            calcGlobalStats(); // تحديث فوري
+            closeModal();
         } else alert(error.message);
     }
 
@@ -575,6 +630,7 @@
             if(!error) {
                 logToSystem('حذف بيانات', currentUnit, det);
                 loadUnitData();
+                calcGlobalStats(); // تحديث فوري
             }
         }
     };
