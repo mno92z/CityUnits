@@ -22,10 +22,15 @@
         .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* عارض الصور المكبر (جديد) */
+        /* عارض الصور المكبر (مع زر التنزيل) */
         #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
         #fullImage { max-width: 95%; max-height: 80vh; border-radius: 5px; box-shadow: 0 0 20px rgba(255,255,255,0.1); object-fit: contain; }
-        .close-viewer { position: absolute; top: 20px; right: 20px; color: white; font-size: 40px; cursor: pointer; background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10001; }
+        
+        /* أزرار العارض */
+        .viewer-btn { position: absolute; top: 20px; color: white; font-size: 24px; cursor: pointer; background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10001; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.3); transition: 0.2s; }
+        .viewer-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
+        .close-viewer { right: 20px; }
+        .download-btn { left: 20px; } /* زر التنزيل على اليسار */
 
         /* تسجيل الدخول */
         #loginScreen { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(135deg, var(--primary), #00251a); color: white; text-align: center; min-height: 100vh; }
@@ -76,10 +81,9 @@
         .btn-approve { background: #28a745; color: white; }
         .btn-reject { background: #dc3545; color: white; }
 
-        /* شبكة الصور المحسنة */
         .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .media-item { 
-            background: #fff; border-radius: 10px; height: 160px; /* حجم مناسب */
+            background: #fff; border-radius: 10px; height: 160px; 
             display: flex; align-items: center; justify-content: center; 
             position: relative; overflow: hidden; border: 1px solid #ddd;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -92,7 +96,6 @@
         label { font-size: 13px; color: #666; font-weight: bold; margin-top: 10px; display: block; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: #fff; }
 
-        /* Modals */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px); }
         .modal-sheet { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 25px; animation: slideUp 0.3s; }
         .modal-btn-group { display: flex; gap: 10px; margin-top: 20px; }
@@ -118,7 +121,8 @@
 </div>
 
 <div id="imageViewer">
-    <div class="close-viewer" onclick="document.getElementById('imageViewer').style.display='none'">×</div>
+    <div class="viewer-btn close-viewer" onclick="document.getElementById('imageViewer').style.display='none'">×</div>
+    <div class="viewer-btn download-btn" onclick="downloadCurrentImage()">⬇</div>
     <img id="fullImage" src="">
 </div>
 
@@ -179,7 +183,8 @@
     <div class="tabs-nav">
         <button class="tab-btn active" onclick="showTab('info')">المعلومات</button>
         <button class="tab-btn" onclick="showTab('payments')">المالية</button>
-        <button class="tab-btn" onclick="showTab('docs')">الوثائق</button> <button class="tab-btn" onclick="showTab('works')">سير العمل</button>
+        <button class="tab-btn" onclick="showTab('docs')">الوثائق</button> 
+        <button class="tab-btn" onclick="showTab('works')">سير العمل</button>
         <button class="tab-btn" onclick="showTab('visits')">الزيارات</button>
         <button class="tab-btn" onclick="showTab('history')">سجل الوحدة</button>
         <button class="tab-btn" onclick="showTab('notifs')">التبليغات</button>
@@ -277,20 +282,15 @@
     async function init() {
         console.log("جاري الاتصال بـ Supabase...");
         
-        // 1. جلب الوحدات
-        const { data: u, error: uErr } = await supabase.from('units').select('*');
+        const { data: u } = await supabase.from('units').select('*');
         if(u) u.forEach(r => db[r.id] = r.data);
         
-        // 2. جلب الأدمنية (حل مشكلة اختفاء الأدمن)
-        const { data: a, error: aErr } = await supabase.from('admins').select('*');
+        const { data: a } = await supabase.from('admins').select('*');
         if(a) a.forEach(r => adminsDb[r.username] = r);
 
         document.getElementById('loadingScreen').style.display = 'none';
         
-        // التحقق من حالة الدخول
-        if (localStorage.getItem('loggedInUser')) {
-             // يمكنك تفعيل تسجيل الدخول التلقائي هنا إذا أردت مستقبلاً
-        } else {
+        if (!localStorage.getItem('loggedInUser')) {
              switchScreen('loginScreen');
         }
     }
@@ -301,7 +301,6 @@
         const u = document.getElementById('loginUser').value.trim().toLowerCase();
         const p = document.getElementById('loginPass').value.trim();
         
-        // فحص الأدمن من قاعدة البيانات
         if (adminsDb[u] && adminsDb[u].password === p) {
             isAdmin = true;
             isSuperAdmin = (adminsDb[u].role === 'super');
@@ -344,12 +343,11 @@
         const p = document.getElementById('newAdminPass').value.trim();
         if(!u || !p) return alert("املأ البيانات");
         
-        // حفظ في Supabase
         const { error } = await supabase.from('admins').upsert({ username: u, password: p, role: 'editor' });
         
         if(!error) {
             alert("تم الحفظ"); 
-            adminsDb[u] = { username: u, password: p, role: 'editor' }; // تحديث محلي
+            adminsDb[u] = { username: u, password: p, role: 'editor' };
             renderAdminsList();
             document.getElementById('newAdminUser').value="";
         } else {
@@ -529,6 +527,27 @@
         if(!url) return;
         document.getElementById('fullImage').src = url;
         document.getElementById('imageViewer').style.display = 'flex';
+    }
+    
+    // دالة التنزيل (الجديدة)
+    window.downloadCurrentImage = async function() {
+        const img = document.getElementById('fullImage');
+        const url = img.src;
+        if(!url) return;
+        
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = "image_" + Date.now() + ".jpg";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (e) {
+            console.error(e);
+            window.open(url, '_blank');
+        }
     }
 
     function calcStats() {
