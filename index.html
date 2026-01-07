@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إدارة مدينة الأزهر</title>
+    <title>إدارة مدينة الأزهر - النظام الشامل</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
@@ -11,169 +11,142 @@
     <meta name="theme-color" content="#004d40">
 
     <style>
-        :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --danger: #d32f2f; --warning: #ff9800; --info: #2196f3; --text: #2c3e50; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); -webkit-tap-highlight-color: transparent; }
+        :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --white: #ffffff; --sold-bg: #e0f2f1; --sold-border: #00bfa5; --danger: #d32f2f; --warning: #ff9800; --info: #2196f3; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; -webkit-tap-highlight-color: transparent; }
         * { box-sizing: border-box; }
         button, input, select, textarea { font-size: 16px; outline: none; font-family: inherit; }
+        .container { max-width: 100%; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
         
-        #loadingScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        /* شاشة التحميل */
+        #loadingScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; transition: opacity 0.5s; }
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* General UI */
-        .btn-confirm { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        .btn-cancel { width: 100%; padding: 10px; border: none; background: #eee; color: #666; margin-top: 5px; border-radius: 8px; cursor: pointer; }
-        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 20px; font-size: 14px; cursor: pointer; }
+        /* عارض الصور */
+        #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
+        #fullImage { max-width: 95%; max-height: 80vh; border-radius: 5px; box-shadow: 0 0 20px rgba(255,255,255,0.1); object-fit: contain; }
+        .viewer-btn { position: absolute; top: 20px; color: white; font-size: 24px; cursor: pointer; background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10001; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.3); transition: 0.2s; }
+        .viewer-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
+        .close-viewer { right: 20px; }
+        .download-btn { left: 20px; }
 
-        /* Login */
-        #loginScreen { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(135deg, var(--primary), #00251a); color: white; text-align: center; }
+        /* تسجيل الدخول */
+        #loginScreen { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(135deg, var(--primary), #00251a); color: white; text-align: center; min-height: 100vh; }
         .login-box { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
-        .login-input { width: 100%; padding: 14px; margin: 10px 0; border: none; border-radius: 10px; background: rgba(255,255,255,0.95); font-weight: bold; color: #333; }
+        .login-input { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; background: rgba(255,255,255,0.9); color: #333; font-weight: bold; }
         .login-btn { width: 100%; padding: 15px; background: var(--accent); color: var(--primary); font-weight: 900; border: none; border-radius: 12px; margin-top: 10px; cursor: pointer; }
+        
+        /* لوحة التحكم */
+        #adminDashboard { display: none; padding: 20px; }
+        .top-bar { position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 10px 0; display: flex; gap: 10px; flex-direction: column; }
+        .search-input { width: 100%; padding: 15px; border-radius: 50px; border: 1px solid #ddd; font-size: 16px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .super-admin-btn { background: #333; color: var(--accent); border: 1px solid var(--accent); padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: none; }
+        
+        /* إحصائيات الأدمن (مضافة للستايل القديم) */
+        .admin-stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 5px; }
+        .adm-stat { background: white; padding: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .adm-stat.total { grid-column: span 2; background: var(--primary); color: white; }
+        .adm-stat h3 { margin: 5px 0; font-size: 16px; }
+        .adm-stat small { font-size: 10px; opacity: 0.8; }
 
-        /* Dashboard */
-        #adminDashboard { display: none; padding: 15px; padding-bottom: 80px; }
-        .top-bar { margin-bottom: 20px; }
-        .admin-stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        .adm-stat { background: white; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-        .adm-stat h3 { margin: 5px 0; color: var(--primary); font-size: 18px; }
-        .adm-stat small { color: #7f8c8d; font-size: 11px; font-weight: bold; }
-        .adm-stat.total { grid-column: span 2; background: linear-gradient(45deg, var(--primary), #00695c); color: white; }
-        .adm-stat.total small { color: #b2dfdb; }
-        .search-input { width: 100%; padding: 14px; border-radius: 50px; border: 1px solid #ddd; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s; }
+        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding-bottom: 80px; margin-top: 10px; }
+        .unit-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; position: relative; }
+        .unit-card.sold { border-color: var(--sold-border); background: var(--sold-bg); }
+        .unit-card h3 { margin: 0; color: var(--primary); font-size: 18px; }
+        .unit-card small { color: #888; font-size: 11px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* Units Grid */
-        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
-        .unit-card { background: white; padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; border: 2px solid transparent; transition: transform 0.2s; }
-        .unit-card:active { transform: scale(0.96); }
-        .unit-card.sold { border-color: var(--accent); background: #e0f2f1; }
-        .unit-card h3 { margin: 0; color: var(--primary); font-size: 17px; }
-        .unit-card small { color: #7f8c8d; font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
-        
-        .dots-container { position: absolute; top: 4px; right: 4px; display: flex; gap: 3px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid white; }
+        /* التنبيهات */
+        .dots-container { position: absolute; top: -5px; right: -5px; display: flex; gap: 2px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; }
         .dot-red { background: var(--danger); }
         .dot-blue { background: var(--info); }
-        .dot-orange { background: var(--warning);}
+        .dot-orange { background: var(--warning); }
 
-        /* Unit Interface */
-        #unitInterface { display: none; padding-bottom: 80px; }
-        .unit-header { background: var(--primary); color: white; padding: 20px 20px 30px; border-radius: 0 0 30px 30px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,77,64,0.3); }
+        /* واجهة الوحدة */
+        #unitInterface { display: none; background: white; min-height: 100vh; padding-bottom: 80px; }
+        .unit-header { background: var(--primary); color: white; padding: 20px; border-radius: 0 0 25px 25px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
         
-        .stats-scroll { display: flex; overflow-x: auto; gap: 12px; padding: 0 20px 20px; scrollbar-width: none; }
-        .stat-card { min-width: 140px; padding: 15px; border-radius: 15px; color: white; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .stats-scroll { display: flex; overflow-x: auto; gap: 15px; padding: 0 20px 20px; scrollbar-width: none; }
+        .stat-card { min-width: 150px; padding: 15px; border-radius: 15px; color: white; flex-shrink: 0; }
         .bg-1 { background: linear-gradient(45deg, #FF9800, #F57C00); }
         .bg-2 { background: linear-gradient(45deg, #2196F3, #1976D2); }
         .bg-3 { background: linear-gradient(45deg, #4CAF50, #388E3C); }
         .bg-4 { background: linear-gradient(45deg, #607D8B, #455A64); }
 
-        /* ⭐⭐⭐ نظام التبويب الحديث والمرتب (The Modern Tabs) ⭐⭐⭐ */
-        .tabs-nav { 
-            display: flex; 
-            overflow-x: auto; 
-            padding: 0 15px; 
-            gap: 20px; 
-            border-bottom: 1px solid #eee; 
-            margin-bottom: 20px; 
-            scrollbar-width: none; 
-        }
-        .tabs-nav::-webkit-scrollbar { display: none; }
+        .tabs-nav { display: flex; overflow-x: auto; padding: 0 10px; gap: 10px; border-bottom: 1px solid #eee; margin-bottom: 15px; scrollbar-width: none; }
+        .tab-btn { padding: 10px 15px; background: none; border: none; white-space: nowrap; color: #666; font-weight: bold; border-bottom: 3px solid transparent; font-size: 14px; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--accent); }
+        .tab-content { display: none; padding: 0 20px; animation: fadeIn 0.3s; }
         
-        .tab-btn { 
-            padding: 12px 5px; 
-            background: none; 
-            border: none; 
-            white-space: nowrap; 
-            color: #888; 
-            font-weight: 600; 
-            font-size: 15px; 
-            cursor: pointer; 
-            position: relative; 
-            transition: 0.3s; 
-        }
-        
-        .tab-btn.active { 
-            color: var(--primary); 
-        }
-        
-        .tab-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: var(--accent);
-            border-radius: 3px 3px 0 0;
-        }
-        /* ⭐⭐⭐ نهاية ستايل التبويب ⭐⭐⭐ */
+        .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: #444; }
 
-        .table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #eee; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
-        table { width: 100%; border-collapse: collapse; white-space: nowrap; background: white; }
-        th, td { padding: 12px 15px; text-align: center; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
-        th { background: #f8f9fa; color: #555; font-weight: bold; }
-        
-        /* Media Grid Fixed */
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; }
+        .st-pending { background: #fff3cd; color: #856404; }
+        .st-approved { background: #d4edda; color: #155724; }
+        .st-rejected { background: #f8d7da; color: #721c24; }
+        .visit-action-btn { border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin: 0 2px; }
+        .btn-approve { background: #28a745; color: white; }
+        .btn-reject { background: #dc3545; color: white; }
+
         .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .media-item { 
-            background: #fff; border-radius: 12px; 
-            aspect-ratio: 1; /* مربع */
+            background: #fff; border-radius: 10px; height: 160px; 
             display: flex; align-items: center; justify-content: center; 
-            position: relative; overflow: hidden; border: 1px solid #eee;
+            position: relative; overflow: hidden; border: 1px solid #ddd;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .media-item img { width: 100%; height: 100%; object-fit: cover; }
-
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(3px); }
-        .modal-sheet { background: white; width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; padding: 25px; animation: slideUp 0.3s; max-height: 85vh; overflow-y: auto; }
-        #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
-        #fullImage { max-width: 95%; max-height: 80vh; border-radius: 8px; }
-
-        .admin-header-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .adm-tab { flex: 1; padding: 10px; border: none; background: none; font-weight: bold; color: #999; cursor: pointer; border-radius: 8px; }
-        .adm-tab.active { background: #e0f2f1; color: var(--primary); }
+        .media-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: 0.3s; }
+        .media-item img:active { transform: scale(0.95); }
         
-        .log-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-right: 4px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: 13px; }
-        .log-item.pay { border-color: var(--bg-3); }
-        .log-item.edit { border-color: var(--info); }
-        .log-item.del { border-color: var(--danger); }
-        .log-meta { display: flex; justify-content: space-between; color: #888; font-size: 11px; margin-bottom: 4px; }
-
-        .admin-only { display: none !important; }
-        .show-admin .admin-only { display: block !important; }
-        .unit-interface:not(.show-admin) .editable { pointer-events: none; background: #eee; color: #777; }
+        .fab-add { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; display: none; align-items: center; justify-content: center; }
         
-        /* Action Buttons in Table */
-        .btn-act { border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; margin: 0 2px; font-weight: bold; }
-        .btn-edit { background: #e3f2fd; color: #1976D2; }
-        .btn-del { background: #ffebee; color: #c62828; }
+        label { font-size: 13px; color: #666; font-weight: bold; margin-top: 10px; display: block; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: #fff; }
 
-        .fab-add { position: fixed; bottom: 25px; left: 25px; width: 55px; height: 55px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 30px; box-shadow: 0 4px 15px rgba(0,77,64,0.4); z-index: 100; display: none; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; }
-        .fab-add:active { transform: scale(0.9); }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px); }
+        .modal-sheet { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 25px; animation: slideUp 0.3s; }
+        .modal-btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-confirm { flex: 2; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; }
+        .btn-cancel { flex: 1; padding: 12px; background: #eee; color: #333; border: none; border-radius: 10px; font-weight: bold; }
+
+        #adminsModal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:150; padding:20px; overflow-y:auto; }
+        .admin-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
+        .admin-badge { background: #333; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; }
 
         @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+        
+        .admin-only { display: none !important; }
+        .show-admin .admin-only { display: block !important; }
+        .unit-interface:not(.show-admin) .editable { pointer-events: none; background: #eee; }
     </style>
 </head>
 <body>
 
-<div id="loadingScreen"><div class="loader"></div><p style="margin-top:20px;font-weight:bold;color:#555">جاري التحميل...</p></div>
+<div id="loadingScreen">
+    <div class="loader"></div>
+    <p style="margin-top:20px; font-weight:bold;">جاري الاتصال بالسيرفر...</p>
+</div>
 
 <div id="imageViewer">
-    <div style="position:absolute;top:20px;right:20px;color:white;font-size:30px;cursor:pointer" onclick="document.getElementById('imageViewer').style.display='none'">×</div>
-    <div style="position:absolute;top:20px;left:20px;color:white;font-size:30px;cursor:pointer" onclick="downloadCurrentImage()">⬇</div>
+    <div class="viewer-btn close-viewer" onclick="document.getElementById('imageViewer').style.display='none'">×</div>
+    <div class="viewer-btn download-btn" onclick="downloadCurrentImage()">⬇</div>
     <img id="fullImage" src="">
 </div>
 
-<div id="loginScreen">
+<div id="loginScreen" style="display:none;">
     <div style="margin-bottom: 30px;">
-        <h1 style="margin:0;font-size:2.5em">مدينة الأزهر</h1>
-        <p style="opacity:0.8; letter-spacing:1px">نظام الإدارة الشامل</p>
+        <h1 style="margin:0;">مدينة الأزهر</h1>
+        <p style="opacity:0.8;">نظام المتابعة السحابي</p>
     </div>
     <div class="login-box">
-        <input type="text" id="loginUser" class="login-input" placeholder="اسم المستخدم">
+        <input type="text" id="loginUser" class="login-input" placeholder="اسم المستخدم (للإدارة) أو رقم الوحدة">
         <input type="password" id="loginPass" class="login-input" placeholder="كلمة المرور">
-        <button onclick="handleLogin()" class="login-btn">تسجيل الدخول</button>
+        <button onclick="handleLogin()" class="login-btn">دخول</button>
     </div>
 </div>
 
@@ -184,36 +157,36 @@
             <div class="adm-stat"><small>مقبوضات اليوم</small><h3 id="statTodayMoney">0</h3></div>
             <div class="adm-stat"><small>مبيعات اليوم</small><h3 id="statTodaySales">0</h3></div>
         </div>
-        <div style="display:flex; gap:10px">
-            <input type="text" class="search-input" placeholder="🔍 ابحث برقم الوحدة أو الاسم..." onkeyup="filterUnits(this.value)">
-            <button class="super-admin-btn" id="btnLogs" onclick="openLogsModal()" style="background:#455A64;color:white;border:none;border-radius:10px;padding:0 15px;display:none;font-size:20px">📋</button>
-            <button class="super-admin-btn" id="btnManageAdmins" onclick="openAdminsManager()" style="background:#333;color:var(--accent);border:none;border-radius:10px;padding:0 15px;display:none;font-size:20px">⚙️</button>
+        <div style="display: flex; gap:5px;">
+             <input type="text" class="search-input" placeholder="🔍 ابحث عن وحدة..." onkeyup="filterUnits(this.value)">
+             <button class="super-admin-btn" id="btnManageAdmins" onclick="openAdminsManager()">⚙️</button>
         </div>
-        <button class="back-btn" style="background:var(--danger);width:100%;margin-top:15px;border-radius:10px;padding:12px" onclick="location.reload()">تسجيل خروج</button>
+        <button class="back-btn" style="background:var(--danger); width:100%;" onclick="location.reload()">تسجيل خروج</button>
     </div>
     <div class="units-grid" id="unitsGrid"></div>
 </div>
 
-<div id="adminsModal" class="modal-overlay" style="align-items:center;">
-    <div class="modal-sheet" style="border-radius:20px;">
-        <div style="display:flex;justify-content:space-between;"><h2>المسؤولين</h2><button onclick="document.getElementById('adminsModal').style.display='none'" style="background:none;border:none;font-size:20px">×</button></div>
-        <input type="text" id="newAdminUser" placeholder="اسم المستخدم"><input type="text" id="newAdminPass" placeholder="كلمة المرور">
-        <button class="btn-confirm" onclick="saveAdminUser()">حفظ</button>
-        <div id="adminsListContainer" style="margin-top:20px;max-height:200px;overflow-y:auto"></div>
+<div id="adminsModal">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2 style="margin:0">إدارة المسؤولين</h2>
+        <button onclick="closeAdminsManager()" style="background:none; border:none; font-size:20px;">✖</button>
     </div>
-</div>
-
-<div id="logsModal" class="modal-overlay">
-    <div class="modal-sheet">
-        <div style="display:flex;justify-content:space-between;"><h2>سجل النشاطات</h2><button onclick="document.getElementById('logsModal').style.display='none'" style="background:none;border:none;font-size:20px">×</button></div>
-        <div id="logsContainer" style="max-height:60vh;overflow-y:auto;margin-top:10px">جاري التحميل...</div>
-        <button class="btn-cancel" onclick="document.getElementById('logsModal').style.display='none'">إغلاق</button>
+    <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-bottom:20px;">
+        <h4 style="margin-top:0;">إضافة / تعديل مسؤول</h4>
+        <input type="text" id="newAdminUser" placeholder="اسم المستخدم (Username)">
+        <input type="text" id="newAdminPass" placeholder="كلمة المرور">
+        <button class="login-btn" onclick="saveAdminUser()">حفظ المسؤول</button>
     </div>
+    <h3>قائمة المسؤولين</h3>
+    <div id="adminsListContainer"></div>
 </div>
 
 <div id="unitInterface" class="unit-interface">
     <div class="unit-header">
-        <div><h2 style="margin:0;" id="headerUnitTitle">...</h2><small id="headerOwner">...</small></div>
+        <div>
+            <h2 style="margin:0;" id="headerUnitTitle">...</h2>
+            <small style="opacity:0.9;" id="headerOwner">...</small>
+        </div>
         <button class="back-btn" onclick="goBack()">رجوع</button>
     </div>
 
@@ -237,30 +210,47 @@
     </div>
 
     <div id="info" class="tab-content" style="display:block;">
-        <label>المستفيد</label><input type="text" id="ownerName" class="editable">
-        <label>الهاتف</label><input type="text" id="ownerPhone" class="editable">
-        <div class="admin-only" style="margin-top:20px;background:#e0f7fa;padding:15px;border-radius:10px;border:1px solid #b2dfdb">
-            <label style="color:#00695c">السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData('price')">
+        <label>اسم المستفيد</label><input type="text" id="ownerName" class="editable">
+        <label>رقم الهاتف</label><input type="text" id="ownerPhone" class="editable">
+        <div class="admin-only" style="margin-top:20px; background:#e0f7fa; padding:15px; border-radius:10px;">
+            <label style="color:#006064;">السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData('price')">
         </div>
-        <button class="btn-confirm admin-only" style="margin-top:20px" onclick="saveData('info')">حفظ التعديلات (مع واتساب)</button>
+        <button class="login-btn admin-only" style="margin-top:20px;" onclick="saveData('info')">حفظ التعديلات (مع واتساب)</button>
     </div>
 
-    <div id="payments" class="tab-content"><div class="table-wrapper"><table id="payTable"><thead><tr><th>تاريخ</th><th>وصل</th><th>مبلغ</th><th>تفاصيل</th><th></th></tr></thead><tbody></tbody></table></div></div>
-    <div id="docs" class="tab-content"><div class="table-wrapper"><table id="docsTable"><thead><tr><th>تاريخ</th><th>نوع</th><th>ملاحظة</th><th>ملف</th><th></th></tr></thead><tbody></tbody></table></div></div>
-    <div id="works" class="tab-content"><div class="table-wrapper"><table id="workTable"><thead><tr><th>مرحلة</th><th>تاريخ</th><th>%</th><th></th></tr></thead><tbody></tbody></table></div></div>
-    <div id="visits" class="tab-content">
-        <div style="background:white;padding:15px;border-radius:10px;border:1px solid #eee;margin-bottom:15px">
-            <h4 style="margin:0">طلب زيارة</h4><input type="date" id="reqVisitDate"><input type="text" id="reqVisitReason" placeholder="السبب">
-            <button class="btn-confirm" onclick="submitVisitRequest()">إرسال الطلب</button>
-        </div>
-        <div class="table-wrapper"><table id="visitTable"><thead><tr><th>تاريخ</th><th>سبب</th><th>حالة</th><th></th></tr></thead><tbody></tbody></table></div>
+    <div id="payments" class="tab-content">
+        <div class="table-wrapper"><table id="payTable"><thead><tr><th>التاريخ</th><th>الوصل</th><th>المبلغ</th><th>التفاصيل</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div>
+        <div style="height:60px;"></div>
     </div>
-    <div id="history" class="tab-content"><div class="table-wrapper"><table id="histTable"><thead><tr><th>تاريخ</th><th>حدث</th><th>ملاحظات</th><th></th></tr></thead><tbody></tbody></table></div></div>
-    <div id="notifs" class="tab-content"><div class="table-wrapper"><table id="notifTable"><thead><tr><th>تاريخ</th><th>رسالة</th><th></th></tr></thead><tbody></tbody></table></div></div>
-    <div id="media" class="tab-content"><div class="media-grid" id="mediaGrid"></div></div>
+
+    <div id="docs" class="tab-content">
+        <div class="table-wrapper"><table id="docsTable"><thead><tr><th>تاريخ</th><th>نوع</th><th>ملاحظات</th><th>ملف</th><th></th></tr></thead><tbody></tbody></table></div>
+    </div>
+
+    <div id="works" class="tab-content">
+        <div class="table-wrapper"><table id="workTable"><thead><tr><th>المرحلة</th><th>التاريخ</th><th>%</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div>
+        <div style="height:60px;"></div>
+    </div>
+
+    <div id="visits" class="tab-content">
+        <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee; margin-bottom:20px;">
+            <h3 style="margin-top:0; color:var(--primary);">طلب زيارة</h3>
+            <label>التاريخ</label><input type="date" id="reqVisitDate">
+            <label>السبب</label><input type="text" id="reqVisitReason" placeholder="...">
+            <button class="login-btn" style="margin-top:10px;" onclick="submitVisitRequest()">إرسال</button>
+        </div>
+        <h3 style="margin-bottom:10px;">السجل</h3>
+        <div class="table-wrapper"><table id="visitTable"><thead><tr><th>التاريخ</th><th>السبب</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody></tbody></table></div>
+        <div style="height:60px;"></div>
+    </div>
+
+    <div id="history" class="tab-content"><div class="table-wrapper"><table id="histTable"><thead><tr><th>التاريخ</th><th>الحدث</th><th>ملاحظات</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div><div style="height:60px;"></div></div>
+    <div id="notifs" class="tab-content"><div class="table-wrapper"><table id="notifTable"><thead><tr><th>التاريخ</th><th>التبليغ</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div><div style="height:60px;"></div></div>
+    <div id="media" class="tab-content"><div class="media-grid" id="mediaGrid"></div><div style="height:60px;"></div></div>
+
     <div id="settings" class="tab-content">
-        <label>يوزر المستفيد</label><input type="text" id="uUser"><label>باسورد المستفيد</label><input type="text" id="uPass">
-        <button class="btn-confirm" onclick="saveData('settings')">تحديث الحساب</button>
+        <label>اسم المستخدم (للمستفيد)</label><input type="text" id="uUser"><label>كلمة المرور (للمستفيد)</label><input type="text" id="uPass">
+        <button class="login-btn" onclick="saveData('settings')">تحديث الحساب</button>
     </div>
 
     <button id="fabAdd" class="fab-add admin-only" onclick="openModal()">+</button>
@@ -268,7 +258,7 @@
 
 <div id="actionModal" class="modal-overlay">
     <div class="modal-sheet">
-        <h3 id="modalTitle" style="margin-top:0">إضافة جديد</h3>
+        <div class="modal-title" id="modalTitle">إضافة جديد</div>
         <div id="modalInputs"></div> 
         <div class="modal-btn-group"><button class="btn-confirm" onclick="confirmModal()">حفظ</button><button class="btn-cancel" onclick="closeModal()">إلغاء</button></div>
     </div>
@@ -277,43 +267,52 @@
 <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // 🔴 إعدادات السيرفر
+    // 🔴🔴🔴 بيانات Supabase الخاصة بك 🔴🔴🔴
     const SUPABASE_URL = 'https://csaqawviitdrjzeasmne.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ';
     
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    let db = {}, adminsDb = {}, currentUnit = null, isAdmin = false, isSuperAdmin = false, currentTab = 'info';
-    let currentAdminName = 'system'; 
-    let editingIndex = -1; 
+    
+    let db = {}; 
+    let adminsDb = {};
+    let currentUnit = null;
+    let isAdmin = false;
+    let isSuperAdmin = false;
+    let currentTab = 'info';
+    let currentAdminName = 'system';
+    let editingIndex = -1; // لتتبع التعديل
 
-    function switchScreen(id) {
-        ['loadingScreen','loginScreen','adminDashboard','unitInterface','adminsModal','logsModal'].forEach(s => document.getElementById(s).style.display = 'none');
-        document.getElementById(id).style.display = 'block';
-        if(id === 'unitInterface') {
-            const ui = document.getElementById('unitInterface');
-            if(isAdmin) ui.classList.add('show-admin'); else ui.classList.remove('show-admin');
+    // دالة التبديل
+    function switchScreen(screenId) {
+        const screens = ['loadingScreen', 'loginScreen', 'adminDashboard', 'unitInterface', 'adminsModal'];
+        screens.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.style.cssText = "display: none !important;"; 
+        });
+        const target = document.getElementById(screenId);
+        if(target) {
+            target.style.cssText = "display: block !important;";
+            if(screenId === 'adminDashboard') target.style.display = 'block'; 
         }
+        window.scrollTo(0, 0);
     }
 
+    // --- جلب البيانات ---
     async function init() {
-        const { data: u } = await supabase.from('units').select('*');
+        const { data: u, error: uErr } = await supabase.from('units').select('*');
         if(u) u.forEach(r => db[r.id] = r.data);
-        const { data: a } = await supabase.from('admins').select('*');
+        const { data: a, error: aErr } = await supabase.from('admins').select('*');
         if(a) a.forEach(r => adminsDb[r.username] = r);
-        
+
         document.getElementById('loadingScreen').style.display = 'none';
-        const savedUser = localStorage.getItem('loggedInUser');
-        if (!savedUser) switchScreen('loginScreen');
-        else {
-            if(adminsDb[savedUser.toLowerCase()]) {
-                 document.getElementById('loginUser').value = savedUser;
-                 switchScreen('loginScreen');
-            } else switchScreen('loginScreen');
+        
+        if (!localStorage.getItem('loggedInUser')) {
+             switchScreen('loginScreen');
         }
     }
     init();
 
-    // --- نظام السجلات والواتساب ---
+    // --- دالة السجل الصامت ---
     async function logToSystem(action, target, details) {
         if(!isAdmin) return;
         await supabase.from('logs').insert({
@@ -322,9 +321,10 @@
             target_unit: target || 'N/A',
             details: details
         });
-        calcGlobalStats();
+        calcGlobalStats(); // تحديث الأرقام فوراً
     }
 
+    // --- واتساب ذكي ---
     function sendWhatsApp(phone, name, unitId, details) {
         if (!phone) return;
         let p = phone.toString().replace(/[^0-9]/g, ''); 
@@ -337,46 +337,32 @@
         window.open(`https://wa.me/${p}?text=${encodeURIComponent(text)}`, '_blank');
     }
 
-    window.openLogsModal = async function() {
-        document.getElementById('logsModal').style.display = 'flex';
-        document.getElementById('logsContainer').innerHTML = '<div class="loader" style="width:20px;height:20px;border-width:2px;margin:20px auto"></div>';
-        const { data } = await supabase.from('logs').select('*').order('created_at', { ascending: false }).limit(50);
-        
-        const c = document.getElementById('logsContainer');
-        c.innerHTML = "";
-        if(!data || data.length === 0) c.innerHTML = "<p style='text-align:center;color:#999'>لا توجد سجلات</p>";
-        else {
-            data.forEach(log => {
-                const time = new Date(log.created_at).toLocaleString('ar-EG');
-                c.innerHTML += `<div class="log-item"><span class="log-user">${log.admin_name}</span>: ${log.action} (${log.target_unit})<br><small>${log.details}</small><br><span class="log-time">${time}</span><div style="clear:both"></div></div>`;
-            });
-        }
-    }
-
+    // --- تسجيل الدخول (الذكي) ---
     window.handleLogin = function() {
-        const uRaw = document.getElementById('loginUser').value.trim();
-        const p = document.getElementById('loginPass').value.trim();
-        const uAdmin = uRaw.toLowerCase();
-        const uUnit = uRaw.toUpperCase();
+        const rawUser = document.getElementById('loginUser').value.trim();
+        const pass = document.getElementById('loginPass').value.trim();
+        const adminKey = rawUser.toLowerCase();
+        const unitKey = rawUser.toUpperCase();
 
-        if (adminsDb[uAdmin] && adminsDb[uAdmin].password === p) {
+        if (adminsDb[adminKey] && adminsDb[adminKey].password === pass) {
             isAdmin = true;
-            isSuperAdmin = (adminsDb[uAdmin].role === 'super');
-            currentAdminName = uAdmin; 
-            localStorage.setItem('loggedInUser', uAdmin);
+            isSuperAdmin = (adminsDb[adminKey].role === 'super');
+            currentAdminName = adminKey;
+            localStorage.setItem('loggedInUser', adminKey);
             currentUnit = null;
             document.getElementById('btnManageAdmins').style.display = isSuperAdmin ? 'block' : 'none';
-            document.getElementById('btnLogs').style.display = isSuperAdmin ? 'block' : 'none';
             calcGlobalStats();
-            switchScreen('adminDashboard');
-            renderUnitsGrid("");
-        } else if (db[uUnit]) {
-            if (db[uUnit].settings && db[uUnit].settings.pass === p) {
-                isAdmin = false; isSuperAdmin = false;
+            initAdminDashboard();
+        } 
+        else if (db[unitKey]) {
+            if (db[unitKey].settings && db[unitKey].settings.pass === pass) {
+                isAdmin = false; 
+                isSuperAdmin = false;
                 currentAdminName = 'User';
-                openUnit(uUnit);
-            } else alert("كلمة المرور خطأ");
-        } else alert("بيانات غير صحيحة");
+                openUnit(unitKey);
+            } else alert("كلمة المرور غير صحيحة!");
+        } 
+        else alert("خطأ في البيانات");
     }
 
     function calcGlobalStats() {
@@ -397,21 +383,108 @@
         document.getElementById('statTodaySales').innerText = todaySales;
     }
 
+    // --- إدارة الأدمنية ---
+    window.openAdminsManager = function() {
+        if(!isSuperAdmin) return alert("ليس لديك صلاحية!");
+        switchScreen('adminsModal');
+        renderAdminsList();
+    }
+    window.closeAdminsManager = () => switchScreen('adminDashboard');
+
+    window.renderAdminsList = function() {
+        const container = document.getElementById('adminsListContainer');
+        container.innerHTML = "";
+        Object.keys(adminsDb).forEach(username => {
+            const admin = adminsDb[username];
+            const div = document.createElement('div');
+            div.className = 'admin-list-item';
+            let badge = admin.role === 'super' ? '<span class="admin-badge">رئيسي</span>' : '';
+            let deleteBtn = admin.role === 'super' ? '' : `<button onclick="deleteAdmin('${username}')" style="color:red; background:none; border:none; cursor:pointer;">🗑 حذف</button>`;
+            div.innerHTML = `<div><strong>${username}</strong> ${badge} <br><small>Pass: ${admin.password}</small></div><div>${deleteBtn}</div>`;
+            container.appendChild(div);
+        });
+    }
+
+    window.saveAdminUser = async function() {
+        const u = document.getElementById('newAdminUser').value.trim().toLowerCase();
+        const p = document.getElementById('newAdminPass').value.trim();
+        if(!u || !p) return alert("املأ البيانات");
+        
+        const { error } = await supabase.from('admins').upsert({ username: u, password: p, role: 'editor' });
+        if(!error) {
+            alert("تم الحفظ"); 
+            adminsDb[u] = { username: u, password: p, role: 'editor' };
+            logToSystem('إضافة أدمن', 'النظام', `تم إضافة/تعديل الأدمن ${u}`);
+            renderAdminsList();
+            document.getElementById('newAdminUser').value="";
+        } else alert("خطأ: " + error.message);
+    }
+
+    window.deleteAdmin = async function(username) {
+        if(confirm("حذف؟")) {
+            await supabase.from('admins').delete().eq('username', username);
+            delete adminsDb[username];
+            logToSystem('حذف أدمن', 'النظام', `تم حذف الأدمن ${username}`);
+            renderAdminsList();
+        }
+    }
+
+    // --- حفظ بيانات الوحدة ---
+    window.saveData = async function(context) {
+        if(!currentUnit) return;
+        const d = db[currentUnit];
+        
+        if(isAdmin && document.getElementById('ownerName')) {
+             d.info.name = document.getElementById('ownerName').value;
+             d.info.phone = document.getElementById('ownerPhone').value;
+             d.totalPrice = document.getElementById('totalPrice').value.replace(/,/g,'');
+             d.settings.user = document.getElementById('uUser').value;
+             d.settings.pass = document.getElementById('uPass').value;
+             if(!d.saleDate && d.info.name) d.saleDate = new Date().toISOString().split('T')[0];
+        }
+        
+        const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d });
+        if (error) alert("خطأ في الحفظ: " + error.message);
+        else {
+             loadUnitData();
+             calcGlobalStats();
+             if(context === 'info') {
+                logToSystem('تحديث معلومات', currentUnit, 'تحديث بيانات عامة');
+                if(isAdmin && d.info.phone) {
+                    if(confirm("تم الحفظ. هل تريد إرسال إشعار واتساب؟")) {
+                        sendWhatsApp(d.info.phone, d.info.name, currentUnit, 'تم تحديث المعلومات العامة للوحدة.');
+                    }
+                }
+             }
+        }
+    }
+
+    function initAdminDashboard() {
+        currentUnit = null; 
+        switchScreen('adminDashboard');
+        renderUnitsGrid("");
+    }
+
     window.renderUnitsGrid = function(filter) {
         if(currentUnit !== null) return;
         const grid = document.getElementById('unitsGrid'); grid.innerHTML = "";
-        ['A','B','C'].forEach(cat => {
+        ['A', 'B', 'C'].forEach(cat => {
             for(let i=1; i<=50; i++) {
                 let id = cat + i;
-                if(filter && !id.toLowerCase().includes(filter.toLowerCase())) continue;
+                if (filter && !id.toLowerCase().includes(filter.toLowerCase())) continue;
+                
                 let d = db[id];
-                let isSold = d && d.info.name;
+                let isSold = d && d.info.name && d.info.name.trim().length > 0;
+                let hasPending = d && d.visits && d.visits.some(v => v.status === 'pending');
+                
                 let dotsHTML = '<div class="dots-container">';
                 if(isSold) {
-                    if(d.visits && d.visits.some(v => v.status === 'pending')) dotsHTML += '<div class="dot dot-red"></div>';
+                    if(hasPending) dotsHTML += '<div class="dot dot-red"></div>';
+                    // منطق تاريخ الاستحقاق
                     let lastPayDate = null;
                     if(d.payments && d.payments.length > 0) lastPayDate = new Date(d.payments[d.payments.length-1][0]);
                     else if (d.saleDate) lastPayDate = new Date(d.saleDate);
+
                     if(lastPayDate) {
                         let dueDate = new Date(lastPayDate); dueDate.setDate(dueDate.getDate() + 60); 
                         let diffDays = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
@@ -420,32 +493,48 @@
                     }
                 }
                 dotsHTML += '</div>';
-                grid.innerHTML += `<div class="unit-card ${isSold?'sold':''}" onclick="openUnit('${id}')">${dotsHTML}<h3>${id}</h3><small>${isSold ? d.info.name : 'متاح'}</small></div>`;
+
+                let div = document.createElement('div');
+                div.className = `unit-card ${isSold ? 'sold' : ''} ${hasPending ? 'has-request' : ''}`;
+                div.onclick = () => openUnit(id);
+                div.innerHTML = `${dotsHTML}<h3>${id}</h3><small>${isSold ? d.info.name : 'متاح'}</small>`;
+                grid.appendChild(div);
             }
         });
     }
-    window.filterUnits = (v) => renderUnitsGrid(v);
+    window.filterUnits = (val) => renderUnitsGrid(val);
 
     window.openUnit = function(id) {
-        switchScreen('unitInterface');
+        switchScreen('unitInterface'); 
         currentUnit = id;
-        if(!db[id]) db[id] = { info:{name:"",phone:""}, settings:{user:id, pass:"123"}, totalPrice:0, payments:[], works:[], history:[], notifs:[], media:[], visits:[], docs:[] };
-        ['docs','media','history','notifs','visits','payments','works'].forEach(k => { if(!db[id][k]) db[id][k] = []; });
+        
+        if (!db[id]) {
+            db[id] = { info: {name:"",phone:""}, settings: {user:id, pass:"123"}, totalPrice:0, payments:[], works:[], history:[], notifs:[], media:[], visits:[], docs:[] };
+        }
+        ['docs', 'media', 'history', 'notifs', 'visits', 'payments', 'works'].forEach(k => { if(!db[id][k]) db[id][k] = []; });
+        
+        const ui = document.getElementById('unitInterface');
+        if(isAdmin) ui.classList.add('show-admin');
+        else ui.classList.remove('show-admin');
+        
         loadUnitData();
         showTab('info');
     }
 
     window.loadUnitData = function() {
+        if(!db[currentUnit]) return;
         const d = db[currentUnit];
-        document.getElementById('headerUnitTitle').innerText = currentUnit;
-        document.getElementById('headerOwner').innerText = d.info.name || "متاح";
+        document.getElementById('headerUnitTitle').innerText = "الوحدة " + currentUnit;
+        document.getElementById('headerOwner').innerText = d.info.name || "غير محدد";
         document.getElementById('ownerName').value = d.info.name || "";
         document.getElementById('ownerPhone').value = d.info.phone || "";
         document.getElementById('totalPrice').value = formatNumber(d.totalPrice);
         document.getElementById('uUser').value = d.settings.user;
         document.getElementById('uPass').value = d.settings.pass;
+        
         document.getElementById('ownerName').readOnly = !isAdmin;
         document.getElementById('ownerPhone').readOnly = !isAdmin;
+        
         renderTable('payTable', d.payments);
         renderTable('workTable', d.works);
         renderTable('histTable', d.history);
@@ -456,15 +545,124 @@
         calcStats();
     }
 
+    function renderTable(id, rows) {
+        if(!rows) rows = [];
+        const tb = document.getElementById(id).querySelector('tbody'); tb.innerHTML = "";
+        rows.forEach((r, i) => {
+            let tr = tb.insertRow();
+            r.forEach(c => tr.insertCell().innerText = c);
+            if(isAdmin) {
+                // إضافة زر التعديل للدفعات
+                let btns = `<button onclick="delRow('${id}',${i})" style="color:red;border:none;background:none;font-size:18px;cursor:pointer">✖</button>`;
+                if(id === 'payTable') {
+                    btns = `<button onclick="editRow(${i})" style="color:blue;border:none;background:none;font-size:18px;cursor:pointer;margin-left:5px">✎</button>` + btns;
+                }
+                tr.insertCell().innerHTML = btns;
+            }
+        });
+    }
+
+    function renderDocsTable(docs) {
+        const tb = document.getElementById('docsTable').querySelector('tbody'); tb.innerHTML = "";
+        if(!docs) docs = [];
+        docs.forEach((d, i) => {
+            let link = `<button onclick="viewImage('${d.url}')" style="background:none;border:none;color:blue;text-decoration:underline;cursor:pointer;font-weight:bold;">عرض الملف</button>`;
+            tb.innerHTML += `<tr><td>${d.date}</td><td>${d.type}</td><td>${d.note}</td><td>${link}</td>${isAdmin ? `<td><button onclick="delRow('docsTable',${i})" style="color:red;border:none;background:none">×</button></td>` : ''}</tr>`;
+        });
+    }
+
+    function renderVisitsTable(visits) {
+        if(!visits) visits = [];
+        const tb = document.getElementById('visitTable').querySelector('tbody'); tb.innerHTML = "";
+        visits.forEach((v, i) => {
+            let tr = tb.insertRow();
+            tr.insertCell().innerText = v.date;
+            tr.insertCell().innerText = v.reason;
+            let status = v.status;
+            let statusText = status === 'pending' ? 'قيد المراجعة' : (status === 'approved' ? 'مقبول' : 'مرفوض');
+            let statusClass = status === 'pending' ? 'st-pending' : (status === 'approved' ? 'st-approved' : 'st-rejected');
+            tr.insertCell().innerHTML = `<span class="status-badge ${statusClass}">${statusText}</span>`;
+            let actionTd = tr.insertCell();
+            if(isAdmin) {
+                if(status === 'pending') {
+                    actionTd.innerHTML = `<button class="visit-action-btn btn-approve" onclick="setVisitStatus(${i}, 'approved')">✔</button><button class="visit-action-btn btn-reject" onclick="setVisitStatus(${i}, 'rejected')">✖</button>`;
+                } else actionTd.innerHTML = `<button onclick="delRow('visitTable',${i})" style="color:red;border:none;background:none;">حذف</button>`;
+            } else actionTd.innerText = "-";
+        });
+    }
+
+    window.submitVisitRequest = function() {
+        const date = document.getElementById('reqVisitDate').value;
+        const reason = document.getElementById('reqVisitReason').value;
+        if(!date || !reason) return alert("املأ الحقول");
+        if(!db[currentUnit].visits) db[currentUnit].visits = [];
+        db[currentUnit].visits.push({ date: date, reason: reason, status: 'pending' });
+        saveData();
+        document.getElementById('reqVisitDate').value = "";
+        document.getElementById('reqVisitReason').value = "";
+        alert("تم الإرسال");
+    }
+
+    window.setVisitStatus = function(index, status) {
+        db[currentUnit].visits[index].status = status;
+        saveData();
+    }
+
+    function renderMediaGrid(media) {
+        const g = document.getElementById('mediaGrid'); g.innerHTML = "";
+        if(!media) media = [];
+        media.forEach((m, i) => {
+            let content = '';
+            if (m.type === 'video') {
+                content = `<a href="${m.url}" target="_blank" style="font-size:40px;text-decoration:none;">🎬</a>`;
+            } else {
+                content = `<img src="${m.url}" onclick="viewImage('${m.url}')">`;
+            }
+            
+            g.innerHTML += `
+            <div class="media-item">
+                ${content}
+                ${isAdmin ? `<button onclick="delRow('mediaGrid',${i})" style="position:absolute;top:5px;left:5px;background:red;color:white;border:none;border-radius:50%;width:25px;height:25px;cursor:pointer;">×</button>` : ''}
+            </div>`;
+        });
+    }
+
+    window.viewImage = function(url) {
+        if(!url) return;
+        document.getElementById('fullImage').src = url;
+        document.getElementById('imageViewer').style.display = 'flex';
+    }
+    
+    window.downloadCurrentImage = async function() {
+        const img = document.getElementById('fullImage');
+        const url = img.src;
+        if(!url) return;
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = "image_" + Date.now() + ".jpg";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (e) {
+            console.error(e);
+            window.open(url, '_blank');
+        }
+    }
+
     function calcStats() {
         const d = db[currentUnit];
         let total = parseFloat(String(d.totalPrice).replace(/,/g,'')) || 0;
-        let paid = (d.payments||[]).reduce((a,c) => a + (parseFloat(String(c[2]).replace(/,/g,''))||0), 0);
+        let payments = d.payments || [];
+        let paid = payments.reduce((a,c) => a + (parseFloat(String(c[2]).replace(/,/g,''))||0), 0);
         document.getElementById('dispPaid').innerText = formatNumber(paid);
         document.getElementById('dispRemain').innerText = formatNumber(total - paid);
-        document.getElementById('dispProg').innerText = d.works.length ? d.works[d.works.length-1][2] : "0%";
+        let works = d.works || [];
+        document.getElementById('dispProg').innerText = works.length > 0 ? works[works.length-1][2] : "0%";
         
-        // حساب الاستحقاق القادم
+        // حساب الاستحقاق (تم التصحيح ليعتمد على آخر دفعة موجودة)
         let nextDateStr = "-";
         if (d.payments && d.payments.length > 0) {
             let lastDate = new Date(d.payments[d.payments.length-1][0]);
@@ -478,103 +676,44 @@
         document.getElementById('dispNextDue').innerText = nextDateStr;
     }
 
-    function renderTable(id, rows) {
-        const tb = document.getElementById(id).querySelector('tbody'); tb.innerHTML = "";
-        rows.forEach((r, i) => {
-            let tr = `<tr>${r.map(c=>`<td>${c}</td>`).join('')}${isAdmin ? `<td>
-                ${id==='payTable' ? `<button class="btn-act btn-edit" onclick="editRow(${i})">✎</button>` : ''}
-                <button class="btn-act btn-del" onclick="delRow('${id}',${i})">✖</button>
-            </td>` : ''}</tr>`;
-            tb.innerHTML += tr;
-        });
-    }
-
-    function renderDocsTable(docs) {
-        const tb = document.getElementById('docsTable').querySelector('tbody'); tb.innerHTML = "";
-        docs.forEach((d, i) => {
-            let link = `<button onclick="viewImage('${d.url}')" style="background:none;color:blue;border:none;text-decoration:underline;cursor:pointer">عرض</button>`;
-            tb.innerHTML += `<tr><td>${d.date}</td><td>${d.type}</td><td>${d.note}</td><td>${link}</td>${isAdmin ? `<td><button class="btn-act btn-del" onclick="delRow('docsTable',${i})">✖</button></td>` : ''}</tr>`;
-        });
-    }
-    
-    function renderVisitsTable(visits) {
-        const tb = document.getElementById('visitTable').querySelector('tbody'); tb.innerHTML = "";
-        visits.forEach((v, i) => {
-            let act = isAdmin ? (v.status==='pending' ? `<button onclick="setVisit(${i},'approved')">✔</button><button onclick="setVisit(${i},'rejected')">✖</button>` : `<button class="btn-act btn-del" onclick="delRow('visitTable',${i})">✖</button>`) : '-';
-            tb.innerHTML += `<tr><td>${v.date}</td><td>${v.reason}</td><td>${v.status}</td><td>${act}</td></tr>`;
-        });
-    }
-
-    function renderMediaGrid(media) {
-        const g = document.getElementById('mediaGrid'); g.innerHTML = "";
-        media.forEach((m, i) => {
-            let content = m.type === 'video' ? `<a href="${m.url}" target="_blank" style="font-size:40px">🎬</a>` : `<img src="${m.url}" onclick="viewImage('${m.url}')">`;
-            g.innerHTML += `<div class="media-item">${content}${isAdmin?`<button onclick="delRow('mediaGrid',${i})" style="position:absolute;top:5px;left:5px;background:red;color:white;border:none;width:25px;height:25px;border-radius:50%;cursor:pointer">×</button>`:''}</div>`;
-        });
-    }
-
-    window.saveData = async function(context) {
-        if(!currentUnit) return;
-        const d = db[currentUnit];
-        if(isAdmin && document.getElementById('ownerName')) {
-            d.info.name = document.getElementById('ownerName').value;
-            d.info.phone = document.getElementById('ownerPhone').value;
-            d.totalPrice = document.getElementById('totalPrice').value.replace(/,/g,'');
-            d.settings.user = document.getElementById('uUser').value;
-            d.settings.pass = document.getElementById('uPass').value;
-            if(!d.saleDate && d.info.name) d.saleDate = new Date().toISOString().split('T')[0];
-        }
-        const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d });
-        if(error) alert(error.message);
-        else {
-            loadUnitData();
-            calcGlobalStats(); // تحديث فوري
-            if(context === 'info') {
-                logToSystem('تحديث معلومات', currentUnit, 'تم تحديث البيانات الأساسية أو السعر');
-                if(isAdmin && d.info.phone) {
-                    if(confirm("تم الحفظ. هل تريد إرسال إشعار واتساب للمستفيد؟")) {
-                        sendWhatsApp(d.info.phone, d.info.name, currentUnit, 'تم تحديث المعلومات العامة للوحدة.');
-                    }
-                }
-            }
-            else if(context === 'settings') logToSystem('تحديث حساب', currentUnit, 'تم تغيير كلمة مرور المستفيد');
-        }
-    }
-
     window.showTab = function(t) {
         currentTab = t;
         document.querySelectorAll('.tab-content').forEach(d => d.style.display = 'none');
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(t).style.display = 'block';
         
-        // تفعيل الزر النشط
-        const btns = document.querySelectorAll('.tab-btn');
-        for(let i=0; i<btns.length; i++) {
-            if(btns[i].getAttribute('onclick').includes("'" + t + "'")) {
-                btns[i].classList.add('active');
-                break;
-            }
-        }
-        document.getElementById('fabAdd').style.display = (isAdmin && ['payments','docs','works','media','notifs'].includes(t)) ? 'flex' : 'none';
+        const map = {'info':0, 'payments':1, 'docs':2, 'works':3, 'visits':4, 'history':5, 'notifs':6, 'media':7, 'settings':8};
+        if(document.querySelectorAll('.tab-btn')[map[t]]) document.querySelectorAll('.tab-btn')[map[t]].classList.add('active');
+
+        const fab = document.getElementById('fabAdd');
+        fab.style.display = (isAdmin && ['payments','docs','works','history','notifs','media'].includes(t)) ? 'flex' : 'none';
     }
 
-    window.openModal = () => {
-        editingIndex = -1; // reset editing
+    window.openModal = function() {
+        editingIndex = -1;
         const c = document.getElementById('modalInputs');
         const t = new Date().toISOString().split('T')[0];
         document.getElementById('actionModal').style.display = 'flex';
         document.getElementById('modalTitle').innerText = "إضافة جديد";
         
-        if(currentTab === 'media') c.innerHTML = `<input type="file" id="mFile"><input type="text" id="mDesc" placeholder="وصف"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
-        else if(currentTab === 'docs') c.innerHTML = `<select id="mType"><option>إنذار</option><option>تأجيل</option><option>تعهد</option></select><input type="text" id="mNote" placeholder="ملاحظة"><input type="file" id="mFile"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
-        else if(currentTab === 'payments') c.innerHTML = `<input type="text" id="mRcpt" placeholder="الوصل"><input type="number" id="mAmt" placeholder="المبلغ"><input type="text" id="mNote" placeholder="تفاصيل"><input type="date" id="mDate" value="${t}">`;
-        else if(currentTab === 'works') {
-            let ops = ""; for(let i=5;i<=100;i+=5) ops+=`<option value="${i}">${i}%</option>`;
-            c.innerHTML = `<input type="text" id="mStage" placeholder="المرحلة"><select id="mPerc">${ops}</select><input type="date" id="mDate" value="${t}">`;
+        if(currentTab === 'media') {
+            c.innerHTML = `<label>صورة أو فيديو</label><input type="file" id="mFile"><input type="text" id="mDesc" placeholder="وصف (اختياري)"><input type="date" id="mDate" value="${t}"><p id="uploadStat" style="color:blue"></p>`;
+        } else if(currentTab === 'docs') { 
+            c.innerHTML = `<label>نوع الوثيقة</label><select id="mType"><option>إنذار</option><option>تأجيل</option><option>تعهد</option><option>أخرى</option></select><input type="text" id="mNote" placeholder="ملاحظات"><label>صورة الوثيقة</label><input type="file" id="mFile"><input type="date" id="mDate" value="${t}"><p id="uploadStat" style="color:blue"></p>`;
+        } else if(currentTab === 'payments') {
+            c.innerHTML = `<input type="text" id="mRcpt" placeholder="رقم الوصل"><input type="number" id="mAmt" placeholder="المبلغ"><input type="text" id="mNote" placeholder="تفاصيل"><input type="date" id="mDate" value="${t}">`;
+        } else if(currentTab === 'works') {
+             let options = "";
+             for(let i=5; i<=100; i+=5) options += `<option value="${i}">${i}%</option>`;
+             c.innerHTML = `<label>المرحلة</label><input type="text" id="mStage" placeholder="المرحلة (مثلاً: صب السقف)"><label>نسبة الإنجاز</label><select id="mPerc" style="width:100%;margin-top:5px;border:1px solid #ddd;padding:10px;border-radius:8px">${options}</select><input type="date" id="mDate" value="${t}">`;
+        } else if(currentTab === 'notifs') {
+             c.innerHTML = `<input type="text" id="mMsg" placeholder="نص التبليغ"><input type="date" id="mDate" value="${t}">`;
+        } else if (currentTab === 'history') {
+             c.innerHTML = `<label>الحدث</label><select id="mEvent" style="width:100%;margin-top:5px;border:1px solid #ddd;padding:10px;border-radius:8px"><option>تنازل</option><option>بيع</option><option>انسحاب</option></select><label>ملاحظات</label><input type="text" id="mNote"><label>التاريخ</label><input type="text" id="mDate" value="${t}">`;
         }
-        else if(currentTab === 'notifs') c.innerHTML = `<input type="text" id="mMsg" placeholder="الرسالة"><input type="date" id="mDate" value="${t}">`;
     }
 
+    // --- دالة تحضير التعديل ---
     window.editRow = function(index) {
         editingIndex = index;
         const item = db[currentUnit].payments[index];
@@ -586,149 +725,114 @@
         document.getElementById('mNote').value = item[3];
     }
 
-    window.confirmModal = async () => {
-        const d = db[currentUnit];
+    window.confirmModal = async function() {
         const date = document.getElementById('mDate').value;
-        const note = document.getElementById('mNote') ? document.getElementById('mNote').value : '';
+        const d = db[currentUnit];
         let logAction = "", logDet = "";
+        
+        if (currentTab === 'media' || currentTab === 'docs') {
+            const fileInput = document.getElementById('mFile');
+            const file = fileInput.files[0];
+            const statusText = document.getElementById('uploadStat');
 
-        if(currentTab === 'media' || currentTab === 'docs') {
-            const file = document.getElementById('mFile').files[0];
-            if(!file) return alert('اختر ملف');
-            document.getElementById('upSt').innerText = 'جاري الرفع...';
-            const name = Date.now() + '_' + file.name.replace(/[^a-z0-9.]/gi, '');
-            const { error } = await supabase.storage.from('media').upload(name, file);
-            if(error) return alert(error.message);
-            const { data } = supabase.storage.from('media').getPublicUrl(name);
+            if (!file) return alert("يرجى اختيار ملف أولاً");
+            statusText.innerText = "جاري الرفع... يرجى الانتظار";
+            const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, ''); 
+            const { data, error } = await supabase.storage.from('media').upload(fileName, file);
+
+            if (error) { alert("فشل الرفع: " + error.message); statusText.innerText = ""; return; }
             
-            if(currentTab === 'media') {
-                d.media.push({type:file.type.includes('video')?'video':'image', desc:document.getElementById('mDesc').value, url:data.publicUrl, date});
-                logAction = "رفع وسائط"; logDet = "تم رفع صورة/فيديو جديد";
+            const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(fileName);
+            const publicURL = publicUrlData.publicUrl;
+
+            if (currentTab === 'media') {
+                 const desc = document.getElementById('mDesc').value;
+                 const type = file.type.startsWith('video') ? 'video' : 'image';
+                 d.media.push({type: type, desc: desc, date: date, url: publicURL});
+                 logAction = "رفع وسائط"; logDet = "تم رفع وسائط جديدة";
             } else {
-                d.docs.push({type:document.getElementById('mType').value, note, url:data.publicUrl, date});
-                logAction = "رفع وثيقة"; logDet = "تم رفع وثيقة جديدة: " + document.getElementById('mType').value;
+                 const type = document.getElementById('mType').value;
+                 const note = document.getElementById('mNote').value;
+                 d.docs.push({type: type, note: note, date: date, url: publicURL});
+                 logAction = "رفع وثيقة"; logDet = "تم رفع " + type;
             }
-        }
-        else if(currentTab === 'payments') {
-            const amt = formatNumber(document.getElementById('mAmt').value);
-            const rcpt = document.getElementById('mRcpt').value;
-            const newPayment = [date, rcpt, amt, note];
+        } 
+        else if (currentTab === 'payments') {
+            const r = document.getElementById('mRcpt').value;
+            const a = document.getElementById('mAmt').value;
+            const n = document.getElementById('mNote').value;
+            const newPayment = [date, r||"-", formatNumber(a), n];
             
             if(editingIndex > -1) {
                 d.payments[editingIndex] = newPayment;
-                logAction = "تعديل دفعة"; logDet = `تم تعديل الدفعة (وصل: ${rcpt})`;
+                logAction = "تعديل دفعة"; logDet = `تم تعديل الدفعة (وصل: ${r})`;
             } else {
                 d.payments.push(newPayment);
-                logAction = "إضافة دفعة"; logDet = `تم استلام دفعة مالية بمبلغ: ${amt} (رقم الوصل: ${rcpt})`;
+                logAction = "إضافة دفعة"; logDet = `استلام مبلغ: ${formatNumber(a)} (وصل: ${r})`;
             }
+        } 
+        else if (currentTab === 'works') {
+            const s = document.getElementById('mStage').value;
+            const p = document.getElementById('mPerc').value;
+            d.works.push([s, date, p+"%"]);
+            logAction = "تحديث عمل"; logDet = `${s} (${p}%)`;
+        } 
+        else if (currentTab === 'history') {
+             d.history.push([date, document.getElementById('mEvent').value, document.getElementById('mNote').value]);
+        } 
+        else if (currentTab === 'notifs') {
+             d.notifs.push([date, document.getElementById('mMsg').value]);
+             logAction = "تبليغ"; logDet = document.getElementById('mMsg').value;
         }
-        else if(currentTab === 'works') {
-            const stg = document.getElementById('mStage').value;
-            const prc = document.getElementById('mPerc').value;
-            d.works.push([stg, date, prc+'%']);
-            logAction = "تحديث عمل"; logDet = `تحديث سير العمل: مرحلة (${stg}) وصلت نسبة (${prc}%)`;
-        }
-        else if(currentTab === 'notifs') {
-            d.notifs.push([date, document.getElementById('mMsg').value]);
-            logAction = "إرسال تبليغ"; logDet = "تبليغ إداري: " + document.getElementById('mMsg').value;
-        }
-
+        
         const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d });
         if(!error) {
             logToSystem(logAction, currentUnit, logDet);
-            // واتساب فقط في حالة الإضافة الجديدة أو الرفع، وليس التعديل الصغير
+            // واتساب فقط عند الإضافة الجديدة (وليس التعديل)
             if(isAdmin && d.info.phone && logDet && editingIndex === -1) {
-                if(confirm("تم الحفظ. هل تريد إرسال إشعار واتساب للمستفيد؟")) {
-                    sendWhatsApp(d.info.phone, d.info.name, currentUnit, logDet);
-                }
+                if(confirm("تم الحفظ. إرسال واتساب؟")) sendWhatsApp(d.info.phone, d.info.name, currentUnit, logDet);
             }
             loadUnitData();
-            calcGlobalStats(); // تحديث فوري
+            calcGlobalStats();
             closeModal();
-        } else alert(error.message);
+        } else alert("خطأ: " + error.message);
     }
 
-    window.delRow = async (id, i) => { 
-        if(confirm('حذف؟')) { 
-            const m={'payTable':'payments','workTable':'works','notifTable':'notifs','mediaGrid':'media','docsTable':'docs','visitTable':'visits'}; 
-            const sec = m[id];
-            const item = db[currentUnit][sec][i];
-            let det = "تم حذف عنصر من " + sec;
-            if(sec==='payments') det = `تم حذف دفعة مالية بمبلغ: ${item[2]}`;
-            
-            db[currentUnit][sec].splice(i,1); 
-            const { error } = await supabase.from('units').upsert({ id: currentUnit, data: db[currentUnit] });
-            if(!error) {
-                logToSystem('حذف بيانات', currentUnit, det);
-                loadUnitData();
-                calcGlobalStats(); // تحديث فوري
-            }
-        }
-    };
+    window.closeModal = () => document.getElementById('actionModal').style.display = 'none';
+    
+    window.delRow = async function(id, i) {
+        if(!confirm("حذف؟")) return;
+        const m={'payTable':'payments','workTable':'works','histTable':'history','notifTable':'notifs', 'docsTable':'docs', 'mediaGrid':'media'}; 
+        const section = id==='visitTable' ? 'visits' : m[id];
+        
+        // تفاصيل للحذف
+        let det = "حذف عنصر";
+        if(section === 'payments') det = `حذف دفعة مبلغ: ${db[currentUnit].payments[i][2]}`;
 
-    window.setVisit = async (i, s) => { 
-        db[currentUnit].visits[i].status = s; 
+        db[currentUnit][section].splice(i,1);
+        
         const { error } = await supabase.from('units').upsert({ id: currentUnit, data: db[currentUnit] });
         if(!error) {
-            logToSystem(s==='approved'?'موافقة زيارة':'رفض زيارة', currentUnit, `السبب: ${db[currentUnit].visits[i].reason}`);
+            logToSystem('حذف', currentUnit, det);
             loadUnitData();
+            calcGlobalStats();
         }
-    };
-
-    window.submitVisitRequest = () => { 
-        const date = document.getElementById('reqVisitDate').value;
-        const reason = document.getElementById('reqVisitReason').value;
-        if(!date || !reason) return alert('الرجاء ملء الحقول');
-        db[currentUnit].visits.push({date, reason, status:'pending'}); 
-        const d = db[currentUnit]; 
-        supabase.from('units').upsert({ id: currentUnit, data: d }).then(()=>{
-            alert('تم إرسال الطلب');
-            document.getElementById('reqVisitReason').value = "";
-            loadUnitData();
-        });
-    };
-
-    window.closeModal = () => document.getElementById('actionModal').style.display = 'none';
-    window.viewImage = (u) => { document.getElementById('fullImage').src = u; document.getElementById('imageViewer').style.display = 'flex'; };
-    window.downloadCurrentImage = async () => { try { const r = await fetch(document.getElementById('fullImage').src); const b = await r.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download='img.jpg'; a.click(); } catch(e){ window.open(document.getElementById('fullImage').src); } };
-    window.goBack = () => isAdmin ? (switchScreen('adminDashboard'), renderUnitsGrid("")) : location.reload();
+    }
     
-    window.openAdminsManager = () => { if(isSuperAdmin) { switchScreen('adminsModal'); renderAdminsList(); } else alert('صلاحية مرفوضة'); };
-    window.renderAdminsList = () => { 
-        const c = document.getElementById('adminsListContainer'); c.innerHTML=''; 
-        Object.keys(adminsDb).forEach(u => {
-            const roleBadge = adminsDb[u].role === 'super' ? '👑' : '👤';
-            const delBtn = adminsDb[u].role === 'super' ? '' : `<button onclick="deleteAdmin('${u}')" style="color:white;background:var(--danger);border:none;padding:5px 10px;border-radius:5px;cursor:pointer">حذف</button>`;
-            c.innerHTML += `<div style="display:flex;justify-content:space-between;background:white;padding:10px;border-bottom:1px solid #eee;align-items:center"><div>${roleBadge} <b>${u}</b> <small>(${adminsDb[u].password})</small></div>${delBtn}</div>`;
-        }); 
-    };
-    window.saveAdminUser = async () => { 
-        const u = document.getElementById('newAdminUser').value.toLowerCase(); const p = document.getElementById('newAdminPass').value; 
-        if(!u || !p) return alert("املأ البيانات");
-        await supabase.from('admins').upsert({username:u, password:p, role:'editor'}); 
-        adminsDb[u]={username:u,password:p,role:'editor'}; 
-        logToSystem('إضافة أدمن', 'النظام', `تم إضافة/تعديل الأدمن ${u}`);
-        renderAdminsList(); 
-        alert('تم'); 
-    };
-    window.deleteAdmin = async (u) => { 
-        if(confirm('حذف؟')) { 
-            await supabase.from('admins').delete().eq('username',u); 
-            delete adminsDb[u]; 
-            logToSystem('حذف أدمن', 'النظام', `تم حذف الأدمن ${u}`);
-            renderAdminsList(); 
-        } 
-    };
+    window.goBack = function() { 
+        if(isAdmin) {
+             initAdminDashboard(); 
+        } else {
+             location.reload(); 
+        }
+    }
     
     function formatNumber(n) { return n ? Number(String(n).replace(/,/g,'')).toLocaleString('en-US') : "0"; }
-
-    document.addEventListener("keyup", function(event) {
-        if (event.key === "Enter") {
-            if (document.getElementById('loginScreen').style.display !== 'none') handleLogin();
-            else if (document.getElementById('actionModal').style.display === 'flex') confirmModal();
-            else if (document.getElementById('adminsModal').style.display === 'flex') saveAdminUser();
-        }
-    });
+    document.addEventListener("keyup", function(event) { if (event.key === "Enter") {
+        if (document.getElementById('loginScreen').style.display !== 'none') handleLogin();
+        else if (document.getElementById('actionModal').style.display === 'flex') confirmModal();
+        else if (document.getElementById('adminsModal').style.display === 'flex') saveAdminUser();
+    }});
 </script>
 </body>
 </html>
