@@ -67,10 +67,46 @@
         .bg-3 { background: linear-gradient(45deg, #4CAF50, #388E3C); }
         .bg-4 { background: linear-gradient(45deg, #607D8B, #455A64); }
 
-        .tabs-nav { display: flex; overflow-x: auto; padding: 0 10px; gap: 5px; border-bottom: 1px solid #eee; margin-bottom: 15px; scrollbar-width: none; }
-        .tab-btn { padding: 10px 15px; background: none; border: none; white-space: nowrap; color: #7f8c8d; font-weight: 600; font-size: 14px; border-radius: 20px; transition: 0.3s; }
-        .tab-btn.active { color: white; background: var(--primary); }
-        .tab-content { display: none; padding: 0 20px; animation: fadeIn 0.3s; }
+        /* ⭐⭐⭐ نظام التبويب الحديث والمرتب (The Modern Tabs) ⭐⭐⭐ */
+        .tabs-nav { 
+            display: flex; 
+            overflow-x: auto; 
+            padding: 0 15px; 
+            gap: 20px; 
+            border-bottom: 1px solid #eee; 
+            margin-bottom: 20px; 
+            scrollbar-width: none; 
+        }
+        .tabs-nav::-webkit-scrollbar { display: none; }
+        
+        .tab-btn { 
+            padding: 12px 5px; 
+            background: none; 
+            border: none; 
+            white-space: nowrap; 
+            color: #888; 
+            font-weight: 600; 
+            font-size: 15px; 
+            cursor: pointer; 
+            position: relative; 
+            transition: 0.3s; 
+        }
+        
+        .tab-btn.active { 
+            color: var(--primary); 
+        }
+        
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 3px 3px 0 0;
+        }
+        /* ⭐⭐⭐ نهاية ستايل التبويب ⭐⭐⭐ */
 
         .table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #eee; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
         table { width: 100%; border-collapse: collapse; white-space: nowrap; background: white; }
@@ -177,7 +213,7 @@
 
 <div id="unitInterface" class="unit-interface">
     <div class="unit-header">
-        <div><h2 style="margin:0;" id="headerUnitTitle">...</h2><small id="headerOwner" style="opacity:0.9">...</small></div>
+        <div><h2 style="margin:0;" id="headerUnitTitle">...</h2><small id="headerOwner">...</small></div>
         <button class="back-btn" onclick="goBack()">رجوع</button>
     </div>
 
@@ -214,9 +250,7 @@
     <div id="works" class="tab-content"><div class="table-wrapper"><table id="workTable"><thead><tr><th>مرحلة</th><th>تاريخ</th><th>%</th><th></th></tr></thead><tbody></tbody></table></div></div>
     <div id="visits" class="tab-content">
         <div style="background:white;padding:15px;border-radius:10px;border:1px solid #eee;margin-bottom:15px">
-            <h4 style="margin:0;color:var(--primary)">تقديم طلب زيارة</h4>
-            <input type="date" id="reqVisitDate" style="margin-bottom:5px">
-            <input type="text" id="reqVisitReason" placeholder="سبب الزيارة">
+            <h4 style="margin:0">طلب زيارة</h4><input type="date" id="reqVisitDate"><input type="text" id="reqVisitReason" placeholder="السبب">
             <button class="btn-confirm" onclick="submitVisitRequest()">إرسال الطلب</button>
         </div>
         <div class="table-wrapper"><table id="visitTable"><thead><tr><th>تاريخ</th><th>سبب</th><th>حالة</th><th></th></tr></thead><tbody></tbody></table></div>
@@ -234,7 +268,7 @@
 
 <div id="actionModal" class="modal-overlay">
     <div class="modal-sheet">
-        <h3 id="modalTitle" style="margin-top:0; color:var(--primary)">إضافة جديد</h3>
+        <h3 id="modalTitle" style="margin-top:0">إضافة جديد</h3>
         <div id="modalInputs"></div> 
         <div class="modal-btn-group"><button class="btn-confirm" onclick="confirmModal()">حفظ</button><button class="btn-cancel" onclick="closeModal()">إلغاء</button></div>
     </div>
@@ -250,7 +284,7 @@
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     let db = {}, adminsDb = {}, currentUnit = null, isAdmin = false, isSuperAdmin = false, currentTab = 'info';
     let currentAdminName = 'system'; 
-    let editingIndex = -1; // متغير لحفظ رقم السطر المراد تعديله
+    let editingIndex = -1; 
 
     function switchScreen(id) {
         ['loadingScreen','loginScreen','adminDashboard','unitInterface','adminsModal','logsModal'].forEach(s => document.getElementById(s).style.display = 'none');
@@ -268,7 +302,6 @@
         if(a) a.forEach(r => adminsDb[r.username] = r);
         
         document.getElementById('loadingScreen').style.display = 'none';
-        
         const savedUser = localStorage.getItem('loggedInUser');
         if (!savedUser) switchScreen('loginScreen');
         else {
@@ -294,15 +327,13 @@
 
     function sendWhatsApp(phone, name, unitId, details) {
         if (!phone) return;
-        // تصحيح الرقم بدقة
-        let p = phone.toString().replace(/[^0-9]/g, ''); // حذف أي رمز ليس رقماً
+        let p = phone.toString().replace(/[^0-9]/g, ''); 
         if (p.startsWith('0')) p = '964' + p.substring(1);
         else if (!p.startsWith('964')) p = '964' + p;
 
         const appLink = window.location.href.split('?')[0]; 
         const text = `مرحباً *${name}*،\n\nتحديث بخصوص وحدتك *(${unitId})*:\n${details}\n\nيرجى مراجعة التفاصيل عبر التطبيق:\n${appLink}`;
 
-        // فتح الواتساب مباشرة بعد التاكيد
         window.open(`https://wa.me/${p}?text=${encodeURIComponent(text)}`, '_blank');
     }
 
