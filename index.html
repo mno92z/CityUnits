@@ -22,7 +22,7 @@
         .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* عارض الصور المكبر (مع زر التنزيل) */
+        /* عارض الصور المكبر مع زر التنزيل */
         #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
         #fullImage { max-width: 95%; max-height: 80vh; border-radius: 5px; box-shadow: 0 0 20px rgba(255,255,255,0.1); object-fit: contain; }
         
@@ -30,7 +30,7 @@
         .viewer-btn { position: absolute; top: 20px; color: white; font-size: 24px; cursor: pointer; background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10001; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.3); transition: 0.2s; }
         .viewer-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
         .close-viewer { right: 20px; }
-        .download-btn { left: 20px; } /* زر التنزيل على اليسار */
+        .download-btn { left: 20px; }
 
         /* تسجيل الدخول */
         #loginScreen { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(135deg, var(--primary), #00251a); color: white; text-align: center; min-height: 100vh; }
@@ -109,15 +109,19 @@
 
         @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+        
+        /* كلاسات التحكم بالظهور (أهم جزء) */
         .admin-only { display: none !important; }
         .show-admin .admin-only { display: block !important; }
+        /* عند العرض للمستفيد، الحقول تكون للقراءة فقط شكلياً */
+        .unit-interface:not(.show-admin) .editable { pointer-events: none; background: #eee; }
     </style>
 </head>
 <body>
 
 <div id="loadingScreen">
     <div class="loader"></div>
-    <p style="margin-top:20px; font-weight:bold;">جاري تهيئة البيانات (Supabase)...</p>
+    <p style="margin-top:20px; font-weight:bold;">جاري الاتصال بالسيرفر...</p>
 </div>
 
 <div id="imageViewer">
@@ -132,7 +136,7 @@
         <p style="opacity:0.8;">نظام المتابعة السحابي</p>
     </div>
     <div class="login-box">
-        <input type="text" id="loginUser" class="login-input" placeholder="اسم المستخدم أو رقم الوحدة">
+        <input type="text" id="loginUser" class="login-input" placeholder="اسم المستخدم (للإدارة) أو رقم الوحدة">
         <input type="password" id="loginPass" class="login-input" placeholder="كلمة المرور">
         <button onclick="handleLogin()" class="login-btn">دخول</button>
     </div>
@@ -165,7 +169,7 @@
     <div id="adminsListContainer"></div>
 </div>
 
-<div id="unitInterface">
+<div id="unitInterface" class="unit-interface">
     <div class="unit-header">
         <div>
             <h2 style="margin:0;" id="headerUnitTitle">...</h2>
@@ -193,12 +197,12 @@
     </div>
 
     <div id="info" class="tab-content" style="display:block;">
-        <label>اسم المستفيد</label><input type="text" id="ownerName" class="editable" readonly>
-        <label>رقم الهاتف</label><input type="text" id="ownerPhone" class="editable" readonly>
+        <label>اسم المستفيد</label><input type="text" id="ownerName" class="editable">
+        <label>رقم الهاتف</label><input type="text" id="ownerPhone" class="editable">
         <div class="admin-only" style="margin-top:20px; background:#e0f7fa; padding:15px; border-radius:10px;">
             <label style="color:#006064;">السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData()">
         </div>
-        <button class="login-btn admin-only" style="margin-top:20px;" onclick="saveData()">حفظ</button>
+        <button class="login-btn admin-only" style="margin-top:20px;" onclick="saveData()">حفظ التعديلات</button>
     </div>
 
     <div id="payments" class="tab-content">
@@ -232,7 +236,7 @@
     <div id="media" class="tab-content"><div class="media-grid" id="mediaGrid"></div><div style="height:60px;"></div></div>
 
     <div id="settings" class="tab-content">
-        <label>اسم المستخدم</label><input type="text" id="uUser"><label>كلمة المرور</label><input type="text" id="uPass">
+        <label>اسم المستخدم (للمستفيد)</label><input type="text" id="uUser"><label>كلمة المرور (للمستفيد)</label><input type="text" id="uPass">
         <button class="login-btn" onclick="saveData()">تحديث الحساب</button>
     </div>
 
@@ -250,7 +254,7 @@
 <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // 🔴🔴🔴 بيانات Supabase 🔴🔴🔴
+    // 🔴🔴🔴 بيانات Supabase الخاصة بك 🔴🔴🔴
     const SUPABASE_URL = 'https://csaqawviitdrjzeasmne.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ';
     
@@ -282,10 +286,12 @@
     async function init() {
         console.log("جاري الاتصال بـ Supabase...");
         
-        const { data: u } = await supabase.from('units').select('*');
+        // جلب الوحدات
+        const { data: u, error: uErr } = await supabase.from('units').select('*');
         if(u) u.forEach(r => db[r.id] = r.data);
         
-        const { data: a } = await supabase.from('admins').select('*');
+        // جلب الأدمنية
+        const { data: a, error: aErr } = await supabase.from('admins').select('*');
         if(a) a.forEach(r => adminsDb[r.username] = r);
 
         document.getElementById('loadingScreen').style.display = 'none';
@@ -296,23 +302,36 @@
     }
     init();
 
-    // --- تسجيل الدخول ---
+    // --- تسجيل الدخول (الذكي) ---
     window.handleLogin = function() {
-        const u = document.getElementById('loginUser').value.trim().toLowerCase();
-        const p = document.getElementById('loginPass').value.trim();
+        const rawUser = document.getElementById('loginUser').value.trim();
+        const pass = document.getElementById('loginPass').value.trim();
         
-        if (adminsDb[u] && adminsDb[u].password === p) {
+        // مفاتيح البحث
+        const adminKey = rawUser.toLowerCase();
+        const unitKey = rawUser.toUpperCase();
+
+        // 1. فحص هل هو أدمن؟
+        if (adminsDb[adminKey] && adminsDb[adminKey].password === pass) {
             isAdmin = true;
-            isSuperAdmin = (adminsDb[u].role === 'super');
+            isSuperAdmin = (adminsDb[adminKey].role === 'super');
             currentUnit = null;
             document.getElementById('btnManageAdmins').style.display = isSuperAdmin ? 'block' : 'none';
             initAdminDashboard();
-        } else if (db[u] && db[u].settings && db[u].settings.pass === p) {
-            isAdmin = false; 
-            isSuperAdmin = false;
-            openUnit(u);
-        } else {
-            alert("بيانات خاطئة");
+        } 
+        // 2. فحص هل هو وحدة (موجودة في الداتا)؟
+        else if (db[unitKey]) {
+            if (db[unitKey].settings && db[unitKey].settings.pass === pass) {
+                isAdmin = false; 
+                isSuperAdmin = false;
+                openUnit(unitKey);
+            } else {
+                alert("كلمة المرور غير صحيحة!");
+            }
+        } 
+        // 3. الوحدة غير موجودة (لم يتم بيعها بعد)
+        else {
+            alert("هذه الوحدة غير مفعلة أو لم يتم بيعها بعد.\nيرجى مراجعة الإدارة.");
         }
     }
 
@@ -344,15 +363,12 @@
         if(!u || !p) return alert("املأ البيانات");
         
         const { error } = await supabase.from('admins').upsert({ username: u, password: p, role: 'editor' });
-        
         if(!error) {
             alert("تم الحفظ"); 
             adminsDb[u] = { username: u, password: p, role: 'editor' };
             renderAdminsList();
             document.getElementById('newAdminUser').value="";
-        } else {
-            alert("خطأ: " + error.message);
-        }
+        } else alert("خطأ: " + error.message);
     }
 
     window.deleteAdmin = async function(username) {
@@ -368,10 +384,13 @@
         if(!currentUnit) return;
         const d = db[currentUnit];
         
-        if(document.getElementById('ownerName')) {
+        // فقط الأدمن يستطيع تغيير البيانات
+        if(isAdmin && document.getElementById('ownerName')) {
              d.info.name = document.getElementById('ownerName').value;
              d.info.phone = document.getElementById('ownerPhone').value;
              d.totalPrice = document.getElementById('totalPrice').value.replace(/,/g,'');
+             d.settings.user = document.getElementById('uUser').value;
+             d.settings.pass = document.getElementById('uPass').value;
         }
         
         const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d });
@@ -416,11 +435,17 @@
         currentUnit = id;
         
         if (!db[id]) {
+            // إنشاء هيكل فارغ إذا كانت الوحدة جديدة (للأدمن فقط)
             db[id] = { info: {name:"",phone:""}, settings: {user:id, pass:"123"}, totalPrice:0, payments:[], works:[], history:[], notifs:[], media:[], visits:[], docs:[] };
         }
+        // ضمان وجود المصفوفات
         ['docs', 'media', 'history', 'notifs', 'visits', 'payments', 'works'].forEach(k => { if(!db[id][k]) db[id][k] = []; });
         
-        document.getElementById('unitInterface').className = isAdmin ? 'show-admin' : '';
+        // إضافة كلاس للتحكم بالإخفاء والإظهار
+        const ui = document.getElementById('unitInterface');
+        if(isAdmin) ui.classList.add('show-admin');
+        else ui.classList.remove('show-admin');
+        
         loadUnitData();
         showTab('info');
     }
@@ -435,6 +460,8 @@
         document.getElementById('totalPrice').value = formatNumber(d.totalPrice);
         document.getElementById('uUser').value = d.settings.user;
         document.getElementById('uPass').value = d.settings.pass;
+        
+        // قفل الحقول إذا لم يكن أدمن
         document.getElementById('ownerName').readOnly = !isAdmin;
         document.getElementById('ownerPhone').readOnly = !isAdmin;
         
@@ -570,6 +597,7 @@
         const map = {'info':0, 'payments':1, 'docs':2, 'works':3, 'visits':4, 'history':5, 'notifs':6, 'media':7, 'settings':8};
         if(document.querySelectorAll('.tab-btn')[map[t]]) document.querySelectorAll('.tab-btn')[map[t]].classList.add('active');
 
+        // التحكم في ظهور زر الإضافة (للأدمن فقط)
         const fab = document.getElementById('fabAdd');
         fab.style.display = (isAdmin && ['payments','docs','works','history','notifs','media'].includes(t)) ? 'flex' : 'none';
     }
@@ -594,7 +622,7 @@
         }
     }
 
-    // --- دالة الرفع لـ Supabase ---
+    // --- دالة الرفع والحفظ ---
     window.confirmModal = async function() {
         const date = document.getElementById('mDate').value;
         const d = db[currentUnit];
@@ -661,7 +689,6 @@
         saveData();
     }
     
-    // حل مشكلة زر الرجوع (المفتاح السحري)
     window.goBack = function() { 
         if(isAdmin) {
              initAdminDashboard(); 
