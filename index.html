@@ -20,15 +20,17 @@
         .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Styles from the Golden Version */
+        /* عارض الصور */
         #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
         #fullImage { max-width: 95%; max-height: 80vh; border-radius: 5px; object-fit: contain; }
         
+        /* تسجيل الدخول */
         #loginScreen { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(135deg, var(--primary), #00251a); color: white; text-align: center; }
         .login-box { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
         .login-input { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; background: rgba(255,255,255,0.9); font-weight: bold; }
         .login-btn { width: 100%; padding: 15px; background: var(--accent); color: var(--primary); font-weight: 900; border: none; border-radius: 12px; margin-top: 10px; cursor: pointer; }
 
+        /* لوحة التحكم */
         #adminDashboard { display: none; padding: 20px; padding-bottom: 80px; }
         .top-bar { margin-bottom: 20px; }
         .search-input { width: 100%; padding: 15px; border-radius: 50px; border: 1px solid #ddd; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
@@ -53,6 +55,7 @@
         .dot-blue { background: var(--info); }
         .dot-orange { background: var(--warning);}
 
+        /* واجهة الوحدة */
         #unitInterface { display: none; padding-bottom: 80px; }
         .unit-header { background: var(--primary); color: white; padding: 20px; border-radius: 0 0 25px 25px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; }
@@ -88,7 +91,6 @@
         label { font-size: 13px; color: #666; font-weight: bold; margin-top: 10px; display: block; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
 
-        /* Log Styling (Clean) */
         .log-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
         .log-time { color: #888; font-size: 11px; float: left; }
         .log-user { color: var(--primary); font-weight: bold; }
@@ -426,7 +428,7 @@
     function renderTable(id, rows) {
         const tb = document.getElementById(id).querySelector('tbody'); tb.innerHTML = "";
         rows.forEach((r, i) => {
-            let tr = `<tr>${r.map(c=>`<td>${c}</td>`).join('')}${isAdmin ? `<td><button onclick="delRow('${id}',${i})" style="color:red;border:none;background:none">×</button></td>` : ''}</tr>`;
+            let tr = `<tr>${r.map(c=>`<td>${c}</td>`).join('')}${isAdmin ? `<td><button onclick="delRow('${id}',${i})" style="color:red;border:none;background:none">🗑</button></td>` : ''}</tr>`;
             tb.innerHTML += tr;
         });
     }
@@ -435,14 +437,14 @@
         const tb = document.getElementById('docsTable').querySelector('tbody'); tb.innerHTML = "";
         docs.forEach((d, i) => {
             let link = `<button onclick="viewImage('${d.url}')" style="background:none;color:blue;border:none;text-decoration:underline;cursor:pointer">عرض</button>`;
-            tb.innerHTML += `<tr><td>${d.date}</td><td>${d.type}</td><td>${d.note}</td><td>${link}</td>${isAdmin ? `<td><button onclick="delRow('docsTable',${i})" style="color:red;border:none">×</button></td>` : ''}</tr>`;
+            tb.innerHTML += `<tr><td>${d.date}</td><td>${d.type}</td><td>${d.note}</td><td>${link}</td>${isAdmin ? `<td><button onclick="delRow('docsTable',${i})" style="color:red;border:none">🗑</button></td>` : ''}</tr>`;
         });
     }
     
     function renderVisitsTable(visits) {
         const tb = document.getElementById('visitTable').querySelector('tbody'); tb.innerHTML = "";
         visits.forEach((v, i) => {
-            let act = isAdmin ? (v.status==='pending' ? `<button onclick="setVisit(${i},'approved')">✔</button><button onclick="setVisit(${i},'rejected')">✖</button>` : `<button onclick="delRow('visitTable',${i})" style="color:red;border:none">×</button>`) : '-';
+            let act = isAdmin ? (v.status==='pending' ? `<button onclick="setVisit(${i},'approved')">✔</button><button onclick="setVisit(${i},'rejected')">✖</button>` : `<button onclick="delRow('visitTable',${i})" style="color:red;border:none">🗑</button>`) : '-';
             tb.innerHTML += `<tr><td>${v.date}</td><td>${v.reason}</td><td>${v.status}</td><td>${act}</td></tr>`;
         });
     }
@@ -476,6 +478,39 @@
             }
             else if(context === 'settings') logToSystem('تحديث حساب', currentUnit, 'تم تغيير كلمة مرور المستفيد');
         }
+    }
+
+    window.showTab = function(t) {
+        currentTab = t;
+        document.querySelectorAll('.tab-content').forEach(d => d.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(t).style.display = 'block';
+        
+        // إعادة تفعيل الزر النشط بالطريقة القديمة المضمونة
+        const btns = document.querySelectorAll('.tab-btn');
+        for(let i=0; i<btns.length; i++) {
+            if(btns[i].getAttribute('onclick').includes("'" + t + "'")) {
+                btns[i].classList.add('active');
+                break;
+            }
+        }
+
+        document.getElementById('fabAdd').style.display = (isAdmin && ['payments','docs','works','media','notifs'].includes(t)) ? 'flex' : 'none';
+    }
+
+    window.openModal = () => {
+        const c = document.getElementById('modalInputs');
+        const t = new Date().toISOString().split('T')[0];
+        document.getElementById('actionModal').style.display = 'flex';
+        
+        if(currentTab === 'media') c.innerHTML = `<input type="file" id="mFile"><input type="text" id="mDesc" placeholder="وصف"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
+        else if(currentTab === 'docs') c.innerHTML = `<select id="mType"><option>إنذار</option><option>تأجيل</option><option>تعهد</option></select><input type="text" id="mNote" placeholder="ملاحظة"><input type="file" id="mFile"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
+        else if(currentTab === 'payments') c.innerHTML = `<input type="text" id="mRcpt" placeholder="الوصل"><input type="number" id="mAmt" placeholder="المبلغ"><input type="text" id="mNote" placeholder="تفاصيل"><input type="date" id="mDate" value="${t}">`;
+        else if(currentTab === 'works') {
+            let ops = ""; for(let i=5;i<=100;i+=5) ops+=`<option value="${i}">${i}%</option>`;
+            c.innerHTML = `<input type="text" id="mStage" placeholder="المرحلة"><select id="mPerc">${ops}</select><input type="date" id="mDate" value="${t}">`;
+        }
+        else if(currentTab === 'notifs') c.innerHTML = `<input type="text" id="mMsg" placeholder="الرسالة"><input type="date" id="mDate" value="${t}">`;
     }
 
     window.confirmModal = async () => {
@@ -572,7 +607,6 @@
     window.goBack = () => isAdmin ? (switchScreen('adminDashboard'), renderUnitsGrid("")) : location.reload();
     
     window.openAdminsManager = () => { if(isSuperAdmin) { switchScreen('adminsModal'); renderAdminsList(); } else alert('صلاحية مرفوضة'); };
-    window.closeAdminsManager = () => switchScreen('adminDashboard');
     window.renderAdminsList = () => { 
         const c = document.getElementById('adminsListContainer'); c.innerHTML=''; 
         Object.keys(adminsDb).forEach(u => {
