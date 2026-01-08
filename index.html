@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#004d40">
 
     <style>
-        /* --- التصميم الكلاسيكي الأصلي --- */
+        /* --- الألوان والتصميم الكلاسيكي الأصلي --- */
         :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --white: #ffffff; --sold-bg: #e0f2f1; --sold-border: #00bfa5; --danger: #d32f2f; --warning: #ff9800; --info: #2196f3; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; -webkit-tap-highlight-color: transparent; }
         * { box-sizing: border-box; }
@@ -256,6 +256,7 @@
 <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
+    // 🔴 إعدادات السيرفر
     const SUPABASE_URL = 'https://csaqawviitdrjzeasmne.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ';
     
@@ -263,6 +264,7 @@
     let db = {}, adminsDb = {}, currentUnit = null, isAdmin = false, isSuperAdmin = false, currentTab = 'info';
     let currentAdminName = 'system', editingIndex = -1, activeCategory = 'A';
 
+    // 🔴 أعداد الوحدات
     const unitConfig = { 'A': 472, 'B': 56, 'C': 284, 'D': 142 };
 
     function switchScreen(id) {
@@ -386,8 +388,9 @@
             if(isSold) {
                 if(hasPending) dotsHTML += '<div class="dot dot-red"></div>';
                 let lastPayDate = null;
+                // عدل هنا: أزيل الاعتماد على d.saleDate
                 if(d.payments && d.payments.length > 0) lastPayDate = new Date(d.payments[d.payments.length-1][0]);
-                else if (d.saleDate) lastPayDate = new Date(d.saleDate);
+                // else if (d.saleDate) lastPayDate = new Date(d.saleDate); // <-- هذا السطر انحذف
 
                 if(lastPayDate) {
                     let dueDate = new Date(lastPayDate); dueDate.setDate(dueDate.getDate() + 60); 
@@ -438,7 +441,7 @@
             r.forEach(c => tr.insertCell().innerText = c);
             if(isAdmin) {
                 let btns = `<button onclick="delRow('${id}',${i})" style="color:red;border:none;background:none;font-size:18px;cursor:pointer">✖</button>`;
-                if(id==='payTable') btns = `<button onclick="editRow(${i})" style="color:blue;border:none;background:none;font-size:18px;cursor:pointer">✎</button>` + btns;
+                if(id==='payTable') btns = `<button onclick="editRow(${i})" style="color:blue;border:none;background:none;font-size:18px;cursor:pointer;margin-left:5px">✎</button>` + btns;
                 tr.insertCell().innerHTML = btns;
             }
         });
@@ -526,10 +529,9 @@
         if(!error) {
             logToSystem(logAction, currentUnit, logDet);
             
-            // التعديل هنا: عند إضافة دفعة جديدة (وليس التعديل)، يتم تصفير التاريخ اليدوي
+            // تصفير التاريخ اليدوي عند إضافة دفعة جديدة
             if(logAction === "إضافة دفعة") {
                 delete d.customDueDate;
-                // حفظ التغيير (حذف التاريخ اليدوي) في الداتا بيس
                 await supabase.from('units').upsert({ id: currentUnit, data: d });
             }
 
@@ -595,14 +597,13 @@
         if (d.customDueDate) {
             next = new Date(d.customDueDate).toLocaleDateString('en-GB') + " (يدوي)";
         } 
-        // 2. الحساب التلقائي (فقط إذا كان هناك مستفيد)
+        // 2. الحساب التلقائي (فقط إذا كان هناك مستفيد ودفعة)
         else if(d.info.name && d.info.name.trim()!=="") {
             if(d.payments && d.payments.length>0) {
                 let last = new Date(d.payments[d.payments.length-1][0]);
                 last.setDate(last.getDate()+60); next = last.toLocaleDateString('en-GB');
-            } else if(d.saleDate) {
-                let s = new Date(d.saleDate); s.setDate(s.getDate()+60); next = s.toLocaleDateString('en-GB');
             }
+            // ملاحظة: تم إلغاء الحساب من تاريخ البيع (saleDate) حسب الطلب
         }
         // عرض التاريخ مع زر القلم
         document.getElementById('dispNextDue').innerHTML = next + ` <span class="admin-only" style="cursor:pointer;font-size:12px;margin-right:5px" onclick="editNextDue()">✏️</span>`;
