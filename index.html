@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إدارة مدينة الأزهر - النظام الشامل</title>
+    <title>إدارة مدينة الأزهر</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
@@ -11,86 +11,58 @@
     <meta name="theme-color" content="#004d40">
 
     <style>
-        /* --- الألوان والتصميم الكلاسيكي الأصلي --- */
-        :root { 
-            --primary: #004d40; 
-            --accent: #00bfa5; 
-            --bg: #f5f7fa; 
-            --white: #ffffff; 
-            --sold-bg: #e0f2f1; 
-            --sold-border: #00bfa5; 
-            --danger: #d32f2f; 
-            --warning: #ff9800; 
-            --info: #2196f3; 
-        }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background: var(--bg); 
-            margin: 0; 
-            padding: 0; 
-            color: #333; 
-            -webkit-tap-highlight-color: transparent; 
-        }
-        
+        /* --- التصميم الكلاسيكي الأصلي --- */
+        :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --white: #ffffff; --sold-bg: #e0f2f1; --sold-border: #00bfa5; --danger: #d32f2f; --warning: #ff9800; --info: #2196f3; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; -webkit-tap-highlight-color: transparent; }
         * { box-sizing: border-box; }
         button, input, select, textarea { font-size: 16px; outline: none; font-family: inherit; }
+        .container { max-width: 100%; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
         
-        /* شاشة التحميل */
         #loadingScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; transition: opacity 0.5s; }
         .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* عارض الصور */
         #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
         #fullImage { max-width: 95%; max-height: 80vh; border-radius: 5px; box-shadow: 0 0 20px rgba(255,255,255,0.1); object-fit: contain; }
-        .viewer-btn { position: absolute; top: 20px; color: white; font-size: 24px; cursor: pointer; background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10001; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.3); transition: 0.2s; }
-        .viewer-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
-        .close-viewer { right: 20px; } 
-        .download-btn { left: 20px; }
+        .viewer-btn { position: absolute; top: 20px; color: white; font-size: 24px; cursor: pointer; background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10001; }
+        .close-viewer { right: 20px; } .download-btn { left: 20px; }
 
-        /* تسجيل الدخول */
         #loginScreen { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(135deg, var(--primary), #00251a); color: white; text-align: center; }
         .login-box { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
-        .login-input { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; background: rgba(255,255,255,0.9); color: #333; font-weight: bold; }
+        .login-input { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; background: rgba(255,255,255,0.9); font-weight: bold; }
         .login-btn { width: 100%; padding: 15px; background: var(--accent); color: var(--primary); font-weight: 900; border: none; border-radius: 12px; margin-top: 10px; cursor: pointer; }
-        
-        /* لوحة التحكم */
-        #adminDashboard { display: none; padding: 20px; padding-bottom: 80px; }
-        .top-bar { position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 10px 0; display: flex; gap: 10px; flex-direction: column; }
-        .search-input { width: 100%; padding: 15px; border-radius: 50px; border: 1px solid #ddd; font-size: 16px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .super-admin-btn { background: #333; color: var(--accent); border: 1px solid var(--accent); padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: none; }
-        
-        /* الإحصائيات */
-        .admin-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
-        .adm-stat { background: white; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .adm-stat h3 { margin: 5px 0; font-size: 14px; color: var(--primary); }
-        .adm-stat small { font-size: 10px; color: #666; font-weight: bold; }
 
-        /* تابات الفئات (ستايل كلاسيكي صلب) */
+        #adminDashboard { display: none; padding: 20px; padding-bottom: 80px; }
+        .top-bar { margin-bottom: 20px; }
+        .search-input { width: 100%; padding: 15px; border-radius: 50px; border: 1px solid #ddd; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .super-admin-btn { background: #333; color: var(--accent); border: 1px solid var(--accent); padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: none; }
+
+        .admin-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
+        .adm-stat { background: white; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #eee; }
+        .adm-stat h3 { margin: 5px 0; font-size: 14px; color: var(--primary); }
+        .adm-stat small { font-size: 10px; color: #666; }
+
+        /* تابات الفئات */
         .category-tabs { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
         .cat-btn { 
-            flex: 1; padding: 10px; border: 1px solid #ccc; background: white; 
-            border-radius: 8px; text-align: center; font-size: 14px; font-weight: bold; cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); white-space: nowrap;
+            flex: 1; padding: 8px; border: 1px solid #ddd; background: white; 
+            border-radius: 8px; text-align: center; font-size: 13px; font-weight: bold; cursor: pointer;
+            white-space: nowrap;
         }
         .cat-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .cat-btn small { display: block; font-size: 10px; opacity: 0.8; font-weight: normal; margin-top: 3px; }
+        .cat-btn small { display: block; font-size: 9px; opacity: 0.8; font-weight: normal; }
 
-        /* شبكة الوحدات */
-        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
-        .unit-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; position: relative; }
+        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+        .unit-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
         .unit-card.sold { border-color: var(--sold-border); background: var(--sold-bg); }
         .unit-card h3 { margin: 0; color: var(--primary); font-size: 18px; }
-        .unit-card small { color: #888; font-size: 11px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .dots-container { position: absolute; top: -5px; right: -5px; display: flex; gap: 2px; }
+        .unit-card small { color: #888; font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        .dots-container { position: absolute; top: -5px; right: -5px; display: flex; gap: 3px; }
         .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; }
-        .dot-red { background: var(--danger); } 
-        .dot-blue { background: var(--info); } 
-        .dot-orange { background: var(--warning); }
+        .dot-red { background: var(--danger); } .dot-blue { background: #2196F3; } .dot-orange { background: #FF9800; }
 
-        /* واجهة الوحدة */
-        #unitInterface { display: none; background: white; min-height: 100vh; padding-bottom: 80px; }
+        #unitInterface { display: none; padding-bottom: 80px; }
         .unit-header { background: var(--primary); color: white; padding: 20px; border-radius: 0 0 25px 25px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
         
@@ -105,67 +77,51 @@
         .tab-btn { padding: 10px 15px; background: none; border: none; white-space: nowrap; color: #666; font-weight: bold; border-bottom: 3px solid transparent; font-size: 14px; }
         .tab-btn.active { color: var(--primary); border-bottom-color: var(--accent); }
         .tab-content { display: none; padding: 0 20px; animation: fadeIn 0.3s; }
-        
+
         .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; }
         table { width: 100%; border-collapse: collapse; white-space: nowrap; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; color: #444; }
 
-        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; }
-        .st-pending { background: #fff3cd; color: #856404; }
-        .st-approved { background: #d4edda; color: #155724; }
-        .st-rejected { background: #f8d7da; color: #721c24; }
-        .visit-action-btn { border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin: 0 2px; }
-        .btn-approve { background: #28a745; color: white; }
-        .btn-reject { background: #dc3545; color: white; }
-
-        /* Media Grid */
         .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .media-item { 
-            background: #fff; border-radius: 10px; height: 160px; 
-            display: flex; align-items: center; justify-content: center; 
-            position: relative; overflow: hidden; border: 1px solid #ddd;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .media-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: 0.3s; }
-        .media-item img:active { transform: scale(0.95); }
-        
+        .media-item { background: #fff; border-radius: 10px; height: 160px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 1px solid #ddd; }
+        .media-item img { width: 100%; height: 100%; object-fit: cover; }
+
         .fab-add { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; display: none; align-items: center; justify-content: center; }
         
-        label { font-size: 13px; color: #666; font-weight: bold; margin-top: 10px; display: block; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: #fff; }
-
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px); }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px); }
         .modal-sheet { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 25px; animation: slideUp 0.3s; }
         .modal-btn-group { display: flex; gap: 10px; margin-top: 20px; }
         .btn-confirm { flex: 2; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; }
         .btn-cancel { flex: 1; padding: 12px; background: #eee; color: #333; border: none; border-radius: 10px; font-weight: bold; }
 
-        /* ستايل السجلات */
-        .log-item { padding: 12px; border-bottom: 1px solid #eee; background: #fff; margin-bottom: 5px; border-radius: 8px; }
-        .log-meta { font-size: 11px; color: #888; margin-bottom: 5px; display: flex; justify-content: space-between; }
+        label { font-size: 13px; color: #666; font-weight: bold; margin-top: 10px; display: block; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: #fff; }
+
+        .log-item { padding: 10px; border-bottom: 1px solid #eee; background: #fff; margin-bottom: 5px; border-radius: 5px; }
+        .log-meta { font-size: 11px; color: #888; margin-bottom: 3px; display: flex; justify-content: space-between; }
         .log-txt { font-size: 14px; font-weight: bold; color: #333; }
 
-        /* ستايل الأدمنية */
+        .admin-only { display: none !important; }
+        .show-admin .admin-only { display: block !important; }
+        .unit-interface:not(.show-admin) .editable { pointer-events: none; background: #eee; }
+        
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; }
+        .st-pending { background: #fff3cd; color: #856404; } .st-approved { background: #d4edda; color: #155724; } .st-rejected { background: #f8d7da; color: #721c24; }
+        .visit-action-btn { border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin: 0 2px; }
+        .btn-approve { background: #28a745; color: white; } .btn-reject { background: #dc3545; color: white; }
+
         #adminsModal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:150; padding:20px; overflow-y:auto; }
         .admin-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
         .admin-badge { background: #333; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; }
 
         @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
-        
-        .admin-only { display: none !important; }
-        .show-admin .admin-only { display: block !important; }
-        .unit-interface:not(.show-admin) .editable { pointer-events: none; background: #eee; }
     </style>
 </head>
 <body>
 
-<div id="loadingScreen">
-    <div class="loader"></div>
-    <p style="margin-top:20px; font-weight:bold;">جاري الاتصال بالسيرفر...</p>
-    <button onclick="location.reload()" style="margin-top:20px;padding:10px;background:#ddd;border:none;border-radius:5px;cursor:pointer;font-size:12px">تحديث الصفحة (إذا تأخر)</button>
-</div>
+<div id="loadingScreen"><div class="loader"></div><p style="margin-top:20px;font-weight:bold">جاري التحميل...</p></div>
 
 <div id="imageViewer">
     <div class="viewer-btn close-viewer" onclick="document.getElementById('imageViewer').style.display='none'">×</div>
@@ -173,13 +129,13 @@
     <img id="fullImage" src="">
 </div>
 
-<div id="loginScreen" style="display:none;">
+<div id="loginScreen">
     <div style="margin-bottom: 30px;">
         <h1 style="margin:0;">مدينة الأزهر</h1>
         <p style="opacity:0.8;">نظام المتابعة السحابي</p>
     </div>
     <div class="login-box">
-        <input type="text" id="loginUser" class="login-input" placeholder="اسم المستخدم (للإدارة) أو رقم الوحدة">
+        <input type="text" id="loginUser" class="login-input" placeholder="اسم المستخدم">
         <input type="password" id="loginPass" class="login-input" placeholder="كلمة المرور">
         <button onclick="handleLogin()" class="login-btn">دخول</button>
     </div>
@@ -200,53 +156,51 @@
             <div class="cat-btn" onclick="switchCategory('D', this)" id="btnCatD">فئة D<br><small>...</small></div>
         </div>
 
-        <div style="display: flex; gap:5px;">
-             <input type="text" class="search-input" placeholder="🔍 ابحث في الفئة الحالية..." onkeyup="filterUnits(this.value)">
-             <button class="super-admin-btn" id="btnLogs" onclick="openLogsModal()" style="display:none;background:#607D8B">📋</button>
-             <button class="super-admin-btn" id="btnManageAdmins" onclick="openAdminsManager()" style="display:none">⚙️</button>
+        <div style="display:flex; gap:5px">
+            <input type="text" class="search-input" placeholder="🔍 بحث في الفئة الحالية..." onkeyup="filterUnits(this.value)">
+            <button class="super-admin-btn" id="btnLogs" onclick="openLogsModal()" style="display:none;background:#607D8B">📋</button>
+            <button class="super-admin-btn" id="btnManageAdmins" onclick="openAdminsManager()" style="display:none">⚙️</button>
         </div>
-        <button class="back-btn" style="background:var(--danger); width:100%; margin-top:10px" onclick="location.reload()">تسجيل خروج</button>
+        <button class="back-btn" style="background:var(--danger);width:100%;margin-top:10px" onclick="location.reload()">تسجيل خروج</button>
     </div>
     <div class="units-grid" id="unitsGrid"></div>
 </div>
 
 <div id="logsModal" class="modal-overlay">
     <div class="modal-sheet">
-        <div style="display:flex; justify-content:space-between;"><h3>سجل النشاطات</h3><button onclick="document.getElementById('logsModal').style.display='none'" style="background:none;border:none;font-size:20px">×</button></div>
+        <div style="display:flex;justify-content:space-between;"><h3>سجل النشاطات</h3><button onclick="document.getElementById('logsModal').style.display='none'" style="background:none;border:none;font-size:20px">×</button></div>
         <div id="logsContainer" style="max-height:60vh;overflow-y:auto;margin-top:10px;background:#f9f9f9;padding:10px;border-radius:10px">جاري التحميل...</div>
         <button class="btn-cancel" style="width:100%;margin-top:10px" onclick="document.getElementById('logsModal').style.display='none'">إغلاق</button>
     </div>
 </div>
 
-<div id="adminsModal">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2 style="margin:0">إدارة المسؤولين</h2>
-        <button onclick="document.getElementById('adminsModal').style.display='none'; switchScreen('adminDashboard')" style="background:none; border:none; font-size:20px;">✖</button>
+<div id="adminsModal" class="modal-overlay">
+    <div class="modal-sheet">
+        <div style="display:flex;justify-content:space-between;"><h3>المسؤولين</h3><button onclick="document.getElementById('adminsModal').style.display='none'" style="background:none;border:none;font-size:20px">×</button></div>
+        <div style="background:#f0f0f0;padding:10px;border-radius:10px;margin-bottom:10px">
+            <input type="text" id="newAdminUser" placeholder="اسم المستخدم"><input type="text" id="newAdminPass" placeholder="كلمة المرور">
+            <button class="btn-confirm" onclick="saveAdminUser()">حفظ</button>
+        </div>
+        <div id="adminsListContainer"></div>
     </div>
-    <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-bottom:20px;">
-        <h4 style="margin-top:0;">إضافة / تعديل مسؤول</h4>
-        <input type="text" id="newAdminUser" placeholder="اسم المستخدم">
-        <input type="text" id="newAdminPass" placeholder="كلمة المرور">
-        <button class="login-btn" onclick="saveAdminUser()">حفظ المسؤول</button>
-    </div>
-    <h3>قائمة المسؤولين</h3>
-    <div id="adminsListContainer"></div>
 </div>
 
 <div id="unitInterface" class="unit-interface">
     <div class="unit-header">
-        <div>
-            <h2 style="margin:0;" id="headerUnitTitle">...</h2>
-            <small style="opacity:0.9;" id="headerOwner">...</small>
-        </div>
+        <div><h2 style="margin:0;" id="headerUnitTitle">...</h2><small id="headerOwner">...</small></div>
         <button class="back-btn" onclick="goBack()">رجوع</button>
     </div>
 
     <div class="stats-scroll">
-        <div class="stat-card bg-1"><small>المدفوع</small><h3 id="dispPaid">0</h3></div>
-        <div class="stat-card bg-2"><small>المتبقي</small><h3 id="dispRemain">0</h3></div>
-        <div class="stat-card bg-3"><small>الإنجاز</small><h3 id="dispProg">0%</h3></div>
-        <div class="stat-card bg-4"><small>الاستحقاق</small><h3 id="dispNextDue">-</h3></div>
+        <div class="stat-card bg-1"><small>المدفوع</small><h3 style="margin:5px 0" id="dispPaid">0</h3></div>
+        <div class="stat-card bg-2"><small>المتبقي</small><h3 style="margin:5px 0" id="dispRemain">0</h3></div>
+        <div class="stat-card bg-3"><small>الإنجاز</small><h3 style="margin:5px 0" id="dispProg">0%</h3></div>
+        <div class="stat-card bg-4"><small>الاستحقاق</small>
+            <h3 style="margin:5px 0; font-size:16px;">
+                <span id="dispNextDue">-</span>
+                <span class="admin-only" style="cursor:pointer;font-size:14px" onclick="editNextDue()">✏️</span>
+            </h3>
+        </div>
     </div>
 
     <div class="tabs-nav">
@@ -262,47 +216,30 @@
     </div>
 
     <div id="info" class="tab-content" style="display:block;">
-        <label>اسم المستفيد</label><input type="text" id="ownerName" class="editable">
-        <label>رقم الهاتف</label><input type="text" id="ownerPhone" class="editable">
-        <div class="admin-only" style="margin-top:20px; background:#e0f7fa; padding:15px; border-radius:10px;">
-            <label style="color:#006064;">السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData('price')">
+        <label>المستفيد</label><input type="text" id="ownerName" class="editable">
+        <label>الهاتف</label><input type="text" id="ownerPhone" class="editable">
+        <div class="admin-only" style="margin-top:20px;background:#e0f7fa;padding:15px;border-radius:10px">
+            <label>السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData('price')">
         </div>
-        <button class="login-btn admin-only" style="margin-top:20px;" onclick="saveData('info')">حفظ التعديلات (مع واتساب)</button>
+        <button class="btn-confirm admin-only" style="margin-top:20px" onclick="saveData('info')">حفظ التعديلات</button>
     </div>
 
-    <div id="payments" class="tab-content">
-        <div class="table-wrapper"><table id="payTable"><thead><tr><th>التاريخ</th><th>الوصل</th><th>المبلغ</th><th>التفاصيل</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div>
-        <div style="height:60px;"></div>
-    </div>
-
-    <div id="docs" class="tab-content">
-        <div class="table-wrapper"><table id="docsTable"><thead><tr><th>تاريخ</th><th>نوع</th><th>ملاحظات</th><th>ملف</th><th></th></tr></thead><tbody></tbody></table></div>
-    </div>
-
-    <div id="works" class="tab-content">
-        <div class="table-wrapper"><table id="workTable"><thead><tr><th>المرحلة</th><th>التاريخ</th><th>%</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div>
-        <div style="height:60px;"></div>
-    </div>
-
+    <div id="payments" class="tab-content"><div class="table-wrapper"><table id="payTable"><thead><tr><th>تاريخ</th><th>وصل</th><th>مبلغ</th><th>تفاصيل</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="docs" class="tab-content"><div class="table-wrapper"><table id="docsTable"><thead><tr><th>تاريخ</th><th>نوع</th><th>ملاحظة</th><th>ملف</th><th></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="works" class="tab-content"><div class="table-wrapper"><table id="workTable"><thead><tr><th>مرحلة</th><th>تاريخ</th><th>%</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
     <div id="visits" class="tab-content">
-        <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee; margin-bottom:20px;">
-            <h3 style="margin-top:0; color:var(--primary);">طلب زيارة</h3>
-            <label>التاريخ</label><input type="date" id="reqVisitDate">
-            <label>السبب</label><input type="text" id="reqVisitReason" placeholder="...">
-            <button class="login-btn" style="margin-top:10px;" onclick="submitVisitRequest()">إرسال</button>
+        <div style="background:white;padding:15px;border-radius:10px;border:1px solid #eee;margin-bottom:15px">
+            <h4 style="margin:0">طلب زيارة</h4><input type="date" id="reqVisitDate"><input type="text" id="reqVisitReason" placeholder="السبب">
+            <button class="btn-confirm" style="margin-top:10px" onclick="submitVisitRequest()">إرسال</button>
         </div>
-        <h3 style="margin-bottom:10px;">السجل</h3>
-        <div class="table-wrapper"><table id="visitTable"><thead><tr><th>التاريخ</th><th>السبب</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody></tbody></table></div>
-        <div style="height:60px;"></div>
+        <div class="table-wrapper"><table id="visitTable"><thead><tr><th>تاريخ</th><th>سبب</th><th>حالة</th><th>إجراء</th></tr></thead><tbody></tbody></table></div>
     </div>
-
-    <div id="history" class="tab-content"><div class="table-wrapper"><table id="histTable"><thead><tr><th>التاريخ</th><th>الحدث</th><th>ملاحظات</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div><div style="height:60px;"></div></div>
-    <div id="notifs" class="tab-content"><div class="table-wrapper"><table id="notifTable"><thead><tr><th>التاريخ</th><th>التبليغ</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div><div style="height:60px;"></div></div>
-    <div id="media" class="tab-content"><div class="media-grid" id="mediaGrid"></div><div style="height:60px;"></div></div>
-
+    <div id="history" class="tab-content"><div class="table-wrapper"><table id="histTable"><thead><tr><th>تاريخ</th><th>حدث</th><th>ملاحظات</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="notifs" class="tab-content"><div class="table-wrapper"><table id="notifTable"><thead><tr><th>تاريخ</th><th>رسالة</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="media" class="tab-content"><div class="media-grid" id="mediaGrid"></div></div>
     <div id="settings" class="tab-content">
-        <label>اسم المستخدم (للمستفيد)</label><input type="text" id="uUser"><label>كلمة المرور (للمستفيد)</label><input type="text" id="uPass">
-        <button class="login-btn" onclick="saveData('settings')">تحديث الحساب</button>
+        <label>يوزر المستفيد</label><input type="text" id="uUser"><label>باسورد المستفيد</label><input type="text" id="uPass">
+        <button class="btn-confirm" onclick="saveData('settings')">تحديث</button>
     </div>
 
     <button id="fabAdd" class="fab-add admin-only" onclick="openModal()">+</button>
@@ -310,7 +247,7 @@
 
 <div id="actionModal" class="modal-overlay">
     <div class="modal-sheet">
-        <div class="modal-title" id="modalTitle">إضافة جديد</div>
+        <h3 id="modalTitle" style="margin-top:0">إضافة جديد</h3>
         <div id="modalInputs"></div> 
         <div class="modal-btn-group"><button class="btn-confirm" onclick="confirmModal()">حفظ</button><button class="btn-cancel" onclick="document.getElementById('actionModal').style.display='none'">إلغاء</button></div>
     </div>
@@ -319,16 +256,13 @@
 <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // 🔴🔴🔴 بيانات Supabase الخاصة بك 🔴🔴🔴
     const SUPABASE_URL = 'https://csaqawviitdrjzeasmne.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ';
     
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    
     let db = {}, adminsDb = {}, currentUnit = null, isAdmin = false, isSuperAdmin = false, currentTab = 'info';
     let currentAdminName = 'system', editingIndex = -1, activeCategory = 'A';
 
-    // 🔴 أعداد الوحدات
     const unitConfig = { 'A': 472, 'B': 56, 'C': 284, 'D': 142 };
 
     function switchScreen(id) {
@@ -425,6 +359,7 @@
         document.getElementById('statTodaySales').innerText = tS;
     }
 
+    // --- تبديل الفئات ---
     window.switchCategory = function(cat, btn) {
         activeCategory = cat;
         document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
@@ -503,7 +438,7 @@
             r.forEach(c => tr.insertCell().innerText = c);
             if(isAdmin) {
                 let btns = `<button onclick="delRow('${id}',${i})" style="color:red;border:none;background:none;font-size:18px;cursor:pointer">✖</button>`;
-                if(id==='payTable') btns = `<button onclick="editRow(${i})" style="color:blue;border:none;background:none;font-size:18px;cursor:pointer;margin-left:5px">✎</button>` + btns;
+                if(id==='payTable') btns = `<button onclick="editRow(${i})" style="color:blue;border:none;background:none;font-size:18px;cursor:pointer">✎</button>` + btns;
                 tr.insertCell().innerHTML = btns;
             }
         });
@@ -590,6 +525,14 @@
         const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d });
         if(!error) {
             logToSystem(logAction, currentUnit, logDet);
+            
+            // التعديل هنا: عند إضافة دفعة جديدة (وليس التعديل)، يتم تصفير التاريخ اليدوي
+            if(logAction === "إضافة دفعة") {
+                delete d.customDueDate;
+                // حفظ التغيير (حذف التاريخ اليدوي) في الداتا بيس
+                await supabase.from('units').upsert({ id: currentUnit, data: d });
+            }
+
             if(isAdmin && d.info.phone && editingIndex===-1 && logAction!=="رفع وسائط") {
                 if(confirm("إرسال واتساب؟")) sendWhatsApp(d.info.phone, d.info.name, logDet);
             }
@@ -622,7 +565,22 @@
     window.deleteAdmin = async (u) => { if(confirm('حذف؟')) { await supabase.from('admins').delete().eq('username',u); delete adminsDb[u]; logToSystem('أدمن', 'نظام', `حذف ${u}`); renderAdminsList(); } };
     function formatNumber(n) { return n ? Number(String(n).replace(/,/g,'')).toLocaleString('en-US') : "0"; }
     
-    // تصحيح الاستحقاق: يظهر فقط إذا كان هناك مستفيد
+    // --- الوظيفة الجديدة: تعديل موعد الاستحقاق يدوياً ---
+    window.editNextDue = function() {
+        if(!isAdmin) return;
+        let current = db[currentUnit].customDueDate || "";
+        let newDate = prompt("أدخل تاريخ الاستحقاق القادم (YYYY-MM-DD):\nاتركه فارغاً للعودة للحساب التلقائي", current);
+        if (newDate === null) return;
+        if (newDate.trim() === "") {
+            delete db[currentUnit].customDueDate;
+            alert("تمت العودة للحساب التلقائي");
+        } else {
+            if(!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) return alert("تنسيق التاريخ غير صحيح");
+            db[currentUnit].customDueDate = newDate;
+        }
+        saveData('info');
+    }
+
     function calcStats() {
         const d = db[currentUnit];
         let total = parseFloat(String(d.totalPrice).replace(/,/g,'')) || 0;
@@ -630,8 +588,15 @@
         document.getElementById('dispPaid').innerText = formatNumber(paid);
         document.getElementById('dispRemain').innerText = formatNumber(total - paid);
         document.getElementById('dispProg').innerText = d.works.length ? d.works[d.works.length-1][2] : "0%";
+        
         let next = "-";
-        if(d.info.name && d.info.name.trim()!=="") {
+        
+        // 1. الأولوية للتاريخ اليدوي
+        if (d.customDueDate) {
+            next = new Date(d.customDueDate).toLocaleDateString('en-GB') + " (يدوي)";
+        } 
+        // 2. الحساب التلقائي (فقط إذا كان هناك مستفيد)
+        else if(d.info.name && d.info.name.trim()!=="") {
             if(d.payments && d.payments.length>0) {
                 let last = new Date(d.payments[d.payments.length-1][0]);
                 last.setDate(last.getDate()+60); next = last.toLocaleDateString('en-GB');
@@ -639,7 +604,8 @@
                 let s = new Date(d.saleDate); s.setDate(s.getDate()+60); next = s.toLocaleDateString('en-GB');
             }
         }
-        document.getElementById('dispNextDue').innerText = next;
+        // عرض التاريخ مع زر القلم
+        document.getElementById('dispNextDue').innerHTML = next + ` <span class="admin-only" style="cursor:pointer;font-size:12px;margin-right:5px" onclick="editNextDue()">✏️</span>`;
     }
 
     document.addEventListener("keyup", function(event) { if (event.key === "Enter") {
