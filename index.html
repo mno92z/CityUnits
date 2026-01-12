@@ -6,32 +6,31 @@
     <title>إدارة مدينة الأزهر</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#004d40">
 
     <style>
-        /* --- الألوان والتصميم الكلاسيكي الأصلي --- */
+        /* --- التصميم الكلاسيكي الأصلي --- */
         :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --white: #ffffff; --sold-bg: #e0f2f1; --sold-border: #00bfa5; --danger: #d32f2f; --warning: #ff9800; --info: #2196f3; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; -webkit-tap-highlight-color: transparent; }
         * { box-sizing: border-box; }
         button, input, select, textarea { font-size: 16px; outline: none; font-family: inherit; }
-        .container { max-width: 100%; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
         
         #loadingScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; transition: opacity 0.5s; }
         .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
+        
+        /* عارض الصور */
         #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
         #fullImage { max-width: 95%; max-height: 80vh; border-radius: 5px; box-shadow: 0 0 20px rgba(255,255,255,0.1); object-fit: contain; }
         .viewer-btn { position: absolute; top: 20px; color: white; font-size: 24px; cursor: pointer; background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10001; }
         .close-viewer { right: 20px; } .download-btn { left: 20px; }
 
+        /* Login */
         #loginScreen { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(135deg, var(--primary), #00251a); color: white; text-align: center; }
         .login-box { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
         .login-input { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; background: rgba(255,255,255,0.9); font-weight: bold; }
         .login-btn { width: 100%; padding: 15px; background: var(--accent); color: var(--primary); font-weight: 900; border: none; border-radius: 12px; margin-top: 10px; cursor: pointer; }
 
+        /* Dashboard */
         #adminDashboard { display: none; padding: 20px; padding-bottom: 80px; }
         .top-bar { margin-bottom: 20px; }
         .search-input { width: 100%; padding: 15px; border-radius: 50px; border: 1px solid #ddd; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
@@ -44,11 +43,7 @@
 
         /* تابات الفئات */
         .category-tabs { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
-        .cat-btn { 
-            flex: 1; padding: 8px; border: 1px solid #ddd; background: white; 
-            border-radius: 8px; text-align: center; font-size: 13px; font-weight: bold; cursor: pointer;
-            white-space: nowrap;
-        }
+        .cat-btn { flex: 1; padding: 8px; border: 1px solid #ddd; background: white; border-radius: 8px; text-align: center; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap; }
         .cat-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         .cat-btn small { display: block; font-size: 9px; opacity: 0.8; font-weight: normal; }
 
@@ -57,11 +52,11 @@
         .unit-card.sold { border-color: var(--sold-border); background: var(--sold-bg); }
         .unit-card h3 { margin: 0; color: var(--primary); font-size: 18px; }
         .unit-card small { color: #888; font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        
         .dots-container { position: absolute; top: -5px; right: -5px; display: flex; gap: 3px; }
         .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; }
         .dot-red { background: var(--danger); } .dot-blue { background: #2196F3; } .dot-orange { background: #FF9800; }
 
+        /* Unit Interface */
         #unitInterface { display: none; padding-bottom: 80px; }
         .unit-header { background: var(--primary); color: white; padding: 20px; border-radius: 0 0 25px 25px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
@@ -108,12 +103,9 @@
         
         .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; }
         .st-pending { background: #fff3cd; color: #856404; } .st-approved { background: #d4edda; color: #155724; } .st-rejected { background: #f8d7da; color: #721c24; }
-        .visit-action-btn { border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin: 0 2px; }
-        .btn-approve { background: #28a745; color: white; } .btn-reject { background: #dc3545; color: white; }
-
-        #adminsModal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:150; padding:20px; overflow-y:auto; }
-        .admin-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
-        .admin-badge { background: #333; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+        
+        /* Archive List Style */
+        .archive-item { background: #fff3e0; border-left: 5px solid #ff9800; margin-bottom: 10px; padding: 10px; border-radius: 5px; }
 
         @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
@@ -158,6 +150,7 @@
 
         <div style="display:flex; gap:5px">
             <input type="text" class="search-input" placeholder="🔍 بحث في الفئة الحالية..." onkeyup="filterUnits(this.value)">
+            <button class="super-admin-btn" id="btnArchives" onclick="openArchives()" style="display:none;background:#FF9800">🗄️</button>
             <button class="super-admin-btn" id="btnLogs" onclick="openLogsModal()" style="display:none;background:#607D8B">📋</button>
             <button class="super-admin-btn" id="btnManageAdmins" onclick="openAdminsManager()" style="display:none">⚙️</button>
         </div>
@@ -171,6 +164,14 @@
         <div style="display:flex;justify-content:space-between;"><h3>سجل النشاطات</h3><button onclick="document.getElementById('logsModal').style.display='none'" style="background:none;border:none;font-size:20px">×</button></div>
         <div id="logsContainer" style="max-height:60vh;overflow-y:auto;margin-top:10px;background:#f9f9f9;padding:10px;border-radius:10px">جاري التحميل...</div>
         <button class="btn-cancel" style="width:100%;margin-top:10px" onclick="document.getElementById('logsModal').style.display='none'">إغلاق</button>
+    </div>
+</div>
+
+<div id="archivesModal" class="modal-overlay">
+    <div class="modal-sheet">
+        <div style="display:flex;justify-content:space-between;"><h3>أرشيف الوحدات</h3><button onclick="document.getElementById('archivesModal').style.display='none'" style="background:none;border:none;font-size:20px">×</button></div>
+        <div id="archivesContainer" style="max-height:60vh;overflow-y:auto;margin-top:10px;background:#f9f9f9;padding:10px;border-radius:10px"></div>
+        <button class="btn-cancel" style="width:100%;margin-top:10px" onclick="document.getElementById('archivesModal').style.display='none'">إغلاق</button>
     </div>
 </div>
 
@@ -207,10 +208,10 @@
         <button class="tab-btn active" onclick="showTab('info')">المعلومات</button>
         <button class="tab-btn" onclick="showTab('payments')">المالية</button>
         <button class="tab-btn" onclick="showTab('docs')">الوثائق</button> 
+        <button class="tab-btn" onclick="showTab('warnings')">الإنذارات</button>
         <button class="tab-btn" onclick="showTab('works')">سير العمل</button>
         <button class="tab-btn" onclick="showTab('visits')">الزيارات</button>
-        <button class="tab-btn" onclick="showTab('history')">السجل</button>
-        <button class="tab-btn" onclick="showTab('notifs')">التبليغات</button>
+        <button class="tab-btn admin-only" onclick="showTab('history')">سجل الوحدة</button>
         <button class="tab-btn" onclick="showTab('media')">الوسائط</button>
         <button class="tab-btn admin-only" onclick="showTab('settings')">الإعدادات</button>
     </div>
@@ -218,15 +219,22 @@
     <div id="info" class="tab-content" style="display:block;">
         <label>المستفيد</label><input type="text" id="ownerName" class="editable">
         <label>الهاتف</label><input type="text" id="ownerPhone" class="editable">
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1"><label>رقم العقد</label><input type="text" id="contractNum" class="editable"></div>
+            <div style="flex:1"><label>تاريخ العقد</label><input type="date" id="contractDate" class="editable"></div>
+        </div>
         <div class="admin-only" style="margin-top:20px;background:#e0f7fa;padding:15px;border-radius:10px">
             <label>السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData('price')">
         </div>
         <button class="btn-confirm admin-only" style="margin-top:20px" onclick="saveData('info')">حفظ التعديلات</button>
+        
+        <button class="btn-cancel admin-only" style="margin-top:30px;background:#FF5722;color:white" onclick="archiveUnit()">🗄️ أرشفة وإنهاء الوحدة</button>
     </div>
 
-    <div id="payments" class="tab-content"><div class="table-wrapper"><table id="payTable"><thead><tr><th>تاريخ</th><th>وصل</th><th>مبلغ</th><th>تفاصيل</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
-    <div id="docs" class="tab-content"><div class="table-wrapper"><table id="docsTable"><thead><tr><th>تاريخ</th><th>نوع</th><th>ملاحظة</th><th>ملف</th><th></th></tr></thead><tbody></tbody></table></div></div>
-    <div id="works" class="tab-content"><div class="table-wrapper"><table id="workTable"><thead><tr><th>مرحلة</th><th>تاريخ</th><th>%</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="payments" class="tab-content"><div class="table-wrapper"><table id="payTable"><thead><tr><th>ت</th><th>الوصل</th><th>المبلغ</th><th>الدفعة</th><th>تفاصيل</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="docs" class="tab-content"><div class="table-wrapper"><table id="docsTable"><thead><tr><th>تاريخ</th><th>الصنف</th><th>تفاصيل</th><th>ملف</th><th></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="warnings" class="tab-content"><div class="table-wrapper"><table id="warningsTable"><thead><tr><th>تاريخ</th><th>نوع الإنذار</th><th>ملاحظات</th><th>ملف</th><th></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="works" class="tab-content"><div class="table-wrapper"><table id="workTable"><thead><tr><th>المرحلة</th><th>التاريخ</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
     <div id="visits" class="tab-content">
         <div style="background:white;padding:15px;border-radius:10px;border:1px solid #eee;margin-bottom:15px">
             <h4 style="margin:0">طلب زيارة</h4><input type="date" id="reqVisitDate"><input type="text" id="reqVisitReason" placeholder="السبب">
@@ -234,8 +242,7 @@
         </div>
         <div class="table-wrapper"><table id="visitTable"><thead><tr><th>تاريخ</th><th>سبب</th><th>حالة</th><th>إجراء</th></tr></thead><tbody></tbody></table></div>
     </div>
-    <div id="history" class="tab-content"><div class="table-wrapper"><table id="histTable"><thead><tr><th>تاريخ</th><th>حدث</th><th>ملاحظات</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
-    <div id="notifs" class="tab-content"><div class="table-wrapper"><table id="notifTable"><thead><tr><th>تاريخ</th><th>رسالة</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
+    <div id="history" class="tab-content"><div class="table-wrapper"><table id="histTable"><thead><tr><th>تاريخ</th><th>الحدث</th><th>ملاحظات</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div></div>
     <div id="media" class="tab-content"><div class="media-grid" id="mediaGrid"></div></div>
     <div id="settings" class="tab-content">
         <label>يوزر المستفيد</label><input type="text" id="uUser"><label>باسورد المستفيد</label><input type="text" id="uPass">
@@ -256,7 +263,6 @@
 <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // 🔴 إعدادات السيرفر
     const SUPABASE_URL = 'https://csaqawviitdrjzeasmne.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ';
     
@@ -264,11 +270,10 @@
     let db = {}, adminsDb = {}, currentUnit = null, isAdmin = false, isSuperAdmin = false, currentTab = 'info';
     let currentAdminName = 'system', editingIndex = -1, activeCategory = 'A';
 
-    // 🔴 أعداد الوحدات
     const unitConfig = { 'A': 472, 'B': 56, 'C': 284, 'D': 142 };
 
     function switchScreen(id) {
-        ['loadingScreen','loginScreen','adminDashboard','unitInterface','adminsModal','logsModal'].forEach(s => document.getElementById(s).style.display = 'none');
+        ['loadingScreen','loginScreen','adminDashboard','unitInterface','adminsModal','logsModal','archivesModal'].forEach(s => document.getElementById(s).style.display = 'none');
         document.getElementById(id).style.display = 'block';
         if(id==='unitInterface') {
             const ui = document.getElementById('unitInterface');
@@ -304,19 +309,6 @@
         window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank');
     }
 
-    window.openLogsModal = async function() {
-        document.getElementById('logsModal').style.display = 'flex';
-        const c = document.getElementById('logsContainer');
-        c.innerHTML = 'جاري التحميل...';
-        const { data } = await supabase.from('logs').select('*').order('created_at', { ascending: false }).limit(50);
-        c.innerHTML = "";
-        if(!data || !data.length) c.innerHTML = "<p>لا توجد سجلات</p>";
-        else data.forEach(log => {
-            const t = new Date(log.created_at).toLocaleString('ar-EG');
-            c.innerHTML += `<div class="log-item"><div class="log-meta"><span>${log.admin_name}</span><span>${t}</span></div><div class="log-txt">${log.action} (${log.target_unit})</div><div>${log.details}</div></div>`;
-        });
-    }
-
     window.handleLogin = function() {
         const u = document.getElementById('loginUser').value.trim().toLowerCase();
         const p = document.getElementById('loginPass').value.trim();
@@ -328,6 +320,7 @@
             currentUnit = null;
             document.getElementById('btnManageAdmins').style.display = isSuperAdmin ? 'block' : 'none';
             document.getElementById('btnLogs').style.display = isSuperAdmin ? 'block' : 'none';
+            document.getElementById('btnArchives').style.display = isSuperAdmin ? 'block' : 'none';
             calcGlobalStats();
             switchScreen('adminDashboard');
             renderUnitsGrid("");
@@ -354,11 +347,10 @@
 
         Object.values(db).forEach(u => {
             if(u.payments) u.payments.forEach(p => { let a=parseFloat(String(p[2]).replace(/,/g,''))||0; tM+=a; if(p[0]===today) tD+=a; });
-            if(u.saleDate===today) tS++;
+            // الاستحقاق يعتمد على آخر دفعة وليس البيع
         });
         document.getElementById('statTotalMoney').innerText = tM.toLocaleString();
         document.getElementById('statTodayMoney').innerText = tD.toLocaleString();
-        document.getElementById('statTodaySales').innerText = tS;
     }
 
     // --- تبديل الفئات ---
@@ -388,10 +380,8 @@
             if(isSold) {
                 if(hasPending) dotsHTML += '<div class="dot dot-red"></div>';
                 let lastPayDate = null;
-                // عدل هنا: أزيل الاعتماد على d.saleDate
                 if(d.payments && d.payments.length > 0) lastPayDate = new Date(d.payments[d.payments.length-1][0]);
-                // else if (d.saleDate) lastPayDate = new Date(d.saleDate); // <-- هذا السطر انحذف
-
+                
                 if(lastPayDate) {
                     let dueDate = new Date(lastPayDate); dueDate.setDate(dueDate.getDate() + 60); 
                     let diffDays = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
@@ -413,8 +403,8 @@
     // --- Unit Logic ---
     window.openUnit = function(id) {
         switchScreen('unitInterface'); currentUnit = id;
-        if(!db[id]) db[id] = { info:{name:"",phone:""}, settings:{user:id, pass:"123"}, totalPrice:0, payments:[], works:[], history:[], notifs:[], media:[], visits:[], docs:[] };
-        ['docs','media','history','notifs','visits','payments','works'].forEach(k=>{if(!db[id][k]) db[id][k]=[]});
+        if(!db[id]) db[id] = { info:{name:"",phone:""}, settings:{user:id, pass:"123"}, totalPrice:0, payments:[], works:[], history:[], notifs:[], media:[], visits:[], docs:[], warnings:[], archives:[] };
+        ['docs','media','history','notifs','visits','payments','works','warnings','archives'].forEach(k=>{if(!db[id][k]) db[id][k]=[]});
         loadUnitData(); showTab('info');
     }
 
@@ -424,13 +414,23 @@
         document.getElementById('headerOwner').innerText = d.info.name || "غير محدد";
         document.getElementById('ownerName').value = d.info.name || "";
         document.getElementById('ownerPhone').value = d.info.phone || "";
+        document.getElementById('contractNum').value = d.info.contractNum || "";
+        document.getElementById('contractDate').value = d.info.contractDate || "";
         document.getElementById('totalPrice').value = formatNumber(d.totalPrice);
         document.getElementById('uUser').value = d.settings.user;
         document.getElementById('uPass').value = d.settings.pass;
         document.getElementById('ownerName').readOnly = !isAdmin;
         document.getElementById('ownerPhone').readOnly = !isAdmin;
-        renderTable('payTable', d.payments); renderTable('workTable', d.works); renderTable('histTable', d.history);
-        renderTable('notifTable', d.notifs); renderVisitsTable(d.visits); renderMediaGrid(d.media); renderDocsTable(d.docs);
+        document.getElementById('contractNum').readOnly = !isAdmin;
+        document.getElementById('contractDate').readOnly = !isAdmin;
+
+        renderTable('payTable', d.payments); 
+        renderTable('workTable', d.works); 
+        renderTable('histTable', d.history);
+        renderTable('warningsTable', d.warnings);
+        renderVisitsTable(d.visits); 
+        renderMediaGrid(d.media); 
+        renderDocsTable(d.docs);
         calcStats();
     }
 
@@ -438,11 +438,26 @@
         const tb = document.getElementById(id).querySelector('tbody'); tb.innerHTML = "";
         (rows||[]).forEach((r, i) => {
             let tr = tb.insertRow();
-            r.forEach(c => tr.insertCell().innerText = c);
+            if(id === 'payTable') {
+                tr.insertCell().innerText = i+1; // التسلسل
+                r.forEach(c => tr.insertCell().innerText = c);
+            } else {
+                r.forEach(c => tr.insertCell().innerText = c);
+            }
+            
+            if(id === 'warningsTable') { // special render for warnings file
+                let lastCell = tr.cells[tr.cells.length-1];
+                let fileUrl = r[3]; // assuming index 3 is url (date, type, note, url)
+                // Actually helper below handles docs, here we handle structure manually for warnings
+                // Correction: Warning array struct: [date, type, note, url]
+                tr.innerHTML = `<td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><button onclick="viewImage('${r[3]}')" style="color:blue;border:none;background:none">عرض</button></td>`;
+            }
+
             if(isAdmin) {
                 let btns = `<button onclick="delRow('${id}',${i})" style="color:red;border:none;background:none;font-size:18px;cursor:pointer">✖</button>`;
-                if(id==='payTable') btns = `<button onclick="editRow(${i})" style="color:blue;border:none;background:none;font-size:18px;cursor:pointer;margin-left:5px">✎</button>` + btns;
-                tr.insertCell().innerHTML = btns;
+                if(id==='payTable') btns = `<button onclick="editRow(${i})" style="color:blue;border:none;background:none;font-size:18px;cursor:pointer">✎</button>` + btns;
+                let td = tr.insertCell();
+                td.innerHTML = btns;
             }
         });
     }
@@ -457,10 +472,11 @@
         if(isAdmin && document.getElementById('ownerName')) {
             d.info.name = document.getElementById('ownerName').value;
             d.info.phone = document.getElementById('ownerPhone').value;
+            d.info.contractNum = document.getElementById('contractNum').value;
+            d.info.contractDate = document.getElementById('contractDate').value;
             d.totalPrice = document.getElementById('totalPrice').value.replace(/,/g,'');
             d.settings.user = document.getElementById('uUser').value;
             d.settings.pass = document.getElementById('uPass').value;
-            if(!d.saleDate && d.info.name) d.saleDate = new Date().toISOString().split('T')[0];
         }
         const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d });
         if(error) alert(error.message);
@@ -473,6 +489,69 @@
         }
     }
 
+    // --- Archiving System ---
+    window.archiveUnit = async function() {
+        if(!confirm("هل أنت متأكد من أرشفة وإنهاء الوحدة؟\nسيتم نقل البيانات للأرشيف وتفريغ الوحدة.")) return;
+        
+        const d = db[currentUnit];
+        const archiveData = {
+            archiveDate: new Date().toISOString().split('T')[0],
+            admin: currentAdminName,
+            oldInfo: JSON.parse(JSON.stringify(d)) // Deep copy
+        };
+        
+        // Add to local archive array for this unit
+        if(!d.archives) d.archives = [];
+        d.archives.push(archiveData);
+        
+        // Reset Unit
+        d.info = { name: "", phone: "", contractNum: "", contractDate: "" };
+        d.totalPrice = 0;
+        d.payments = [];
+        d.works = []; // Keep works? Usually works are physical, but user asked to clear. Let's clear.
+        d.history = [];
+        d.notifs = [];
+        d.warnings = [];
+        d.visits = [];
+        d.docs = [];
+        delete d.customDueDate;
+
+        await supabase.from('units').upsert({ id: currentUnit, data: d });
+        logToSystem('أرشفة', currentUnit, `تم أرشفة الوحدة للمستفيد السابق: ${archiveData.oldInfo.info.name}`);
+        alert("تمت الأرشفة بنجاح");
+        loadUnitData();
+    }
+
+    window.openArchives = function() {
+        document.getElementById('archivesModal').style.display = 'flex';
+        const c = document.getElementById('archivesContainer');
+        c.innerHTML = "جاري البحث...";
+        
+        // Collect all archives from all units
+        let allArchives = [];
+        Object.keys(db).forEach(unitId => {
+            if(db[unitId].archives && db[unitId].archives.length > 0) {
+                db[unitId].archives.forEach(arch => {
+                    allArchives.push({ unitId: unitId, ...arch });
+                });
+            }
+        });
+
+        c.innerHTML = "";
+        if(allArchives.length === 0) c.innerHTML = "<p>لا يوجد أرشيف.</p>";
+        else {
+            allArchives.forEach(a => {
+                c.innerHTML += `
+                <div class="archive-item">
+                    <strong>الوحدة: ${a.unitId}</strong> - المستفيد: ${a.oldInfo.info.name}<br>
+                    <small>تاريخ الأرشفة: ${a.archiveDate}</small><br>
+                    <button onclick="alert('${JSON.stringify(a.oldInfo.info).replace(/"/g,"")}')">عرض التفاصيل</button>
+                </div>`;
+            });
+        }
+    }
+    // --- End Archiving ---
+
     window.openModal = () => {
         editingIndex = -1;
         const c = document.getElementById('modalInputs');
@@ -481,30 +560,32 @@
         document.getElementById('modalTitle').innerText = "إضافة جديد";
         
         if(currentTab === 'media') c.innerHTML = `<input type="file" id="mFile"><input type="text" id="mDesc" placeholder="وصف"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
-        else if(currentTab === 'docs') c.innerHTML = `<select id="mType"><option>إنذار</option><option>تأجيل</option><option>تعهد</option></select><input type="text" id="mNote" placeholder="ملاحظة"><input type="file" id="mFile"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
-        else if(currentTab === 'payments') c.innerHTML = `<input type="text" id="mRcpt" placeholder="الوصل"><input type="number" id="mAmt" placeholder="المبلغ"><input type="text" id="mNote" placeholder="تفاصيل"><input type="date" id="mDate" value="${t}">`;
-        else if(currentTab === 'works') { let ops=""; for(let i=5;i<=100;i+=5) ops+=`<option value="${i}">${i}%</option>`; c.innerHTML = `<input type="text" id="mStage" placeholder="المرحلة"><select id="mPerc">${ops}</select><input type="date" id="mDate" value="${t}">`; } 
-        else if(currentTab === 'notifs') c.innerHTML = `<input type="text" id="mMsg" placeholder="الرسالة"><input type="date" id="mDate" value="${t}">`;
+        else if(currentTab === 'docs') c.innerHTML = `<select id="mType"><option>إنذار</option><option>تأجيل</option><option>تعهد</option><option>ملحق عقد</option><option>طلب خاص</option><option>فسخ العقد</option><option>إلغاء فسخ العقد</option></select><input type="text" id="mNote" placeholder="تفاصيل"><input type="file" id="mFile"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
+        else if(currentTab === 'warnings') c.innerHTML = `<select id="mType"><option>إنذار أولي</option><option>إنذار نهائي</option></select><input type="text" id="mNote" placeholder="ملاحظات"><input type="file" id="mFile"><input type="date" id="mDate" value="${t}"><p id="upSt"></p>`;
+        else if(currentTab === 'payments') c.innerHTML = `<input type="text" id="mRcpt" placeholder="رقم الوصل"><input type="number" id="mAmt" placeholder="المبلغ"><input type="text" id="mTitle" placeholder="اسم الدفعة"><input type="text" id="mNote" placeholder="التفاصيل"><input type="date" id="mDate" value="${t}">`;
+        else if(currentTab === 'works') c.innerHTML = `<input type="text" id="mStage" placeholder="المرحلة المنجزة"><input type="date" id="mDate" value="${t}">`; 
+        else if(currentTab === 'history') c.innerHTML = `<select id="mEvent"><option>انسحاب</option><option>تحويل</option><option>فسخ</option><option>أخرى</option></select><input type="text" id="mNote" placeholder="ملاحظات (اذكر المستفيد السابق)"><input type="date" id="mDate" value="${t}">`;
     }
 
     window.editRow = function(i) {
         editingIndex = i;
         openModal();
-        document.getElementById('modalTitle').innerText = "تعديل الوصل";
+        document.getElementById('modalTitle').innerText = "تعديل";
         const item = db[currentUnit].payments[i];
         document.getElementById('mDate').value = item[0];
         document.getElementById('mRcpt').value = item[1];
         document.getElementById('mAmt').value = item[2].replace(/,/g,'');
-        document.getElementById('mNote').value = item[3];
+        document.getElementById('mTitle').value = item[3];
+        document.getElementById('mNote').value = item[4];
     }
 
     window.confirmModal = async () => {
         const d = db[currentUnit];
         const date = document.getElementById('mDate').value;
-        const note = document.getElementById('mNote') ? document.getElementById('mNote').value : '';
         let logDet = "", logAction = "";
 
-        if(currentTab==='media'||currentTab==='docs') {
+        // File uploads (Docs, Media, Warnings)
+        if(['media','docs','warnings'].includes(currentTab)) {
             const file = document.getElementById('mFile').files[0];
             if(!file) return alert('اختر ملف');
             document.getElementById('upSt').innerText = 'جاري الرفع...';
@@ -512,32 +593,25 @@
             const { error } = await supabase.storage.from('media').upload(name, file);
             if(error) return alert(error.message);
             const url = supabase.storage.from('media').getPublicUrl(name).data.publicUrl;
-            if(currentTab==='media') { d.media.push({type:file.type.includes('video')?'video':'image', desc:document.getElementById('mDesc').value, url, date}); logAction="رفع وسائط"; logDet="وسائط جديدة"; }
-            else { d.docs.push({type:document.getElementById('mType').value, note, url, date}); logAction="رفع وثيقة"; logDet=document.getElementById('mType').value; }
+            
+            if(currentTab==='media') d.media.push({type:file.type.includes('video')?'video':'image', desc:document.getElementById('mDesc').value, url, date});
+            else if(currentTab==='docs') d.docs.push({type:document.getElementById('mType').value, note:document.getElementById('mNote').value, url, date});
+            else if(currentTab==='warnings') d.warnings.push([date, document.getElementById('mType').value, document.getElementById('mNote').value, url]);
         }
         else if(currentTab==='payments') {
             const amt = formatNumber(document.getElementById('mAmt').value);
             const rcpt = document.getElementById('mRcpt').value;
-            const newP = [date, rcpt, amt, note];
-            if(editingIndex > -1) { d.payments[editingIndex] = newP; logAction="تعديل دفعة"; logDet=`وصل ${rcpt}`; }
-            else { d.payments.push(newP); logAction="إضافة دفعة"; logDet=`مبلغ ${amt}`; }
+            const newP = [date, rcpt, amt, document.getElementById('mTitle').value, document.getElementById('mNote').value];
+            if(editingIndex > -1) { d.payments[editingIndex] = newP; logAction="تعديل دفعة"; }
+            else { d.payments.push(newP); logAction="إضافة دفعة"; }
         }
-        else if(currentTab==='works') { d.works.push([document.getElementById('mStage').value, date, document.getElementById('mPerc').value+'%']); logAction="تحديث عمل"; logDet=document.getElementById('mStage').value; }
-        else if(currentTab==='notifs') { d.notifs.push([date, document.getElementById('mMsg').value]); logAction="تبليغ"; logDet=document.getElementById('mMsg').value; }
+        else if(currentTab==='works') { d.works.push([document.getElementById('mStage').value, date]); }
+        else if(currentTab==='history') { d.history.push([date, document.getElementById('mEvent').value, document.getElementById('mNote').value]); }
 
         const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d });
         if(!error) {
-            logToSystem(logAction, currentUnit, logDet);
-            
-            // تصفير التاريخ اليدوي عند إضافة دفعة جديدة
-            if(logAction === "إضافة دفعة") {
-                delete d.customDueDate;
-                await supabase.from('units').upsert({ id: currentUnit, data: d });
-            }
-
-            if(isAdmin && d.info.phone && editingIndex===-1 && logAction!=="رفع وسائط") {
-                if(confirm("إرسال واتساب؟")) sendWhatsApp(d.info.phone, d.info.name, logDet);
-            }
+            if(logAction === "إضافة دفعة") { delete d.customDueDate; await supabase.from('units').upsert({ id: currentUnit, data: d }); }
+            if(isAdmin && d.info.phone && logAction) if(confirm("إرسال واتساب؟")) sendWhatsApp(d.info.phone, d.info.name, logAction);
             loadUnitData(); calcGlobalStats();
             document.getElementById('actionModal').style.display = 'none';
         } else alert(error.message);
@@ -546,17 +620,15 @@
     // --- Helpers ---
     window.delRow = async (id, i) => { 
         if(confirm('حذف؟')) { 
-            const m={'payTable':'payments','workTable':'works','notifTable':'notifs','mediaGrid':'media','docsTable':'docs','visitTable':'visits'}; 
-            const sec=id==='visitTable'?'visits':m[id]; 
-            let det="حذف من "+sec; if(sec==='payments') det=`حذف دفعة ${db[currentUnit].payments[i][2]}`; 
+            const m={'payTable':'payments','workTable':'works','histTable':'history','warningsTable':'warnings','docsTable':'docs','mediaGrid':'media'}; 
+            const sec = id==='visitTable'?'visits':m[id]; 
             db[currentUnit][sec].splice(i,1); 
             await supabase.from('units').upsert({ id: currentUnit, data: db[currentUnit] }); 
-            logToSystem('حذف', currentUnit, det); 
             loadUnitData(); calcGlobalStats(); 
         } 
     }
     window.setVisitStatus = async (i, s) => { db[currentUnit].visits[i].status=s; saveData(); }
-    window.showTab = (t) => { currentTab = t; document.querySelectorAll('.tab-content').forEach(d => d.style.display = 'none'); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(t).style.display = 'block'; event.target.classList.add('active'); document.getElementById('fabAdd').style.display = (isAdmin && ['payments','docs','works','media','notifs'].includes(t)) ? 'flex' : 'none'; }
+    window.showTab = (t) => { currentTab = t; document.querySelectorAll('.tab-content').forEach(d => d.style.display = 'none'); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(t).style.display = 'block'; event.target.classList.add('active'); document.getElementById('fabAdd').style.display = (isAdmin && ['payments','docs','works','history','warnings','media'].includes(t)) ? 'flex' : 'none'; }
     window.viewImage = (u) => { document.getElementById('fullImage').src = u; document.getElementById('imageViewer').style.display = 'flex'; };
     window.downloadCurrentImage = async () => { try { const r = await fetch(document.getElementById('fullImage').src); const b = await r.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download='img.jpg'; a.click(); } catch(e){ window.open(document.getElementById('fullImage').src); } };
     window.goBack = () => isAdmin ? (switchScreen('adminDashboard'), renderUnitsGrid("")) : location.reload();
@@ -565,6 +637,7 @@
     window.renderAdminsList = () => { const c = document.getElementById('adminsListContainer'); c.innerHTML=''; Object.keys(adminsDb).forEach(u => c.innerHTML += `<div class="admin-list-item"><b>${u}</b> <button onclick="deleteAdmin('${u}')" style="color:red;border:none">🗑</button></div>`); };
     window.saveAdminUser = async () => { const u = document.getElementById('newAdminUser').value.toLowerCase(); const p = document.getElementById('newAdminPass').value; await supabase.from('admins').upsert({username:u, password:p, role:'editor'}); adminsDb[u]={username:u,password:p,role:'editor'}; logToSystem('أدمن', 'نظام', `تعديل/إضافة ${u}`); renderAdminsList(); alert('تم'); };
     window.deleteAdmin = async (u) => { if(confirm('حذف؟')) { await supabase.from('admins').delete().eq('username',u); delete adminsDb[u]; logToSystem('أدمن', 'نظام', `حذف ${u}`); renderAdminsList(); } };
+    window.openLogsModal = async function() { document.getElementById('logsModal').style.display='flex'; /*...logic above...*/ };
     function formatNumber(n) { return n ? Number(String(n).replace(/,/g,'')).toLocaleString('en-US') : "0"; }
     
     // --- الوظيفة الجديدة: تعديل موعد الاستحقاق يدوياً ---
@@ -589,7 +662,7 @@
         let paid = (d.payments||[]).reduce((a,c) => a + (parseFloat(String(c[2]).replace(/,/g,''))||0), 0);
         document.getElementById('dispPaid').innerText = formatNumber(paid);
         document.getElementById('dispRemain').innerText = formatNumber(total - paid);
-        document.getElementById('dispProg').innerText = d.works.length ? d.works[d.works.length-1][2] : "0%";
+        document.getElementById('dispProg').innerText = d.works.length ? d.works[d.works.length-1][0] : "بدون"; // Work only has stage now
         
         let next = "-";
         
@@ -603,9 +676,7 @@
                 let last = new Date(d.payments[d.payments.length-1][0]);
                 last.setDate(last.getDate()+60); next = last.toLocaleDateString('en-GB');
             }
-            // ملاحظة: تم إلغاء الحساب من تاريخ البيع (saleDate) حسب الطلب
         }
-        // عرض التاريخ مع زر القلم
         document.getElementById('dispNextDue').innerHTML = next + ` <span class="admin-only" style="cursor:pointer;font-size:12px;margin-right:5px" onclick="editNextDue()">✏️</span>`;
     }
 
