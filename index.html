@@ -6,179 +6,472 @@
 <title>نظام إدارة الوحدات السكنية</title>
 
 <style>
-body{
-  margin:0;
-  font-family:Tahoma, Arial, sans-serif;
-  background:#f5f5f5;
+:root{
+  --blue:#1e88e5;--blue-100:#e3f2fd;--bg:#f4f6f8;--card:#fff;--border:#dfe3e8;
+  --late:#fb8c00;--warn:#f44336;--cancel:#8e24aa
 }
+*{box-sizing:border-box}
+body{margin:0;font-family:Tahoma,Arial,sans-serif;background:var(--bg);color:#222}
 .hide{display:none}
-header{
-  background:#2e7d32;
-  color:#fff;
-  padding:12px;
-  font-size:18px;
-}
-button{
-  background:#2e7d32;
-  color:#fff;
-  border:none;
-  padding:8px 12px;
-  cursor:pointer;
-}
-input,textarea{
-  width:100%;
-  padding:6px;
-  margin-top:4px;
-}
-.card{
-  background:#fff;
-  margin:10px;
-  padding:12px;
-  border:1px solid #ddd;
-}
-.units{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(90px,1fr));
-  gap:8px;
-  padding:10px;
-}
-.unit{
-  background:#fff;
-  border:1px solid #ccc;
-  padding:10px;
-  text-align:center;
-  cursor:pointer;
-}
-.unit.sold{
-  background:#e8f5e9;
-  border-color:#2e7d32;
-}
-.tabs{
-  display:flex;
-  gap:6px;
-  margin:10px;
-}
-.tab{
-  padding:6px 10px;
-  border:1px solid #ccc;
-  cursor:pointer;
-}
-.tab.active{
-  background:#2e7d32;
-  color:#fff;
-}
+header{background:var(--blue);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+.sidebar{position:fixed;right:0;top:52px;bottom:0;width:220px;background:#fff;border-left:1px solid var(--border);padding:10px;overflow:auto}
+.sidebar button{width:100%;margin-bottom:8px;border:1px solid var(--border);background:#fff;padding:10px;border-radius:10px;cursor:pointer;text-align:right}
+.sidebar button.active{background:var(--blue-100);border-color:var(--blue);color:var(--blue)}
+main{margin-right:240px;padding:12px}
+.card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.units{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px}
+.unit{background:#fff;border-radius:12px;padding:14px 8px;text-align:center;border:2px solid transparent;cursor:pointer;font-weight:bold}
+.unit.sold{background:var(--blue-100);border-color:var(--blue)}
+.unit.late{background:#fff3e0;border-color:var(--late)}
+.unit.warn{background:#ffebee;border-color:var(--warn)}
+.unit.cancel{background:#f3e5f5;border-color:var(--cancel)}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;margin-right:6px;background:#fff}
+.tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:8px}
+.tab{padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:#fff;cursor:pointer;white-space:nowrap}
+.tab.active{background:var(--blue);color:#fff}
+input,textarea,select{width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;margin-top:6px}
+button.primary{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
+button.ghost{background:#fff;color:#222;border:1px solid var(--border)}
+.readonly input,.readonly textarea,.readonly select{background:#eee}
+.file-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:10px}
+.file-row a{text-decoration:none;color:var(--blue);word-break:break-all}
+.hr{height:1px;background:var(--border);margin:10px 0}
+.small{font-size:12px;color:#666}
 </style>
 </head>
 
 <body>
-
-<header>إدارة الوحدات السكنية</header>
+<header>
+  <b>إدارة الوحدات السكنية</b>
+  <span id="roleLabel"></span>
+</header>
 
 <div id="login" class="card">
   <input id="email" placeholder="الايميل">
   <input id="password" type="password" placeholder="كلمة المرور">
-  <button onclick="login()">دخول</button>
+  <button class="primary" onclick="login()">دخول</button>
 </div>
 
-<div id="main" class="hide">
-
-  <div id="unitsView">
-    <div class="units" id="unitsGrid"></div>
+<div id="app" class="hide">
+  <div class="sidebar">
+    <button id="btnAll" class="active" onclick="setPage('units'); setView('all')">الرئيسية</button>
+    <button onclick="setPage('units'); setView('late')">المتأخرين</button>
+    <button onclick="setPage('units'); setView('warn')">الإنذارات</button>
+    <button onclick="setPage('units'); setView('cancel')">الفسخ</button>
+    <button onclick="setPage('units'); setView('archive')">الأرشيف</button>
+    <button id="btnLogs" class="adminOnly" onclick="setPage('logs')">السجل</button>
   </div>
 
-  <div id="unitView" class="hide">
+  <main>
+    <!-- Units page -->
+    <div id="pageUnits">
+      <div class="card">
+        <div class="tabs" id="catTabs">
+          <div class="tab active" data-cat="ALL">الكل</div>
+          <div class="tab" data-cat="A">A <span class="badge" id="cntA">0</span></div>
+          <div class="tab" data-cat="B">B <span class="badge" id="cntB">0</span></div>
+          <div class="tab" data-cat="C">C <span class="badge" id="cntC">0</span></div>
+          <div class="tab" data-cat="D">D <span class="badge" id="cntD">0</span></div>
+        </div>
+        <div class="small">المبيوع = الاسم موجود | التصنيف حسب آخر دفعة: متأخر/إنذار/فسخ</div>
+      </div>
 
-    <div class="tabs">
-      <div class="tab active" data-tab="info">المعلومات</div>
-      <div class="tab" data-tab="finance">المالية</div>
-      <div class="tab" data-tab="media">الوسائط</div>
+      <div id="unitsView" class="card">
+        <div class="units" id="unitsGrid"></div>
+      </div>
+
+      <div id="unitView" class="hide">
+        <div class="tabs">
+          <div class="tab active" data-tab="info">المعلومات</div>
+          <div class="tab" data-tab="finance">المالية</div>
+          <div class="tab" data-tab="media">الوسائط</div>
+          <div class="tab adminOnly" data-tab="docs">الوثائق</div>
+          <div class="tab adminOnly" data-tab="warnings">الإنذارات</div>
+        </div>
+
+        <div id="info" class="card tabContent"></div>
+        <div id="finance" class="card tabContent hide"></div>
+        <div id="media" class="card tabContent hide"></div>
+        <div id="docs" class="card tabContent hide"></div>
+        <div id="warnings" class="card tabContent hide"></div>
+
+        <button onclick="back()">⬅ رجوع</button>
+      </div>
     </div>
 
-    <div id="info" class="card tabContent"></div>
-    <div id="finance" class="card tabContent hide"></div>
-    <div id="media" class="card tabContent hide"></div>
+    <!-- Logs page -->
+    <div id="pageLogs" class="hide">
+      <div class="card">
+        <b>السجل (audit_logs)</b>
+        <div class="small">إذا الجدول/السياسات مو موجودة، راح يطلع تنبيه هنا.</div>
+        <div class="hr"></div>
+        <button class="primary" onclick="loadLogs()">تحديث السجل</button>
+      </div>
+      <div id="logsBox" class="card"></div>
+    </div>
 
-    <button onclick="back()">رجوع</button>
-  </div>
+  </main>
 </div>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const supabase = createClient(
-  "https://csaqawviitdrjzeasmne.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ"
+ "https://csaqawviitdrjzeasmne.supabase.co",
+ "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ"
 );
 
-let currentUnit=null;
+const MEDIA_BUCKET="unit-media";
+const DOCS_BUCKET="unit-docs";
+const WARN_BUCKET="unit-warnings";
 
-window.login = async ()=>{
-  const {error}=await supabase.auth.signInWithPassword({
-    email:email.value,
-    password:password.value
-  });
-  if(error) alert(error.message);
-  else init();
+let role="user", units=[], currentUnit=null, viewMode="all", catMode="ALL";
+
+window.login=async()=>{
+ const {error}=await supabase.auth.signInWithPassword({email:email.value,password:password.value});
+ if(error) alert(error.message); else init();
 };
 
 async function init(){
-  login.classList.add("hide");
-  main.classList.remove("hide");
-  loadUnits();
+ const {data:{user}}=await supabase.auth.getUser();
+ if(!user) return;
+
+ const {data:profile}=await supabase.from("profiles").select("role").eq("id",user.id).single();
+ role=profile?.role||"user";
+ roleLabel.innerText="الدور: "+role;
+
+ login.classList.add("hide");
+ app.classList.remove("hide");
+
+ if(role==="user") document.querySelectorAll(".adminOnly").forEach(e=>e.remove());
+
+ hookCatTabs();
+ await loadUnits();
 }
 
-function isSold(u){
-  return u?.data?.info?.name && u.data.info.name.trim()!=="";
+function hookCatTabs(){
+ document.querySelectorAll('#catTabs .tab').forEach(t=>{
+   t.onclick=()=>{
+     document.querySelectorAll('#catTabs .tab').forEach(x=>x.classList.remove('active'));
+     t.classList.add('active');
+     catMode=t.dataset.cat;
+     renderUnits();
+   };
+ });
 }
 
+/* Helpers */
+function isSold(u){return u?.data?.info?.name && u.data.info.name.trim()!=="";}
+function isArchived(u){
+  return u?.data?.settings?.archived === true || u?.data?.archived === true;
+}
+function calcStatus(u){
+ const pays=u.data?.finance?.payments||[];
+ if(pays.length===0) return "cancel";
+ const last=new Date(pays[pays.length-1].date);
+ const diff=(Date.now()-last.getTime())/86400000;
+ if(diff>=90) return "cancel";
+ if(diff>=70) return "warn";
+ if(diff>60) return "late";
+ return "normal";
+}
+function unitCategory(id){
+  // A1 -> A
+  return (id||"").trim().charAt(0).toUpperCase();
+}
+function fmtDate(ts){
+  try{
+    const d=new Date(ts);
+    return d.toLocaleString('ar-IQ');
+  }catch(e){return ts||"";}
+}
+
+/* Audit logging (best effort) */
+async function writeLog(action, unit_id=null, details=null){
+  try{
+    await supabase.from("audit_logs").insert([{
+      action,
+      unit_id,
+      details: details ? JSON.stringify(details) : null
+    }]);
+  }catch(e){
+    // ignore (table/policy may not exist)
+  }
+}
+
+/* Pages */
+window.setPage=(p)=>{
+  if(p==='logs'){
+    pageUnits.classList.add('hide');
+    pageLogs.classList.remove('hide');
+    loadLogs();
+    return;
+  }
+  pageLogs.classList.add('hide');
+  pageUnits.classList.remove('hide');
+};
+window.setView=(v)=>{viewMode=v;renderUnits();};
+
+/* Units load */
 async function loadUnits(){
-  const {data}=await supabase.from("units").select("id,data");
-  unitsGrid.innerHTML="";
-  data.forEach(u=>{
-    const d=document.createElement("div");
-    d.className="unit"+(isSold(u)?" sold":"");
-    d.innerText=u.id;
-    d.onclick=()=>openUnit(u);
-    unitsGrid.appendChild(d);
-  });
+ const {data, error}=await supabase.from("units").select("id,data");
+ if(error){alert(error.message); return;}
+ units=data||[];
+
+ // update counts
+ const c={A:0,B:0,C:0,D:0};
+ units.forEach(u=>{
+   const k=unitCategory(u.id);
+   if(c[k]!==undefined) c[k]+=1;
+ });
+ cntA.innerText=c.A; cntB.innerText=c.B; cntC.innerText=c.C; cntD.innerText=c.D;
+
+ renderUnits();
 }
 
-function openUnit(u){
-  currentUnit=u;
-  unitsView.classList.add("hide");
-  unitView.classList.remove("hide");
+function renderUnits(){
+ unitsGrid.innerHTML="";
 
-  info.innerHTML=`
-    <b>اسم المستفيد</b>
-    <input id="name" value="${u.data?.info?.name||""}">
-    <button onclick="save()">حفظ</button>
-  `;
+ // Sidebar active mark
+ document.querySelectorAll('.sidebar button').forEach(b=>b.classList.remove('active'));
+ if(viewMode==='all') btnAll.classList.add('active');
 
-  finance.innerHTML="<pre>"+JSON.stringify(u.data?.finance||{},null,2)+"</pre>";
-  media.innerHTML="قسم الوسائط";
+ units.forEach(u=>{
+   // category filter
+   if(catMode!=="ALL" && unitCategory(u.id)!==catMode) return;
+
+   // archive filter
+   if(viewMode==="archive" && !isArchived(u)) return;
+   if(viewMode!=="all" && viewMode!=="archive"){
+     const st=calcStatus(u);
+     if(st!==viewMode) return;
+   }
+
+   const st=calcStatus(u);
+   const d=document.createElement("div");
+   let cls="unit";
+   if(isSold(u)) cls+=" sold";
+   if(st==="late") cls+=" late";
+   if(st==="warn") cls+=" warn";
+   if(st==="cancel") cls+=" cancel";
+   d.className=cls;
+   d.innerText=u.id;
+   d.onclick=()=>openUnit(u);
+   unitsGrid.appendChild(d);
+ });
 }
 
-window.save = async ()=>{
-  const data=currentUnit.data||{};
-  data.info={name:name.value};
-  await supabase.from("units").update({data}).eq("id",currentUnit.id);
-  alert("تم الحفظ");
+/* Unit open */
+async function openUnit(u){
+ currentUnit=u;
+ unitsView.classList.add("hide");
+ unitView.classList.remove("hide");
+
+ const archived=isArchived(u);
+
+ info.innerHTML=`
+ <b>الوحدة: ${u.id}</b>
+ <div class="hr"></div>
+ <label>اسم المستفيد</label>
+ <input id="name" value="${u.data?.info?.name||""}">
+ <label>الهاتف</label>
+ <input id="phone" value="${u.data?.info?.phone||""}">
+ ${role!=="user"?`
+   <button class="primary" onclick="saveInfo()">حفظ</button>
+   <button class="ghost" onclick="toggleArchive()">${archived ? "إلغاء أرشفة" : "أرشفة الوحدة"}</button>
+ `:""}
+ `;
+
+ finance.innerHTML=`
+ <label>الدفعات (JSON)</label>
+ <textarea id="payments" rows="6">${JSON.stringify(u.data?.finance?.payments||[],null,2)}</textarea>
+ <div class="small">آخر دفعة لازم تحتوي date بصيغة YYYY-MM-DD مثل: 2025-01-01</div>
+ ${role!=="user"?'<button class="primary" onclick="saveFinance()">حفظ</button>':""}
+ `;
+
+ await loadMedia();
+ if(role!=="user"){
+   await loadDocs();
+   await loadWarnings();
+ }
+
+ if(role==="user") unitView.classList.add("readonly");
+ else unitView.classList.remove("readonly");
+}
+
+window.saveInfo=async()=>{
+ const data=currentUnit.data||{};
+ data.info={name:name.value,phone:phone.value};
+ const {error}=await supabase.from("units").update({data}).eq("id",currentUnit.id);
+ if(error) return alert(error.message);
+ await writeLog("update_info", currentUnit.id, {name:data.info.name, phone:data.info.phone});
+ alert("تم حفظ المعلومات");
+ await loadUnits();
 };
 
-window.back = ()=>{
-  unitView.classList.add("hide");
-  unitsView.classList.remove("hide");
+window.saveFinance=async()=>{
+ const data=currentUnit.data||{};
+ try{data.finance={payments:JSON.parse(payments.value)}}catch(e){return alert("JSON غير صحيح")}
+ const {error}=await supabase.from("units").update({data}).eq("id",currentUnit.id);
+ if(error) return alert(error.message);
+ await writeLog("update_finance", currentUnit.id, {count:(data.finance.payments||[]).length});
+ alert("تم حفظ المالية");
+ await loadUnits();
 };
 
+/* Archive toggle */
+window.toggleArchive=async()=>{
+ const data=currentUnit.data||{};
+ data.settings=data.settings||{};
+ data.settings.archived = !(data.settings.archived===true);
+ const {error}=await supabase.from("units").update({data}).eq("id",currentUnit.id);
+ if(error) return alert(error.message);
+ await writeLog(data.settings.archived ? "archive_unit" : "unarchive_unit", currentUnit.id, null);
+ alert(data.settings.archived ? "تمت الأرشفة" : "تم إلغاء الأرشفة");
+ // update currentUnit locally
+ currentUnit.data=data;
+ await loadUnits();
+ // refresh info tab button label
+ await openUnit(currentUnit);
+};
+
+/* Media */
+async function loadMedia(){
+ let html="";
+ if(role!=="user"){
+   html+=`<input type="file" id="fileMedia"><button class="primary" onclick="uploadMedia()">رفع</button><div class="hr"></div>`;
+ }
+ const {data:files}=await supabase.storage.from(MEDIA_BUCKET).list(currentUnit.id);
+ html+=`<div>`;
+ for(const f of files||[]){
+   const {data:url}=await supabase.storage.from(MEDIA_BUCKET)
+     .createSignedUrl(currentUnit.id+"/"+f.name,600);
+   html+=`<div class="file-row"><a href="${url.signedUrl}" target="_blank">${f.name}</a></div>`;
+ }
+ html+=`</div>`;
+ media.innerHTML=html;
+}
+window.uploadMedia=async()=>{
+ const file=document.getElementById("fileMedia").files[0];
+ if(!file) return;
+ const path=currentUnit.id+"/"+Date.now()+"_"+file.name;
+ const {error}=await supabase.storage.from(MEDIA_BUCKET).upload(path,file);
+ if(error) return alert(error.message);
+ await writeLog("upload_media", currentUnit.id, {name:file.name});
+ await loadMedia();
+};
+
+/* Documents (Admin) */
+async function loadDocs(){
+ let html=`
+ <select id="docType">
+   <option>انذار</option><option>ملحق عقد</option><option>تأجيل</option>
+   <option>تعهد</option><option>طلب خاص</option><option>فسخ عقد</option><option>الغاء فسخ</option>
+ </select>
+ <input type="file" id="docFile">
+ <button class="primary" onclick="uploadDoc()">رفع</button>
+ <div class="hr"></div>
+ `;
+ const {data:files}=await supabase.storage.from(DOCS_BUCKET).list(currentUnit.id);
+ html+=`<div>`;
+ for(const f of files||[]){
+   const {data:url}=await supabase.storage.from(DOCS_BUCKET)
+     .createSignedUrl(currentUnit.id+"/"+f.name,600);
+   html+=`<div class="file-row"><a href="${url.signedUrl}" target="_blank">${f.name}</a></div>`;
+ }
+ html+=`</div>`;
+ docs.innerHTML=html;
+}
+window.uploadDoc=async()=>{
+ const file=document.getElementById("docFile").files[0];
+ const type=document.getElementById("docType").value;
+ if(!file) return;
+ const path=currentUnit.id+"/"+type+"_"+Date.now()+"_"+file.name;
+ const {error}=await supabase.storage.from(DOCS_BUCKET).upload(path,file);
+ if(error) return alert(error.message);
+ await writeLog("upload_doc", currentUnit.id, {type, name:file.name});
+ await loadDocs();
+};
+
+/* Warnings (Admin) */
+async function loadWarnings(){
+ let html=`
+ <select id="warnType">
+   <option>انذار اولي</option><option>انذار نهائي</option>
+ </select>
+ <input type="file" id="warnFile">
+ <button class="primary" onclick="uploadWarn()">رفع</button>
+ <div class="hr"></div>
+ `;
+ const {data:files}=await supabase.storage.from(WARN_BUCKET).list(currentUnit.id);
+ html+=`<div>`;
+ for(const f of files||[]){
+   const {data:url}=await supabase.storage.from(WARN_BUCKET)
+     .createSignedUrl(currentUnit.id+"/"+f.name,600);
+   html+=`<div class="file-row"><a href="${url.signedUrl}" target="_blank">${f.name}</a></div>`;
+ }
+ html+=`</div>`;
+ warnings.innerHTML=html;
+}
+window.uploadWarn=async()=>{
+ const file=document.getElementById("warnFile").files[0];
+ const type=document.getElementById("warnType").value;
+ if(!file) return;
+ const path=currentUnit.id+"/"+type+"_"+Date.now()+"_"+file.name;
+ const {error}=await supabase.storage.from(WARN_BUCKET).upload(path,file);
+ if(error) return alert(error.message);
+ await writeLog("upload_warning", currentUnit.id, {type, name:file.name});
+ await loadWarnings();
+};
+
+/* Logs */
+window.loadLogs=async()=>{
+ logsBox.innerHTML="جاري التحميل...";
+ const {data, error}=await supabase
+   .from("audit_logs")
+   .select("id,created_at,action,unit_id,details")
+   .order("created_at",{ascending:false})
+   .limit(200);
+ if(error){
+   logsBox.innerHTML = `
+     <b>ما كدرنا نقرأ السجل.</b>
+     <div class="small">${error.message}</div>
+     <div class="hr"></div>
+     <div class="small">لازم تسوي جدول audit_logs وسياسة قراءة للأدمن.</div>
+   `;
+   return;
+ }
+ if(!data || data.length===0){
+   logsBox.innerHTML="<div class='small'>ماكو سجلات بعد.</div>";
+   return;
+ }
+ let h="<div>";
+ data.forEach(r=>{
+   h+=`
+   <div class="card" style="margin:0 0 10px 0">
+     <b>${r.action}</b>
+     <div class="small">الوحدة: ${r.unit_id||"-"} | ${fmtDate(r.created_at)}</div>
+     <div class="small">${r.details||""}</div>
+   </div>`;
+ });
+ h+="</div>";
+ logsBox.innerHTML=h;
+};
+
+/* Nav */
+window.back=()=>{unitView.classList.add("hide");unitsView.classList.remove("hide");};
+
+/* Tabs inside unit */
 document.querySelectorAll(".tab").forEach(t=>{
-  t.onclick=()=>{
-    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-    document.querySelectorAll(".tabContent").forEach(c=>c.classList.add("hide"));
-    t.classList.add("active");
-    document.getElementById(t.dataset.tab).classList.remove("hide");
-  };
+ t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".tabContent").forEach(c=>c.classList.add("hide"));
+  t.classList.add("active");
+  document.getElementById(t.dataset.tab).classList.remove("hide");
+ };
 });
 
+init();
 </script>
 </body>
 </html>
