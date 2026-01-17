@@ -1,961 +1,1284 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إدارة مدينة الأزهر - النظام الشامل</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#004d40">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>مدينة الأزهر - النظام الشامل</title>
+  <meta name="theme-color" content="#004d40" />
+  <style>
+    :root{--p:#004d40;--a:#00bfa5;--bg:#f5f7fa;--w:#fff;--d:#d32f2f;--muted:#6b7280;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:#111827;-webkit-tap-highlight-color:transparent}
+    button,input,select,textarea{font-family:inherit;font-size:16px}
+    .wrap{max-width:1100px;margin:0 auto;padding:14px}
 
-    <style>
-        :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --white: #ffffff; --sold-bg: #e0f2f1; --sold-border: #00bfa5; --danger: #d32f2f; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; -webkit-tap-highlight-color: transparent; }
-        * { box-sizing: border-box; }
-        button, input, select, textarea { font-size: 16px; outline: none; font-family: inherit; }
-        .container { max-width: 100%; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
-        
-        /* شاشة التحميل */
-        #loadingScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; transition: opacity 0.5s; }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    /* Loading */
+    #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(255,255,255,.96);z-index:9999}
+    .spinner{width:44px;height:44px;border:4px solid #e5e7eb;border-top-color:var(--p);border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
 
-        /* عارض الصور المكبر مع زر التنزيل */
-        #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
-        #fullImage { max-width: 95%; max-height: 80vh; border-radius: 5px; box-shadow: 0 0 20px rgba(255,255,255,0.1); object-fit: contain; }
-        
-        /* أزرار العارض */
-        .viewer-btn { position: absolute; top: 20px; color: white; font-size: 24px; cursor: pointer; background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10001; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.3); transition: 0.2s; }
-        .viewer-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
-        .close-viewer { right: 20px; }
-        .download-btn { left: 20px; }
+    /* Cards */
+    .card{background:var(--w);border:1px solid #eee;border-radius:16px;padding:14px;box-shadow:0 2px 10px rgba(0,0,0,.04);margin:10px 0}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row > *{flex:1}
+    .muted{color:var(--muted);font-size:13px;line-height:1.6}
 
-        /* تسجيل الدخول */
-        #loginScreen { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(135deg, var(--primary), #00251a); color: white; text-align: center; min-height: 100vh; }
-        .login-box { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
-        .login-input { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; background: rgba(255,255,255,0.9); color: #333; font-weight: bold; }
-        .login-btn { width: 100%; padding: 15px; background: var(--accent); color: var(--primary); font-weight: 900; border: none; border-radius: 12px; margin-top: 10px; cursor: pointer; }
-        
-        /* لوحة التحكم */
-        #adminDashboard { display: none; padding: 20px; }
-        .top-bar { position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 10px 0; display: flex; gap: 10px; flex-direction: column; }
-        .search-input { width: 100%; padding: 15px; border-radius: 50px; border: 1px solid #ddd; font-size: 16px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .super-admin-btn { background: #333; color: var(--accent); border: 1px solid var(--accent); padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: none; }
-        
-        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding-bottom: 80px; margin-top: 10px; }
-        .unit-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; position: relative; }
-        .unit-card.sold { border-color: var(--sold-border); background: var(--sold-bg); }
-        .unit-card h3 { margin: 0; color: var(--primary); font-size: 18px; }
-        .unit-card small { color: #888; font-size: 11px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .notify-dot { position: absolute; top: -5px; right: -5px; width: 15px; height: 15px; background: red; border-radius: 50%; border: 2px solid white; display: none; }
-        .has-request .notify-dot { display: block; }
+    /* Buttons */
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-weight:900;cursor:pointer}
+    .btn.primary{background:var(--p);color:#fff}
+    .btn.gray{background:#eee;color:#111}
+    .btn.danger{background:var(--d);color:#fff}
+    .btn.small{padding:8px 10px;border-radius:12px;font-weight:800}
 
-        /* واجهة الوحدة */
-        #unitInterface { display: none; background: white; min-height: 100vh; padding-bottom: 80px; }
-        .unit-header { background: var(--primary); color: white; padding: 20px; border-radius: 0 0 25px 25px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
-        
-        .stats-scroll { display: flex; overflow-x: auto; gap: 15px; padding: 0 20px 20px; scrollbar-width: none; }
-        .stat-card { min-width: 150px; padding: 15px; border-radius: 15px; color: white; flex-shrink: 0; }
-        .bg-1 { background: linear-gradient(45deg, #FF9800, #F57C00); }
-        .bg-2 { background: linear-gradient(45deg, #2196F3, #1976D2); }
-        .bg-3 { background: linear-gradient(45deg, #4CAF50, #388E3C); }
+    /* Top bar */
+    .topbar{position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:50}
+    .toprow{display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid #ddd;background:#fff;font-weight:900;color:var(--p)}
+    .menuBtn{width:46px;height:46px;border-radius:14px;border:1px solid #ddd;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.05);cursor:pointer;font-size:22px}
 
-        .tabs-nav { display: flex; overflow-x: auto; padding: 0 10px; gap: 10px; border-bottom: 1px solid #eee; margin-bottom: 15px; scrollbar-width: none; }
-        .tab-btn { padding: 10px 15px; background: none; border: none; white-space: nowrap; color: #666; font-weight: bold; border-bottom: 3px solid transparent; font-size: 14px; }
-        .tab-btn.active { color: var(--primary); border-bottom-color: var(--accent); }
-        .tab-content { display: none; padding: 0 20px; animation: fadeIn 0.3s; }
-        
-        .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: #444; }
+    /* Drawer */
+    #overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:200}
+    #drawer{position:absolute;top:0;right:0;height:100%;width:min(86vw,360px);background:#fff;border-radius:0 0 0 22px;box-shadow:-10px 0 30px rgba(0,0,0,.12);padding:16px}
+    .drawerHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    .drawerTitle{font-weight:1000;color:var(--p)}
+    .drawerClose{width:42px;height:42px;border-radius:14px;border:1px solid #ddd;background:#f3f4f6;cursor:pointer;font-size:18px}
+    .drawerList{display:flex;flex-direction:column;gap:8px}
+    .drawerItem{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-radius:16px;border:1px solid #eee;background:#fff;cursor:pointer;font-weight:900}
+    .drawerItem.active{border-color:var(--a);background:#e0f2f1}
+    .badge{min-width:26px;height:22px;padding:0 8px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:1000;background:#f3f4f6}
+    .badge.blue{background:#e3f2fd;color:#1565c0}
+    .badge.orange{background:#fff3e0;color:#ef6c00}
+    .badge.red{background:#ffebee;color:#c62828}
 
-        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; }
-        .st-pending { background: #fff3cd; color: #856404; }
-        .st-approved { background: #d4edda; color: #155724; }
-        .st-rejected { background: #f8d7da; color: #721c24; }
-        .visit-action-btn { border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin: 0 2px; }
-        .btn-approve { background: #28a745; color: white; }
-        .btn-reject { background: #dc3545; color: white; }
+    /* Login */
+    #login{min-height:100vh;display:none;align-items:center;justify-content:center;padding:18px;background:linear-gradient(135deg,var(--p),#00251a)}
+    .loginBox{width:min(520px,100%);background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px);border-radius:20px;padding:22px;color:#fff}
+    .loginBox input{width:100%;padding:14px;border:none;border-radius:12px;margin:8px 0}
 
-        .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .media-item { 
-            background: #fff; border-radius: 10px; height: 160px; 
-            display: flex; align-items: center; justify-content: center; 
-            position: relative; overflow: hidden; border: 1px solid #ddd;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .media-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: 0.3s; }
-        .media-item img:active { transform: scale(0.95); }
-        
-        .fab-add { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; display: none; align-items: center; justify-content: center; }
-        
-        label { font-size: 13px; color: #666; font-weight: bold; margin-top: 10px; display: block; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: #fff; }
+    /* Panels */
+    .panel{display:none}
+    .panel.active{display:block}
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px); }
-        .modal-sheet { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 25px; animation: slideUp 0.3s; }
-        .modal-btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-confirm { flex: 2; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; }
-        .btn-cancel { flex: 1; padding: 12px; background: #eee; color: #333; border: none; border-radius: 10px; font-weight: bold; }
+    /* Category tabs */
+    .catTabs{display:flex;gap:8px;overflow:auto;padding:6px 0}
+    .catBtn{border:1px solid #ddd;background:#fff;border-radius:999px;padding:10px 14px;font-weight:900;cursor:pointer;white-space:nowrap}
+    .catBtn.active{border-color:var(--a);background:#e0f2f1}
 
-        /* Manage Admins Modal */
-        #adminsModal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:150; padding:20px; overflow-y:auto; }
-        .admin-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
-        .admin-badge { background: #333; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+    /* Units grid */
+    .search{width:100%;padding:14px;border:1px solid #ddd;border-radius:999px;text-align:center}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:10px;padding-bottom:80px}
+    .unit{background:#fff;border:2px solid transparent;border-radius:16px;padding:12px;text-align:center;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.04);position:relative}
+    .unit.sold{border-color:var(--a);background:#e0f2f1}
+    .unit b{display:block;color:var(--p);font-size:18px}
+    .unit small{display:block;color:#6b7280;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-        @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
-        
-        /* كلاسات التحكم بالظهور */
-        .admin-only { display: none !important; }
-        .show-admin .admin-only { display: block !important; }
-        /* عند العرض للمستفيد، الحقول تكون للقراءة فقط شكلياً */
-        .unit-interface:not(.show-admin) .editable { pointer-events: none; background: #eee; }
-    
-        /* ===== V12 Sidebar ===== */
-        .header-row{display:flex; align-items:center; justify-content:space-between; gap:10px;}
-        .menu-btn{width:46px; height:46px; border-radius:14px; border:1px solid #ddd; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.05); cursor:pointer; font-size:22px;}
-        .section-pill{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:#fff; border:1px solid #ddd; font-weight:800; color:var(--primary);}
-        #sideOverlay{position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:300; display:none;}
-        #sideDrawer{position:absolute; top:0; right:0; height:100%; width:min(86vw, 360px); background:#fff; border-radius:0 0 0 22px; box-shadow:-10px 0 30px rgba(0,0,0,0.12); padding:18px; transform:translateX(0);}
-        .side-header{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px;}
-        .side-title{font-weight:900; color:var(--primary); font-size:16px;}
-        .side-close{background:#f2f2f2; border:1px solid #ddd; width:42px; height:42px; border-radius:14px; cursor:pointer; font-size:18px;}
-        .side-list{display:flex; flex-direction:column; gap:8px;}
-        .side-item{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 12px; border-radius:16px; border:1px solid #eee; background:#fff; cursor:pointer; font-weight:800;}
-        .side-item:active{transform:scale(0.99)}
-        .side-item .ico{font-size:18px}
-        .side-item.active{border-color:var(--accent); background:#e0f2f1}
-        .side-sub{font-size:12px; opacity:0.75; font-weight:700;}
-        .badge{min-width:26px; height:22px; padding:0 8px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; background:#f1f1f1; font-size:12px; font-weight:900;}
-        .badge.blue{background:#e3f2fd; color:#1565c0}
-        .badge.orange{background:#fff3e0; color:#ef6c00}
-        .badge.red{background:#ffebee; color:#c62828}
-        .panel{display:none;}
-        .panel.active{display:block;}
-        .list-card{background:#fff; border:1px solid #eee; border-radius:16px; padding:12px; box-shadow:0 2px 10px rgba(0,0,0,0.04); margin:10px 0;}
-        .mini{font-size:12px; opacity:.8}
-    
-    </style>
+    /* Unit view */
+    #unitView{display:none}
+    .unitHeader{background:var(--p);color:#fff;padding:18px;border-radius:0 0 22px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .backBtn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:999px;padding:8px 12px;cursor:pointer;font-weight:900}
+
+    .progressWrap{padding:12px 14px}
+    .bar{height:12px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+    .bar > div{height:12px;width:0%;background:var(--a)}
+
+    .tabsH{display:flex;gap:10px;overflow:auto;padding:0 10px;border-bottom:1px solid #eee;scrollbar-width:none}
+    .tab{padding:10px 14px;border:none;background:none;font-weight:1000;color:#6b7280;white-space:nowrap;border-bottom:3px solid transparent;cursor:pointer}
+    .tab.active{color:var(--p);border-bottom-color:var(--a)}
+    .tabContent{display:none;padding:14px}
+    .tabContent.active{display:block}
+
+    label{display:block;margin-top:10px;font-weight:900;color:#374151;font-size:13px}
+    input,select,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;margin-top:6px}
+    textarea{min-height:90px;resize:vertical}
+
+    table{width:100%;border-collapse:collapse;white-space:nowrap}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:center}
+    th{background:#fafafa}
+    .tableWrap{overflow:auto;border:1px solid #eee;border-radius:14px}
+
+    .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .thumb{border:1px solid #eee;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+    .thumb img{width:100%;height:150px;object-fit:cover;display:block}
+    .thumb .cap{padding:10px;font-size:12px;color:#6b7280}
+
+    /* Viewer */
+    #viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:400}
+    #viewer img{max-width:95%;max-height:78vh;object-fit:contain;border-radius:12px}
+    .viewerBtns{position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between}
+    .vbtn{width:46px;height:46px;border-radius:14px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.15);color:#fff;font-size:20px;cursor:pointer}
+
+    .hide{display:none !important}
+  </style>
 </head>
 <body>
 
-<div id="loadingScreen">
-    <div class="loader"></div>
-    <p style="margin-top:20px; font-weight:bold;">جاري الاتصال بالسيرفر...</p>
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="muted" style="margin-top:12px">جاري الاتصال بالسيرفر...</div>
+  <div id="loadErr" class="muted" style="margin-top:8px;color:#b91c1c"></div>
 </div>
 
-<div id="imageViewer">
-    <div class="viewer-btn close-viewer" onclick="document.getElementById('imageViewer').style.display='none'">×</div>
-    <div class="viewer-btn download-btn" onclick="downloadCurrentImage()">⬇</div>
-    <img id="fullImage" src="">
+<div id="viewer">
+  <div class="viewerBtns">
+    <button class="vbtn" id="btnViewerClose">×</button>
+    <button class="vbtn" id="btnViewerDownload">⬇</button>
+  </div>
+  <img id="viewerImg" src="" alt="" />
 </div>
 
-<div id="loginScreen" style="display:none;">
-    <div style="margin-bottom: 30px;">
-        <h1 style="margin:0;">مدينة الأزهر</h1>
-        <p style="opacity:0.8;">نظام المتابعة السحابي</p>
-    </div>
-    <div class="login-box">
-        <input type="text" id="loginUser" class="login-input" placeholder="اسم المستخدم (للإدارة) أو رقم الوحدة">
-        <input type="password" id="loginPass" class="login-input" placeholder="كلمة المرور">
-        <button onclick="handleLogin()" class="login-btn">دخول</button>
-    </div>
+<!-- LOGIN -->
+<div id="login">
+  <div class="loginBox">
+    <h2 style="margin:0 0 6px 0">مدينة الأزهر</h2>
+    <div class="muted" style="color:#e5e7eb">تسجيل دخول الإدارة والمستفيدين (إيميل + باسورد)</div>
+    <input id="loginEmail" type="email" placeholder="الايميل" autocomplete="email" />
+    <input id="loginPass" type="password" placeholder="كلمة المرور" autocomplete="current-password" />
+    <button class="btn" style="width:100%;margin-top:10px;background:var(--a);color:var(--p)" id="btnLogin">دخول</button>
+    <button class="btn gray" style="width:100%;margin-top:8px" id="btnReset">نسيت كلمة المرور</button>
+    <div id="loginMsg" class="muted" style="margin-top:10px;color:#fee2e2"></div>
+  </div>
 </div>
 
-<div id="adminDashboard">
-    <div class="top-bar">
-        <div class="header-row">
-            <button class="menu-btn" id="btnMenu" title="القائمة">☰</button>
-            <div class="section-pill" id="currentSectionPill">🏠 الرئيسية</div>
-            <button class="super-admin-btn" id="btnManageAdmins" onclick="openAdminsManager()">⚙️</button>
-        </div>
-        <input id="searchBox" type="text" class="search-input" placeholder="🔍 ابحث عن وحدة..." onkeyup="filterUnits(this.value)">
-        <button class="back-btn" style="background:var(--danger); width:100%;" onclick="location.reload()">تسجيل خروج</button>
+<!-- APP -->
+<div id="app" class="wrap" style="display:none">
+  <div class="topbar">
+    <div class="toprow">
+      <button class="menuBtn" id="btnMenu">☰</button>
+      <div class="pill" id="sectionPill">🏠 الرئيسية</div>
+      <button class="btn danger small" id="btnLogout">خروج</button>
+    </div>
+    <div class="muted" id="who">...</div>
+  </div>
+
+  <!-- Panels -->
+  <div id="panelHome" class="panel active">
+    <div class="card" id="adminOnlyBox" style="display:none">
+      <div style="font-weight:1000;margin-bottom:8px">تصنيف الوحدات</div>
+      <div class="catTabs">
+        <button class="catBtn active" data-cat="ALL">الكل</button>
+        <button class="catBtn" data-cat="A">A (472)</button>
+        <button class="catBtn" data-cat="B">B (56)</button>
+        <button class="catBtn" data-cat="C">C (284)</button>
+        <button class="catBtn" data-cat="D">D (142)</button>
+      </div>
     </div>
 
-    <div id="dashPanels">
-        <div id="panelUnits" class="panel active">
-            <div class="units-grid" id="unitsGrid"></div>
-        </div>
-        <div id="panelArchive" class="panel">
-            <div class="list-card">
-                <b>🗄️ الأرشيف</b>
-                <div class="mini">يعرض الوحدات المؤرشفة (إذا data.settings.archived = true).</div>
-                <div id="archiveList"></div>
-            </div>
-        </div>
-        <div id="panelLogs" class="panel">
-            <div class="list-card">
-                <b>📋 السجل</b>
-                <div class="mini">آخر 50 عملية من جدول audit_logs (إذا موجود).</div>
-                <div id="logsStatus" class="mini"></div>
-                <div id="logsList" style="direction:ltr; text-align:left; font-size:12px; white-space:pre-wrap; word-break:break-word;"></div>
-            </div>
-        </div>
+    <div class="card">
+      <input id="search" class="search" placeholder="🔍 ابحث عن وحدة مثل A1" />
+      <div class="muted" id="homeHint" style="margin-top:8px"></div>
     </div>
 
+    <div class="grid" id="unitsGrid"></div>
+  </div>
 
-<div id="sideOverlay">
-  <div id="sideDrawer" onclick="event.stopPropagation()">
-    <div class="side-header">
-      <div>
-        <div class="side-title">القائمة</div>
-        <div class="side-sub" id="sideUserLine">...</div>
+  <div id="panelArchive" class="panel">
+    <div class="card">
+      <b>🗄️ الأرشيف</b>
+      <div class="muted">يعرض الوحدات المؤرشفة (data.settings.archived = true).</div>
+      <div id="archiveGrid" class="grid" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div id="panelLogs" class="panel">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <b>📋 السجل (audit_logs)</b>
+        <button class="btn gray small" id="btnReloadLogs">تحديث</button>
       </div>
-      <button class="side-close" id="btnCloseMenu">✖</button>
+      <div class="muted">آخر 50 سجل (للأدمن/السوبر فقط).</div>
+      <div id="logsMsg" class="muted" style="margin-top:8px"></div>
+      <div class="tableWrap" style="margin-top:10px">
+        <table>
+          <thead><tr><th>الوقت</th><th>action</th><th>table</th><th>record</th><th>actor</th><th>changes</th></tr></thead>
+          <tbody id="logsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="panelAdmin" class="panel">
+    <div class="card">
+      <b>⚙️ الإدارة (سوبر فقط)</b>
+      <div class="muted">إنشاء حسابات أدمن/مستفيد من داخل النظام وربط المستفيد بوحدة.</div>
+
+      <div class="card" style="background:#fbfbfb">
+        <div style="font-weight:1000">إنشاء حساب</div>
+        <div class="row" style="margin-top:10px">
+          <input id="newEmail" placeholder="Email" />
+          <input id="newPass" placeholder="Password" />
+        </div>
+        <div class="row" style="margin-top:10px">
+          <select id="newRole">
+            <option value="user">user (مستفيد)</option>
+            <option value="admin">admin (أدمن)</option>
+          </select>
+          <input id="newUnit" placeholder="Unit ID مثل A1 (للمستفيد فقط)" />
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn primary" id="btnCreate">إنشاء</button>
+          <button class="btn gray" id="btnMakeAdmin">أدمن سريع</button>
+        </div>
+        <div id="createMsg" class="muted" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unit View -->
+  <div id="unitView">
+    <div class="unitHeader">
+      <button class="backBtn" id="btnBack">رجوع</button>
+      <div style="font-weight:1000">الوحدة: <span id="unitTitle"></span></div>
+      <div style="font-size:12px" id="unitRoleLabel"></div>
     </div>
 
-    <div class="side-list" id="sideList">
-      <div class="side-item active" data-section="home">
-        <div><span class="ico">🏠</span> الرئيسية<br><span class="side-sub">كل الوحدات + البحث</span></div>
-        <span class="badge" id="badgeHome">0</span>
-      </div>
-      <div class="side-item" data-section="late">
-        <div><span class="ico">🔵</span> المتأخرين<br><span class="side-sub">أكثر من 60 يوم</span></div>
-        <span class="badge blue" id="badgeLate">0</span>
-      </div>
-      <div class="side-item" data-section="warning">
-        <div><span class="ico">🟠</span> الإنذارات<br><span class="side-sub">من 70 إلى 80 يوم</span></div>
-        <span class="badge orange" id="badgeWarn">0</span>
-      </div>
-      <div class="side-item" data-section="cancel">
-        <div><span class="ico">🔴</span> الفسخ<br><span class="side-sub">90 يوم وفوك</span></div>
-        <span class="badge red" id="badgeCancel">0</span>
-      </div>
-      <div class="side-item" data-section="admin">
-        <div><span class="ico">⚙️</span> الإدارة<br><span class="side-sub">الأدمنية + الباسوردات</span></div>
-        <span class="badge" id="badgeAdmin"> </span>
-      </div>
-      <div class="side-item" data-section="archive">
-        <div><span class="ico">🗄️</span> الأرشيف<br><span class="side-sub">وحدات مؤرشفة</span></div>
-        <span class="badge" id="badgeArchive">0</span>
-      </div>
-      <div class="side-item" data-section="logs">
-        <div><span class="ico">📋</span> السجل<br><span class="side-sub">منو اشتغل شنو</span></div>
-        <span class="badge" id="badgeLogs"> </span>
-      </div>
+    <div class="card progressWrap">
+      <div class="muted">نسبة الإنجاز</div>
+      <div class="bar" style="margin-top:8px"><div id="barFill"></div></div>
+      <div class="muted" id="barLabel" style="margin-top:6px">0%</div>
+    </div>
+
+    <div class="tabsH" id="unitTabs"></div>
+
+    <div class="card tabContent" id="tab_info"></div>
+    <div class="card tabContent" id="tab_finance"></div>
+    <div class="card tabContent" id="tab_documents"></div>
+    <div class="card tabContent" id="tab_alerts"></div>
+    <div class="card tabContent" id="tab_progress"></div>
+    <div class="card tabContent" id="tab_notes"></div>
+    <div class="card tabContent" id="tab_media"></div>
+  </div>
+</div>
+
+<!-- Drawer -->
+<div id="overlay">
+  <div id="drawer">
+    <div class="drawerHeader">
+      <div class="drawerTitle">القائمة</div>
+      <button class="drawerClose" id="btnClose">×</button>
+    </div>
+    <div class="drawerList" id="drawerList"></div>
+    <div class="muted" style="margin-top:12px">
+      * المستفيد ما يشوف أقسام المتأخرين/الإنذارات/الفسخ.
     </div>
   </div>
 </div>
 
-</div>
-
-<div id="adminsModal">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2 style="margin:0">إدارة المسؤولين</h2>
-        <button onclick="closeAdminsManager()" style="background:none; border:none; font-size:20px;">✖</button>
-    </div>
-    <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-bottom:20px;">
-        <h4 style="margin-top:0;">إضافة / تعديل مسؤول</h4>
-        <input type="text" id="newAdminUser" placeholder="اسم المستخدم (Username)">
-        <input type="text" id="newAdminPass" placeholder="كلمة المرور">
-        <button class="login-btn" onclick="saveAdminUser()">حفظ المسؤول</button>
-    </div>
-    <h3>قائمة المسؤولين</h3>
-    <div id="adminsListContainer"></div>
-</div>
-
-<div id="unitInterface" class="unit-interface">
-    <div class="unit-header">
-        <div>
-            <h2 style="margin:0;" id="headerUnitTitle">...</h2>
-            <small style="opacity:0.9;" id="headerOwner">...</small>
-        </div>
-        <button class="back-btn" onclick="goBack()">رجوع</button>
-    </div>
-
-    <div class="stats-scroll">
-        <div class="stat-card bg-1"><small>المدفوع</small><h3 style="margin:5px 0" id="dispPaid">0</h3></div>
-        <div class="stat-card bg-2"><small>المتبقي</small><h3 style="margin:5px 0" id="dispRemain">0</h3></div>
-        <div class="stat-card bg-3"><small>الإنجاز</small><h3 style="margin:5px 0" id="dispProg">0%</h3></div>
-    </div>
-
-    <div class="tabs-nav">
-        <button class="tab-btn active" onclick="showTab('info')">المعلومات</button>
-        <button class="tab-btn" onclick="showTab('payments')">المالية</button>
-        <button class="tab-btn" onclick="showTab('docs')">الوثائق</button> 
-        <button class="tab-btn" onclick="showTab('works')">سير العمل</button>
-        <button class="tab-btn" onclick="showTab('visits')">الزيارات</button>
-        <button class="tab-btn" onclick="showTab('history')">سجل الوحدة</button>
-        <button class="tab-btn" onclick="showTab('notifs')">التبليغات</button>
-        <button class="tab-btn" onclick="showTab('media')">الوسائط</button>
-        <button class="tab-btn admin-only" onclick="showTab('settings')">الإعدادات</button>
-    </div>
-
-    <div id="info" class="tab-content" style="display:block;">
-        <label>اسم المستفيد</label><input type="text" id="ownerName" class="editable">
-        <label>رقم الهاتف</label><input type="text" id="ownerPhone" class="editable">
-        <div class="admin-only" style="margin-top:20px; background:#e0f7fa; padding:15px; border-radius:10px;">
-            <label style="color:#006064;">السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData()">
-        </div>
-        <button class="login-btn admin-only" style="margin-top:20px;" onclick="saveData()">حفظ التعديلات</button>
-    </div>
-
-    <div id="payments" class="tab-content">
-        <div class="table-wrapper"><table id="payTable"><thead><tr><th>التاريخ</th><th>الوصل</th><th>المبلغ</th><th>التفاصيل</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div>
-        <div style="height:60px;"></div>
-    </div>
-
-    <div id="docs" class="tab-content">
-        <div class="table-wrapper"><table id="docsTable"><thead><tr><th>تاريخ</th><th>نوع</th><th>ملاحظات</th><th>ملف</th><th></th></tr></thead><tbody></tbody></table></div>
-    </div>
-
-    <div id="works" class="tab-content">
-        <div class="table-wrapper"><table id="workTable"><thead><tr><th>المرحلة</th><th>التاريخ</th><th>%</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div>
-        <div style="height:60px;"></div>
-    </div>
-
-    <div id="visits" class="tab-content">
-        <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee; margin-bottom:20px;">
-            <h3 style="margin-top:0; color:var(--primary);">طلب زيارة</h3>
-            <label>التاريخ</label><input type="date" id="reqVisitDate">
-            <label>السبب</label><input type="text" id="reqVisitReason" placeholder="...">
-            <button class="login-btn" style="margin-top:10px;" onclick="submitVisitRequest()">إرسال</button>
-        </div>
-        <h3 style="margin-bottom:10px;">السجل</h3>
-        <div class="table-wrapper"><table id="visitTable"><thead><tr><th>التاريخ</th><th>السبب</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody></tbody></table></div>
-        <div style="height:60px;"></div>
-    </div>
-
-    <div id="history" class="tab-content"><div class="table-wrapper"><table id="histTable"><thead><tr><th>التاريخ</th><th>الحدث</th><th>ملاحظات</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div><div style="height:60px;"></div></div>
-    <div id="notifs" class="tab-content"><div class="table-wrapper"><table id="notifTable"><thead><tr><th>التاريخ</th><th>التبليغ</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div><div style="height:60px;"></div></div>
-    <div id="media" class="tab-content"><div class="media-grid" id="mediaGrid"></div><div style="height:60px;"></div></div>
-
-    <div id="settings" class="tab-content">
-        <label>اسم المستخدم (للمستفيد)</label><input type="text" id="uUser"><label>كلمة المرور (للمستفيد)</label><input type="text" id="uPass">
-        <button class="login-btn" onclick="saveData()">تحديث الحساب</button>
-    </div>
-
-    <button id="fabAdd" class="fab-add admin-only" onclick="openModal()">+</button>
-</div>
-
-<div id="actionModal" class="modal-overlay">
-    <div class="modal-sheet">
-        <div class="modal-title" id="modalTitle">إضافة جديد</div>
-        <div id="modalInputs"></div> 
-        <div class="modal-btn-group"><button class="btn-confirm" onclick="confirmModal()">حفظ</button><button class="btn-cancel" onclick="closeModal()">إلغاء</button></div>
-    </div>
-</div>
-
 <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-    // 🔴🔴🔴 بيانات Supabase الخاصة بك 🔴🔴🔴
-    const SUPABASE_URL = 'https://csaqawviitdrjzeasmne.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ';
-    
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    
-    let db = {}; 
-    let adminsDb = {};
-    let currentUnit = null;
-    let isAdmin = false;
-    let isSuperAdmin = false;
-    let currentTab = 'info';
-    let currentSection = 'home';
+  // ✅ API مالك
+  const SUPABASE_URL = 'https://csaqawviitdrjzeasmne.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ';
+  const FUNCTION_NAME = 'admin-create-user';
 
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // دالة التبديل
-    function switchScreen(screenId) {
-        const screens = ['loadingScreen', 'loginScreen', 'adminDashboard', 'unitInterface', 'adminsModal'];
-        screens.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.style.cssText = "display: none !important;"; 
-        });
-        const target = document.getElementById(screenId);
-        if(target) {
-            target.style.cssText = "display: block !important;";
-            if(screenId === 'adminDashboard') target.style.display = 'block'; 
-        }
-        window.scrollTo(0, 0);
+  // ---------- Helpers ----------
+  const $ = (id)=>document.getElementById(id);
+  const show = (id,on=true)=>$(id).style.display = on ? '' : 'none';
+  const setPanel = (id)=>{
+    ['panelHome','panelArchive','panelLogs','panelAdmin'].forEach(p=>$(p).classList.remove('active'));
+    $(id).classList.add('active');
+    $('unitView').style.display = 'none';
+    $('sectionPill').textContent = sectionTitleMap[id] || '🏠 الرئيسية';
+  };
+
+  function safeDateToMs(dateStr){
+    if(!dateStr) return null;
+    // accept YYYY-MM-DD or ISO
+    const d = new Date(dateStr);
+    const ms = d.getTime();
+    return Number.isFinite(ms) ? ms : null;
+  }
+
+  function getLastPaymentDate(unitData){
+    const payments = unitData?.finance?.payments;
+    if(!Array.isArray(payments) || payments.length === 0) return null;
+    // last element is last payment
+    const last = payments[payments.length - 1];
+    return last?.date || null;
+  }
+
+  function daysSince(dateStr){
+    const ms = safeDateToMs(dateStr);
+    if(!ms) return null;
+    const now = Date.now();
+    const diff = now - ms;
+    return Math.floor(diff / (1000*60*60*24));
+  }
+
+  function getUnitStatus(unitData){
+    const lastDate = getLastPaymentDate(unitData);
+    const d = daysSince(lastDate);
+    if(d === null) return { key:'cancel', days:null }; // no payments => treat as فسخ (اداري)
+    if(d >= 90) return { key:'cancel', days:d };
+    if(d >= 70 && d <= 80) return { key:'warning', days:d };
+    if(d > 60) return { key:'late', days:d };
+    return { key:'normal', days:d };
+  }
+
+  function isArchived(unitData){
+    return unitData?.settings?.archived === true;
+  }
+
+  // ---------- State ----------
+  let me = null;
+  let role = null; // super/admin/user
+  let isAdmin = false;
+  let isSuper = false;
+
+  let allUnits = []; // for admin
+  let myUnit = null; // for user
+
+  let currentCategory = 'ALL';
+  let currentSection = 'home';
+
+  const sectionTitleMap = {
+    panelHome:'🏠 الرئيسية',
+    panelArchive:'🗄️ الأرشيف',
+    panelLogs:'📋 السجل',
+    panelAdmin:'⚙️ الإدارة'
+  };
+
+  const drawerItemsBase = [
+    { id:'home', title:'🏠 الرئيسية', badge:null },
+    { id:'archive', title:'🗄️ الأرشيف', badge:null }
+  ];
+
+  function buildDrawerCounts(){
+    const counts = { late:0, warning:0, cancel:0, archive:0 };
+    for(const u of allUnits){
+      const st = getUnitStatus(u.data||{}).key;
+      if(st === 'late') counts.late++;
+      if(st === 'warning') counts.warning++;
+      if(st === 'cancel') counts.cancel++;
+      if(isArchived(u.data||{})) counts.archive++;
+    }
+    return counts;
+  }
+
+  function renderDrawer(){
+    const list = $('drawerList');
+    list.innerHTML = '';
+
+    const items = [];
+    // base
+    items.push({ key:'home', label:'🏠 الرئيسية' });
+
+    if(isAdmin){
+      const c = buildDrawerCounts();
+      items.push({ key:'late', label:'🔵 المتأخرين', badge:{text:String(c.late), cls:'blue'} });
+      items.push({ key:'warning', label:'🟠 الإنذارات', badge:{text:String(c.warning), cls:'orange'} });
+      items.push({ key:'cancel', label:'🔴 الفسخ', badge:{text:String(c.cancel), cls:'red'} });
     }
 
-    // --- جلب البيانات ---
-    async function init() {
-        console.log("جاري الاتصال بـ Supabase...");
-        
-        // جلب الوحدات
-        const { data: u, error: uErr } = await supabase.from('units').select('*');
-        if(u) u.forEach(r => db[r.id] = r.data);
-        
-        // جلب الأدمنية
-        const { data: a, error: aErr } = await supabase.from('admins').select('*');
-        if(a) a.forEach(r => adminsDb[r.username] = r);
+    items.push({ key:'archive', label:'🗄️ الأرشيف', badge: isAdmin ? {text:String(buildDrawerCounts().archive), cls:''} : null });
 
-        document.getElementById('loadingScreen').style.display = 'none';
-        try{ computeBadges(); }catch(e){}
-        
-        if (!localStorage.getItem('loggedInUser')) {
-             switchScreen('loginScreen');
-        }
+    if(isAdmin){
+      items.push({ key:'logs', label:'📋 السجل' });
     }
-    init();
+    if(isSuper){
+      items.push({ key:'admin', label:'⚙️ الإدارة' });
+    }
 
-    
-    
+    items.forEach(it=>{
+      const div = document.createElement('div');
+      div.className = 'drawerItem' + (currentSection === it.key ? ' active' : '');
+      div.innerHTML = `<span>${it.label}</span>` + (it.badge ? `<span class="badge ${it.badge.cls||''}">${it.badge.text}</span>` : '');
+      div.onclick = ()=>{
+        closeDrawer();
+        goSection(it.key);
+      };
+      list.appendChild(div);
+    });
+  }
 
-    // ===== V12 (Sidebar + أقسام التأخير) =====
-    let currentSection = 'home';
+  function openDrawer(){ $('overlay').style.display='block'; }
+  function closeDrawer(){ $('overlay').style.display='none'; }
 
-    // Menu hooks
-    const _ov = document.getElementById('sideOverlay');
-    if (_ov) _ov.addEventListener('click', closeMenu);
-    const _bm = document.getElementById('btnMenu');
-    if (_bm) _bm.addEventListener('click', openMenu);
-    const _bc = document.getElementById('btnCloseMenu');
-    if (_bc) _bc.addEventListener('click', closeMenu);
-    document.querySelectorAll('#sideList .side-item').forEach(it => {
-        it.addEventListener('click', () => setSection(it.getAttribute('data-section')));
+  $('btnMenu').onclick = openDrawer;
+  $('btnClose').onclick = closeDrawer;
+  $('overlay').onclick = (e)=>{ if(e.target.id==='overlay') closeDrawer(); };
+
+  // Viewer
+  let viewerUrl = null;
+  $('btnViewerClose').onclick = ()=>{ $('viewer').style.display='none'; viewerUrl=null; };
+  $('btnViewerDownload').onclick = ()=>{
+    if(!viewerUrl) return;
+    const a=document.createElement('a');
+    a.href=viewerUrl; a.download='image'; a.target='_blank';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+
+  // ---------- Auth ----------
+  async function loadSession(){
+    const { data: { session } } = await supabase.auth.getSession();
+    me = session?.user || null;
+    return session;
+  }
+
+  async function loadRole(){
+    if(!me) return null;
+    const { data, error } = await supabase.from('profiles').select('role').eq('id', me.id).single();
+    if(error) throw error;
+    role = data?.role || 'user';
+    isSuper = role === 'super';
+    isAdmin = role === 'admin' || isSuper;
+    return role;
+  }
+
+  async function initApp(){
+    try{
+      $('loadErr').textContent='';
+      await loadSession();
+      if(!me){
+        // show login
+        show('loading',false);
+        $('login').style.display='flex';
+        $('app').style.display='none';
+        return;
+      }
+
+      await loadRole();
+
+      $('login').style.display='none';
+      $('app').style.display='block';
+
+      $('who').innerHTML = `داخل كـ <b>${me.email}</b> | <span style="font-family:ui-monospace" >${me.id}</span> | role: <b>${role}</b>`;
+
+      // show admin category box
+      $('adminOnlyBox').style.display = isAdmin ? '' : 'none';
+
+      if(isAdmin){
+        await fetchUnits();
+        renderDrawer();
+        goSection('home');
+      }else{
+        await fetchMyUnit();
+        renderDrawer();
+        goSection('home');
+        // open my unit directly
+        if(myUnit) openUnitView(myUnit);
+      }
+
+      show('loading',false);
+    }catch(e){
+      console.error(e);
+      $('loadErr').textContent = 'صار خطأ بالاتصال/الكود. افتح Console وشوف التفاصيل.';
+      // لا نعلق المستخدم
+      show('loading',false);
+      $('login').style.display='flex';
+      $('app').style.display='none';
+    }
+  }
+
+  supabase.auth.onAuthStateChange(async (_evt, session)=>{
+    me = session?.user || null;
+    if(!me){
+      role=null;isAdmin=false;isSuper=false;allUnits=[];myUnit=null;
+      $('app').style.display='none';
+      $('login').style.display='flex';
+      return;
+    }
+    await initApp();
+  });
+
+  // Login actions
+  $('btnLogin').onclick = async ()=>{
+    $('loginMsg').textContent = '...';
+    const email = $('loginEmail').value.trim();
+    const pass = $('loginPass').value.trim();
+    if(!email || !pass){ $('loginMsg').textContent='اكتب الايميل والباسورد'; return; }
+    const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if(error){ $('loginMsg').textContent = 'فشل الدخول: ' + error.message; return; }
+    $('loginMsg').textContent='';
+  };
+
+  $('btnReset').onclick = async ()=>{
+    const email = $('loginEmail').value.trim();
+    if(!email){ $('loginMsg').textContent='اكتب الايميل أولاً'; return; }
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if(error){ $('loginMsg').textContent='خطأ: ' + error.message; return; }
+    $('loginMsg').textContent='تم إرسال رابط تغيير الباسورد للإيميل';
+  };
+
+  $('btnLogout').onclick = async ()=>{
+    await supabase.auth.signOut();
+  };
+
+  // ---------- Data ----------
+  async function fetchUnits(){
+    const { data, error } = await supabase.from('units').select('id, user_id, data');
+    if(error) throw error;
+    allUnits = (data||[]).map(r=>({ id:r.id, user_id:r.user_id, data:r.data||{} }));
+  }
+
+  async function fetchMyUnit(){
+    const { data, error } = await supabase.from('units').select('id, user_id, data').eq('user_id', me.id).maybeSingle();
+    if(error) throw error;
+    myUnit = data ? { id:data.id, user_id:data.user_id, data:data.data||{} } : null;
+    if(!myUnit){
+      alert('ماكو وحدة مربوطة بحسابك. راجع الإدارة حتى تربط user_id للوحدة.');
+    }
+  }
+
+  // ---------- Sections ----------
+  function goSection(key){
+    currentSection = key;
+    $('unitView').style.display = 'none';
+
+    if(key==='home'){
+      setPanel('panelHome');
+      renderHome();
+      return;
+    }
+    if(key==='archive'){
+      setPanel('panelArchive');
+      renderArchive();
+      return;
+    }
+    if(key==='logs'){
+      setPanel('panelLogs');
+      loadLogs();
+      return;
+    }
+    if(key==='admin'){
+      setPanel('panelAdmin');
+      if(!isSuper){ alert('ليس لديك صلاحية'); goSection('home'); }
+      return;
+    }
+
+    // admin-only filters
+    if(!isAdmin){ goSection('home'); return; }
+
+    setPanel('panelHome');
+    if(key==='late') renderHome({ status:'late' });
+    if(key==='warning') renderHome({ status:'warning' });
+    if(key==='cancel') renderHome({ status:'cancel' });
+
+    $('sectionPill').textContent = ({late:'🔵 المتأخرين',warning:'🟠 الإنذارات',cancel:'🔴 الفسخ'})[key] || '🏠 الرئيسية';
+  }
+
+  // ---------- Category tabs ----------
+  document.querySelectorAll('.catBtn').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('.catBtn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCategory = btn.dataset.cat;
+      renderHome();
+    };
+  });
+
+  $('search').addEventListener('input', ()=>renderHome());
+
+  function getUnitsForGrid(opts={}){
+    if(!isAdmin){
+      return myUnit ? [myUnit] : [];
+    }
+
+    let list = allUnits.slice();
+
+    // category filter
+    if(currentCategory !== 'ALL'){
+      list = list.filter(u=>String(u.id||'').toUpperCase().startsWith(currentCategory));
+    }
+
+    // status filter
+    if(opts.status){
+      list = list.filter(u=>getUnitStatus(u.data||{}).key === opts.status);
+    }
+
+    // search
+    const q = $('search').value.trim().toUpperCase();
+    if(q){
+      list = list.filter(u=>String(u.id).toUpperCase().includes(q));
+    }
+
+    // sort (A1, A2, A10 ...)
+    list.sort((a,b)=>a.id.localeCompare(b.id,'en',{numeric:true}));
+    return list;
+  }
+
+  function renderHome(opts={}){
+    const grid = $('unitsGrid');
+    grid.innerHTML = '';
+
+    const list = getUnitsForGrid(opts);
+
+    // hint
+    if(!isAdmin){
+      $('homeHint').textContent = 'أنت مستفيد: قراءة فقط. التابات الإدارية مخفية.';
+    } else {
+      $('homeHint').textContent = 'اضغط على وحدة لفتح تفاصيلها.';
+    }
+
+    list.forEach(u=>{
+      const sold = Boolean(u.data?.info?.name && String(u.data.info.name).trim());
+      const st = getUnitStatus(u.data||{});
+      const small = sold ? (u.data?.info?.name || 'مباع') : 'متاح';
+      const badge = isAdmin ? (st.days===null ? '—' : `${st.days} يوم`) : '';
+
+      const div = document.createElement('div');
+      div.className = 'unit' + (sold ? ' sold' : '');
+      div.innerHTML = `<b>${u.id}</b><small>${small}</small>` + (isAdmin ? `<small>آخر دفعة: ${badge}</small>` : '');
+      div.onclick = ()=>openUnitView(u);
+      grid.appendChild(div);
     });
 
-    function openMenu(){
-        const ov = document.getElementById('sideOverlay');
-        if (ov) ov.style.display = 'block';
-        const userLine = document.getElementById('sideUserLine');
-        if (userLine){
-            userLine.innerText = isSuperAdmin ? 'Super Admin' : (isAdmin ? 'Admin' : 'User');
-        }
-        try{ computeBadges(); }catch(e){}
-    }
-    function closeMenu(){
-        const ov = document.getElementById('sideOverlay');
-        if (ov) ov.style.display = 'none';
-    }
+    renderDrawer();
+  }
 
-    function updateSectionPill(){
-        const pill = document.getElementById('currentSectionPill');
-        if(!pill) return;
-        const map = {
-            home: '🏠 الرئيسية',
-            late: '🔵 المتأخرين',
-            warning: '🟠 الإنذارات',
-            cancel: '🔴 الفسخ',
-            admin: '⚙️ الإدارة',
-            archive: '🗄️ الأرشيف',
-            logs: '📋 السجل'
+  function renderArchive(){
+    const grid = $('archiveGrid');
+    grid.innerHTML='';
+    const list = isAdmin ? allUnits.filter(u=>isArchived(u.data||{})) : (myUnit && isArchived(myUnit.data||{}) ? [myUnit] : []);
+    list.sort((a,b)=>a.id.localeCompare(b.id,'en',{numeric:true}));
+    list.forEach(u=>{
+      const div=document.createElement('div');
+      div.className='unit sold';
+      div.innerHTML=`<b>${u.id}</b><small>${u.data?.info?.name||'—'}</small>`;
+      div.onclick=()=>openUnitView(u);
+      grid.appendChild(div);
+    });
+  }
+
+  // ---------- Unit View ----------
+  const unitTabsDef = [
+    { key:'info', label:'المعلومات', admin:false },
+    { key:'finance', label:'المالية', admin:false },
+    { key:'documents', label:'الوثائق', admin:true },
+    { key:'alerts', label:'الإنذارات', admin:true },
+    { key:'progress', label:'مرحلة العمل', admin:false },
+    { key:'notes', label:'ملاحظات', admin:true },
+    { key:'media', label:'الوسائط', admin:false },
+  ];
+
+  function setActiveUnitTab(key){
+    document.querySelectorAll('#unitTabs .tab').forEach(t=>t.classList.toggle('active', t.dataset.key===key));
+    ['info','finance','documents','alerts','progress','notes','media'].forEach(k=>{
+      const el = $('tab_'+k);
+      el.classList.toggle('active', k===key);
+      el.style.display = (k===key) ? '' : 'none';
+    });
+  }
+
+  $('btnBack').onclick = ()=>{
+    $('unitView').style.display='none';
+    $('panelHome').classList.add('active');
+    $('sectionPill').textContent = sectionTitleMap['panelHome'];
+  };
+
+  async function refreshCurrentUnitFromDB(unitId){
+    const { data, error } = await supabase.from('units').select('id, user_id, data').eq('id', unitId).single();
+    if(error) throw error;
+    const u = { id:data.id, user_id:data.user_id, data:data.data||{} };
+    if(isAdmin){
+      const idx = allUnits.findIndex(x=>x.id===unitId);
+      if(idx>=0) allUnits[idx]=u;
+    } else {
+      myUnit = u;
+    }
+    return u;
+  }
+
+  function openUnitView(u){
+    $('panelHome').classList.remove('active');
+    $('panelArchive').classList.remove('active');
+    $('panelLogs').classList.remove('active');
+    $('panelAdmin').classList.remove('active');
+
+    $('unitView').style.display='block';
+    $('unitTitle').textContent = u.id;
+    $('unitRoleLabel').textContent = (isAdmin ? 'إدارة' : 'مستفيد');
+
+    // progress bar
+    const prog = u.data?.progress || {};
+    const pct = Number(prog.percent || 0);
+    $('barFill').style.width = Math.max(0, Math.min(100, pct)) + '%';
+    $('barLabel').textContent = `${Math.max(0, Math.min(100, pct))}%`;
+
+    // build tabs
+    const tabs = $('unitTabs');
+    tabs.innerHTML='';
+    unitTabsDef.forEach(t=>{
+      if(t.admin && !isAdmin) return; // hide for beneficiary
+      const b=document.createElement('button');
+      b.className='tab';
+      b.textContent=t.label;
+      b.dataset.key=t.key;
+      b.onclick=()=>setActiveUnitTab(t.key);
+      tabs.appendChild(b);
+    });
+
+    // render contents
+    renderInfo(u);
+    renderFinance(u);
+    renderDocuments(u);
+    renderAlerts(u);
+    renderProgress(u);
+    renderNotes(u);
+    renderMedia(u);
+
+    setActiveUnitTab('info');
+  }
+
+  function renderInfo(u){
+    const info = u.data?.info || {};
+    const ro = !isAdmin;
+    $('tab_info').innerHTML = `
+      <div style="font-weight:1000;margin-bottom:8px">معلومات المستفيد</div>
+      <label>اسم المستفيد</label>
+      <input id="f_name" ${ro?'disabled':''} value="${escapeHtml(info.name||'')}" />
+      <label>رقم الهاتف</label>
+      <input id="f_phone" ${ro?'disabled':''} value="${escapeHtml(info.phone||'')}" />
+      <label>سعر البيع</label>
+      <input id="f_sale" ${ro?'disabled':''} value="${escapeHtml(info.sale_price||'')}" />
+      <label>تاريخ العقد</label>
+      <input id="f_cdate" type="date" ${ro?'disabled':''} value="${escapeHtml(info.contract_date||'')}" />
+      <label>رقم العقد</label>
+      <input id="f_cno" ${ro?'disabled':''} value="${escapeHtml(info.contract_number||'')}" />
+      ${isAdmin ? `<div class="row" style="margin-top:12px"><button class="btn primary" id="btnSaveInfo">حفظ</button><button class="btn gray" id="btnArchive">${isArchived(u.data)?'إلغاء الأرشفة':'أرشفة'}</button></div><div id="infoMsg" class="muted" style="margin-top:8px"></div>`:''}
+    `;
+
+    if(isAdmin){
+      $('btnSaveInfo').onclick = async ()=>{
+        $('infoMsg').textContent='جاري الحفظ...';
+        const data = structuredClone(u.data||{});
+        data.info = data.info || {};
+        data.info.name = $('f_name').value;
+        data.info.phone = $('f_phone').value;
+        data.info.sale_price = $('f_sale').value;
+        data.info.contract_date = $('f_cdate').value;
+        data.info.contract_number = $('f_cno').value;
+        const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+        if(error){ $('infoMsg').textContent='خطأ: '+error.message; return; }
+        const fresh = await refreshCurrentUnitFromDB(u.id);
+        $('infoMsg').textContent='تم ✅';
+        renderDrawer();
+        renderHome();
+        openUnitView(fresh);
+      };
+
+      $('btnArchive').onclick = async ()=>{
+        const data = structuredClone(u.data||{});
+        data.settings = data.settings || {};
+        data.settings.archived = !isArchived(data);
+        const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+        if(error){ alert(error.message); return; }
+        const fresh = await refreshCurrentUnitFromDB(u.id);
+        renderDrawer();
+        renderHome();
+        openUnitView(fresh);
+      };
+    }
+  }
+
+  function renderFinance(u){
+    const payments = u.data?.finance?.payments;
+    const list = Array.isArray(payments) ? payments : [];
+    const ro = !isAdmin;
+
+    const rows = list.map((p,idx)=>{
+      const n = idx+1;
+      return `<tr>
+        <td>${n}</td>
+        <td>${escapeHtml(p.receipt_no||'-')}</td>
+        <td>${escapeHtml(p.date||'-')}</td>
+        <td>${escapeHtml(p.amount??'-')}</td>
+        <td>${escapeHtml(p.installment||'-')}</td>
+        <td style="text-align:right;white-space:normal">${escapeHtml(p.note||'')}</td>
+        ${isAdmin ? `<td><button class="btn danger small" data-del="${idx}">حذف</button></td>`:''}
+      </tr>`;
+    }).join('');
+
+    const st = isAdmin ? getUnitStatus(u.data||{}) : null;
+    const stText = isAdmin ? ({normal:'طبيعي',late:'متأخر',warning:'إنذار',cancel:'فسخ'})[st.key] : '';
+
+    $('tab_finance').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="font-weight:1000">المالية</div>
+        ${isAdmin ? `<div class="muted">الحالة الحالية (إدارة): <b>${stText}</b> ${st.days===null?'':'— '+st.days+' يوم'}</div>` : ''}
+      </div>
+      <div class="tableWrap" style="margin-top:10px">
+        <table>
+          <thead><tr><th>تسلسل</th><th>رقم الوصل</th><th>تاريخ الوصل</th><th>المبلغ</th><th>الدفعة</th><th>التفاصيل</th>${isAdmin?'<th></th>':''}</tr></thead>
+          <tbody>${rows || `<tr><td colspan="${isAdmin?7:6}">لا توجد دفعات</td></tr>`}</tbody>
+        </table>
+      </div>
+
+      ${isAdmin ? `
+      <div class="card" style="background:#fbfbfb;margin-top:12px">
+        <div style="font-weight:1000">إضافة دفعة</div>
+        <div class="row" style="margin-top:10px">
+          <input id="pay_receipt" placeholder="رقم الوصل" />
+          <input id="pay_date" type="date" />
+        </div>
+        <div class="row" style="margin-top:10px">
+          <input id="pay_amount" type="number" placeholder="المبلغ" />
+          <input id="pay_inst" placeholder="الدفعة" />
+        </div>
+        <label>التفاصيل</label>
+        <textarea id="pay_note" placeholder="..." ></textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="btn primary" id="btnAddPay">إضافة</button>
+          <button class="btn gray" id="btnSortPay">ترتيب حسب التاريخ</button>
+        </div>
+        <div id="payMsg" class="muted" style="margin-top:8px"></div>
+      </div>
+      ` : `<div class="muted" style="margin-top:10px">* قراءة فقط للمستفيد.</div>`}
+    `;
+
+    if(isAdmin){
+      // delete
+      $('tab_finance').querySelectorAll('button[data-del]').forEach(b=>{
+        b.onclick = async ()=>{
+          const idx = Number(b.dataset.del);
+          if(!confirm('متأكد حذف الدفعة؟')) return;
+          const data = structuredClone(u.data||{});
+          data.finance = data.finance || {};
+          data.finance.payments = Array.isArray(data.finance.payments) ? data.finance.payments : [];
+          data.finance.payments.splice(idx,1);
+          const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+          if(error){ alert(error.message); return; }
+          const fresh = await refreshCurrentUnitFromDB(u.id);
+          openUnitView(fresh);
         };
-        pill.innerText = map[currentSection] || '🏠 الرئيسية';
+      });
+
+      $('btnAddPay').onclick = async ()=>{
+        $('payMsg').textContent='جاري...';
+        const receipt = $('pay_receipt').value.trim();
+        const date = $('pay_date').value;
+        const amount = Number($('pay_amount').value || 0);
+        const inst = $('pay_inst').value.trim();
+        const note = $('pay_note').value.trim();
+        if(!date){ $('payMsg').textContent='لازم تاريخ الوصل'; return; }
+
+        const data = structuredClone(u.data||{});
+        data.finance = data.finance || {};
+        data.finance.payments = Array.isArray(data.finance.payments) ? data.finance.payments : [];
+        data.finance.payments.push({ receipt_no: receipt, date, amount, installment: inst, note });
+
+        const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+        if(error){ $('payMsg').textContent='خطأ: '+error.message; return; }
+        const fresh = await refreshCurrentUnitFromDB(u.id);
+        $('payMsg').textContent='تم ✅';
+        renderDrawer();
+        renderHome();
+        openUnitView(fresh);
+      };
+
+      $('btnSortPay').onclick = async ()=>{
+        const data = structuredClone(u.data||{});
+        data.finance = data.finance || {};
+        const arr = Array.isArray(data.finance.payments) ? data.finance.payments : [];
+        arr.sort((a,b)=> (safeDateToMs(a?.date)||0) - (safeDateToMs(b?.date)||0));
+        data.finance.payments = arr;
+        const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+        if(error){ alert(error.message); return; }
+        const fresh = await refreshCurrentUnitFromDB(u.id);
+        openUnitView(fresh);
+      };
     }
+  }
 
-    // ===== حساب أيام التأخير حسب آخر دفعة =====
-    function parseAnyDate(s){
-        if(!s) return null;
-        s = String(s).trim();
-        let m;
-        if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/))) {
-            return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-        }
-        if ((m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/))) {
-            return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
-        }
-        if ((m = s.match(/^(\d{2})-(\d{2})-(\d{4})$/))) {
-            return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
-        }
-        const d = new Date(s);
-        return isNaN(d.getTime()) ? null : d;
+  // Storage helper (bucket name)
+  const FILE_BUCKET = 'unit-files';
+
+  async function uploadToStorage(file, unitId, folder){
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const path = `${unitId}/${folder}/${Date.now()}_${safeName}`;
+    const { error } = await supabase.storage.from(FILE_BUCKET).upload(path, file, { upsert:false });
+    if(error) throw error;
+    const { data } = supabase.storage.from(FILE_BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  function renderDocuments(u){
+    if(!isAdmin){ $('tab_documents').style.display='none'; return; }
+    const docs = Array.isArray(u.data?.documents) ? u.data.documents : [];
+
+    const rows = docs.map((d,idx)=>`<tr>
+      <td>${escapeHtml(d.date||'-')}</td>
+      <td>${escapeHtml(d.type||'-')}</td>
+      <td style="text-align:right;white-space:normal">${escapeHtml(d.description||'')}</td>
+      <td>${d.file_url ? `<a href="${d.file_url}" target="_blank">تحميل</a>` : '-'}</td>
+      <td><button class="btn danger small" data-del-doc="${idx}">حذف</button></td>
+    </tr>`).join('');
+
+    $('tab_documents').innerHTML = `
+      <div style="font-weight:1000">الوثائق (للأدمن فقط)</div>
+      <div class="tableWrap" style="margin-top:10px">
+        <table>
+          <thead><tr><th>تاريخ</th><th>نوع</th><th>تفاصيل</th><th>ملف</th><th></th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="5">لا توجد وثائق</td></tr>`}</tbody>
+        </table>
+      </div>
+
+      <div class="card" style="background:#fbfbfb;margin-top:12px">
+        <div style="font-weight:1000">رفع وثيقة</div>
+        <label>النوع</label>
+        <select id="doc_type">
+          <option>انذار</option>
+          <option>ملحق عقد</option>
+          <option>تاجيل</option>
+          <option>تعهد</option>
+          <option>طلب خاص</option>
+          <option>فسخ عقد</option>
+          <option>الغاء فسخ</option>
+        </select>
+        <label>التفاصيل</label>
+        <textarea id="doc_desc" placeholder="..."></textarea>
+        <label>تاريخ الرفع</label>
+        <input id="doc_date" type="date" />
+        <label>الملف</label>
+        <input id="doc_file" type="file" />
+        <div class="row" style="margin-top:10px">
+          <button class="btn primary" id="btnAddDoc">رفع</button>
+        </div>
+        <div id="docMsg" class="muted" style="margin-top:8px"></div>
+        <div class="muted">* لازم تسوي Bucket باسم <b>${FILE_BUCKET}</b> وتخليه Public حتى التحميل يشتغل.</div>
+      </div>
+    `;
+
+    // delete
+    $('tab_documents').querySelectorAll('button[data-del-doc]').forEach(b=>{
+      b.onclick = async ()=>{
+        const idx = Number(b.dataset.delDoc);
+        if(!confirm('حذف الوثيقة؟')) return;
+        const data = structuredClone(u.data||{});
+        data.documents = Array.isArray(data.documents) ? data.documents : [];
+        data.documents.splice(idx,1);
+        const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+        if(error){ alert(error.message); return; }
+        const fresh = await refreshCurrentUnitFromDB(u.id);
+        openUnitView(fresh);
+      };
+    });
+
+    $('btnAddDoc').onclick = async ()=>{
+      $('docMsg').textContent='جاري...';
+      try{
+        const type = $('doc_type').value;
+        const description = $('doc_desc').value.trim();
+        const date = $('doc_date').value;
+        const file = $('doc_file').files?.[0] || null;
+        if(!date) throw new Error('لازم تاريخ');
+        if(!file) throw new Error('اختار ملف');
+
+        const file_url = await uploadToStorage(file, u.id, 'documents');
+
+        const data = structuredClone(u.data||{});
+        data.documents = Array.isArray(data.documents) ? data.documents : [];
+        data.documents.push({ type, description, date, file_url, uploaded_at: new Date().toISOString() });
+
+        const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+        if(error) throw error;
+
+        const fresh = await refreshCurrentUnitFromDB(u.id);
+        $('docMsg').textContent='تم ✅';
+        openUnitView(fresh);
+      }catch(e){
+        $('docMsg').textContent='خطأ: ' + (e?.message||e);
+      }
+    };
+  }
+
+  function renderAlerts(u){
+    if(!isAdmin){ $('tab_alerts').style.display='none'; return; }
+    const warns = Array.isArray(u.data?.warnings) ? u.data.warnings : [];
+    const rows = warns.map((w,idx)=>`<tr>
+      <td>${escapeHtml(w.date||'-')}</td>
+      <td>${escapeHtml(w.level||'-')}</td>
+      <td style="text-align:right;white-space:normal">${escapeHtml(w.description||'')}</td>
+      <td>${w.file_url ? `<a href="${w.file_url}" target="_blank">تحميل</a>` : '-'}</td>
+      <td><button class="btn danger small" data-del-w="${idx}">حذف</button></td>
+    </tr>`).join('');
+
+    $('tab_alerts').innerHTML = `
+      <div style="font-weight:1000">الإنذارات (للأدمن فقط)</div>
+      <div class="tableWrap" style="margin-top:10px">
+        <table>
+          <thead><tr><th>تاريخ</th><th>النوع</th><th>تفاصيل</th><th>ملف</th><th></th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="5">لا توجد إنذارات</td></tr>`}</tbody>
+        </table>
+      </div>
+
+      <div class="card" style="background:#fbfbfb;margin-top:12px">
+        <div style="font-weight:1000">رفع إنذار</div>
+        <label>النوع</label>
+        <select id="w_level">
+          <option value="انذار اولي">انذار اولي</option>
+          <option value="انذار نهائي">انذار نهائي</option>
+        </select>
+        <label>التفاصيل</label>
+        <textarea id="w_desc" placeholder="..."></textarea>
+        <label>التاريخ</label>
+        <input id="w_date" type="date" />
+        <label>الملف</label>
+        <input id="w_file" type="file" />
+        <div class="row" style="margin-top:10px">
+          <button class="btn primary" id="btnAddWarn">رفع</button>
+        </div>
+        <div id="wMsg" class="muted" style="margin-top:8px"></div>
+      </div>
+    `;
+
+    $('tab_alerts').querySelectorAll('button[data-del-w]').forEach(b=>{
+      b.onclick = async ()=>{
+        const idx = Number(b.dataset.delW);
+        if(!confirm('حذف الإنذار؟')) return;
+        const data = structuredClone(u.data||{});
+        data.warnings = Array.isArray(data.warnings) ? data.warnings : [];
+        data.warnings.splice(idx,1);
+        const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+        if(error){ alert(error.message); return; }
+        const fresh = await refreshCurrentUnitFromDB(u.id);
+        openUnitView(fresh);
+      };
+    });
+
+    $('btnAddWarn').onclick = async ()=>{
+      $('wMsg').textContent='جاري...';
+      try{
+        const level = $('w_level').value;
+        const description = $('w_desc').value.trim();
+        const date = $('w_date').value;
+        const file = $('w_file').files?.[0] || null;
+        if(!date) throw new Error('لازم تاريخ');
+        if(!file) throw new Error('اختار ملف');
+
+        const file_url = await uploadToStorage(file, u.id, 'warnings');
+        const data = structuredClone(u.data||{});
+        data.warnings = Array.isArray(data.warnings) ? data.warnings : [];
+        data.warnings.push({ level, description, date, file_url, uploaded_at: new Date().toISOString() });
+        const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+        if(error) throw error;
+
+        const fresh = await refreshCurrentUnitFromDB(u.id);
+        $('wMsg').textContent='تم ✅';
+        openUnitView(fresh);
+      }catch(e){
+        $('wMsg').textContent='خطأ: ' + (e?.message||e);
+      }
+    };
+  }
+
+  function renderProgress(u){
+    const p = u.data?.progress || {};
+    const ro = !isAdmin;
+    $('tab_progress').innerHTML = `
+      <div style="font-weight:1000">مرحلة العمل</div>
+      <label>المرحلة</label>
+      <input id="pr_stage" ${ro?'disabled':''} value="${escapeHtml(p.stage||'')}" placeholder="مثل: رفت / طابوق أول" />
+      <label>التاريخ</label>
+      <input id="pr_date" type="date" ${ro?'disabled':''} value="${escapeHtml(p.date||'')}" />
+      <label>نسبة الإنجاز (%)</label>
+      <input id="pr_pct" type="number" min="0" max="100" ${ro?'disabled':''} value="${escapeHtml(p.percent||0)}" />
+      ${isAdmin ? `<div class="row" style="margin-top:12px"><button class="btn primary" id="btnSaveProg">حفظ</button></div><div id="progMsg" class="muted" style="margin-top:8px"></div>` : `<div class="muted" style="margin-top:10px">* قراءة فقط للمستفيد.</div>`}
+    `;
+
+    if(isAdmin){
+      $('btnSaveProg').onclick = async ()=>{
+        $('progMsg').textContent='جاري الحفظ...';
+        const data = structuredClone(u.data||{});
+        data.progress = data.progress || {};
+        data.progress.stage = $('pr_stage').value;
+        data.progress.date = $('pr_date').value;
+        data.progress.percent = Number($('pr_pct').value || 0);
+        const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+        if(error){ $('progMsg').textContent='خطأ: '+error.message; return; }
+        const fresh = await refreshCurrentUnitFromDB(u.id);
+        $('progMsg').textContent='تم ✅';
+        openUnitView(fresh);
+      };
     }
+  }
 
-    function getLastPaymentDate(unitData){
-        const pays = (unitData && unitData.payments) ? unitData.payments : [];
-        if (!Array.isArray(pays) || pays.length === 0) return null;
-        let best = null;
-        for (const row of pays){
-            const ds = Array.isArray(row) ? row[0] : null;
-            const d = parseAnyDate(ds);
-            if (!d) continue;
-            if (!best || d.getTime() > best.getTime()) best = d;
-        }
-        return best;
-    }
+  function renderNotes(u){
+    if(!isAdmin){ $('tab_notes').style.display='none'; return; }
+    const notes = Array.isArray(u.data?.admin_notes) ? u.data.admin_notes : [];
+    const rows = notes.map(n=>`<div class="card" style="margin:10px 0;background:#fbfbfb">
+      <div class="muted">${escapeHtml(n.date||'-')}</div>
+      <div>${escapeHtml(n.note||'')}</div>
+    </div>`).join('');
 
-    function getOverdueDays(unitData){
-        const last = getLastPaymentDate(unitData);
-        if (!last) return null;
-        const now = new Date();
-        const a = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        const b = new Date(last.getFullYear(), last.getMonth(), last.getDate()).getTime();
-        return Math.floor((a - b) / 86400000);
-    }
+    $('tab_notes').innerHTML = `
+      <div style="font-weight:1000">ملاحظات الوحدة (للأدمن فقط)</div>
+      ${rows || `<div class="muted" style="margin-top:10px">لا توجد ملاحظات</div>`}
+      <div class="card" style="background:#fbfbfb;margin-top:12px">
+        <div style="font-weight:1000">إضافة ملاحظة</div>
+        <label>التاريخ</label>
+        <input id="n_date" type="date" />
+        <label>النص</label>
+        <textarea id="n_text" placeholder="... مثلا فسخ/تحويل"></textarea>
+        <div class="row" style="margin-top:10px"><button class="btn primary" id="btnAddNote">إضافة</button></div>
+        <div id="nMsg" class="muted" style="margin-top:8px"></div>
+      </div>
+    `;
 
-    function isSold(unitData){
-        return !!(unitData && unitData.info && unitData.info.name && String(unitData.info.name).trim().length > 0);
-    }
+    $('btnAddNote').onclick = async ()=>{
+      $('nMsg').textContent='جاري...';
+      const date = $('n_date').value;
+      const note = $('n_text').value.trim();
+      if(!date || !note){ $('nMsg').textContent='اكتب التاريخ والنص'; return; }
+      const data = structuredClone(u.data||{});
+      data.admin_notes = Array.isArray(data.admin_notes) ? data.admin_notes : [];
+      data.admin_notes.push({ date, note });
+      const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+      if(error){ $('nMsg').textContent='خطأ: '+error.message; return; }
+      const fresh = await refreshCurrentUnitFromDB(u.id);
+      $('nMsg').textContent='تم ✅';
+      openUnitView(fresh);
+    };
+  }
 
-    function computeBadges(){
-        // نعتمد فقط الوحدات المباعة للدقات
-        let soldCount = 0;
-        let late = 0;
-        let warn = 0;
-        let cancel = 0;
-        let arch = 0;
+  function renderMedia(u){
+    const media = Array.isArray(u.data?.media) ? u.data.media : [];
+    const ro = !isAdmin;
 
-        for (const id of Object.keys(db)){
-            const d = db[id];
-            if (!d) continue;
-            if (d?.settings?.archived === true) arch += 1;
-            if (!isSold(d)) continue;
-            soldCount += 1;
-            const ov = getOverdueDays(d);
-            if (ov == null) continue;
-            if (ov > 60) late += 1;
-            if (ov >= 70 && ov <= 80) warn += 1;
-            if (ov >= 90) cancel += 1;
-        }
+    const items = media.map((m,idx)=>`<div class="thumb">
+      <img src="${m.url}" alt="" data-img="${m.url}" />
+      <div class="cap">${escapeHtml(m.caption||'')}</div>
+      ${isAdmin ? `<div style="padding:10px"><button class="btn danger small" data-del-m="${idx}">حذف</button></div>`:''}
+    </div>`).join('');
 
-        const set = (id, v) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = String(v);
+    $('tab_media').innerHTML = `
+      <div style="font-weight:1000">الوسائط</div>
+      <div class="gallery" style="margin-top:10px">${items || `<div class="muted">لا توجد صور</div>`}</div>
+
+      ${isAdmin ? `
+      <div class="card" style="background:#fbfbfb;margin-top:12px">
+        <div style="font-weight:1000">رفع صورة</div>
+        <label>العنوان/الوصف</label>
+        <input id="m_cap" placeholder="..." />
+        <label>الملف</label>
+        <input id="m_file" type="file" accept="image/*" />
+        <div class="row" style="margin-top:10px"><button class="btn primary" id="btnAddMedia">رفع</button></div>
+        <div id="mMsg" class="muted" style="margin-top:8px"></div>
+      </div>
+      ` : `<div class="muted" style="margin-top:10px">* قراءة فقط للمستفيد.</div>`}
+    `;
+
+    // viewer
+    $('tab_media').querySelectorAll('img[data-img]').forEach(img=>{
+      img.onclick = ()=>{
+        viewerUrl = img.dataset.img;
+        $('viewerImg').src = viewerUrl;
+        $('viewer').style.display='flex';
+      };
+    });
+
+    if(isAdmin){
+      $('tab_media').querySelectorAll('button[data-del-m]').forEach(b=>{
+        b.onclick = async ()=>{
+          const idx = Number(b.dataset.delM);
+          if(!confirm('حذف الصورة؟')) return;
+          const data = structuredClone(u.data||{});
+          data.media = Array.isArray(data.media) ? data.media : [];
+          data.media.splice(idx,1);
+          const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+          if(error){ alert(error.message); return; }
+          const fresh = await refreshCurrentUnitFromDB(u.id);
+          openUnitView(fresh);
         };
-        set('badgeHome', soldCount);
-        set('badgeLate', late);
-        set('badgeWarn', warn);
-        set('badgeCancel', cancel);
-        set('badgeArchive', arch);
-    }
+      });
 
-    async function loadAuditLogs(){
-        const st = document.getElementById('logsStatus');
-        const box = document.getElementById('logsList');
-        if(st) st.innerText = 'جاري...';
-        if(box) box.innerText = '';
+      $('btnAddMedia').onclick = async ()=>{
+        $('mMsg').textContent='جاري...';
         try{
-            const { data, error } = await supabase
-                .from('audit_logs')
-                .select('*')
-                .order('id',{ascending:false})
-                .limit(50);
-            if (error) throw error;
-            if (!data || data.length === 0){
-                if(st) st.innerText = 'ماكو بيانات.';
-                return;
-            }
-            if(st) st.innerText = `تم ✅ (${data.length})`;
-            const lines = data.map(r => {
-                const t = r.created_at ? new Date(r.created_at).toLocaleString() : '';
-                return `${t} | ${r.action || ''} | ${r.table_name || ''} | ${r.record_id || ''}\nactor: ${r.actor_role || ''} ${r.actor_id || ''}\n${JSON.stringify(r.changes || {}, null, 2)}\n------------------------------`;
-            });
-            if(box) box.innerText = lines.join('\n');
+          const caption = $('m_cap').value.trim();
+          const file = $('m_file').files?.[0] || null;
+          if(!file) throw new Error('اختار صورة');
+          const url = await uploadToStorage(file, u.id, 'media');
+          const data = structuredClone(u.data||{});
+          data.media = Array.isArray(data.media) ? data.media : [];
+          data.media.push({ url, caption, uploaded_at: new Date().toISOString() });
+          const { error } = await supabase.from('units').update({ data }).eq('id', u.id);
+          if(error) throw error;
+          const fresh = await refreshCurrentUnitFromDB(u.id);
+          $('mMsg').textContent='تم ✅';
+          openUnitView(fresh);
         }catch(e){
-            if(st) st.innerText = 'خطأ بجلب السجل: ' + (e?.message || e);
+          $('mMsg').textContent='خطأ: '+(e?.message||e);
         }
+      };
     }
+  }
 
-    function renderArchive(){
-        const cont = document.getElementById('archiveList');
-        if(!cont) return;
-        cont.innerHTML = '';
-        const ids = Object.keys(db).filter(id => db[id]?.settings?.archived === true);
-        if(ids.length === 0){
-            cont.innerHTML = '<div class="mini">ماكو وحدات مؤرشفة حالياً.</div>';
-            return;
-        }
-        ids.sort((a,b)=>a.localeCompare(b, 'en', {numeric:true}));
-        ids.forEach(id => {
-            const d = db[id];
-            const div = document.createElement('div');
-            div.className = 'unit-card sold';
-            div.onclick = () => openUnit(id);
-            div.innerHTML = `<h3>${id}</h3><small>${d?.info?.name || '---'}</small>`;
-            cont.appendChild(div);
-        });
+  // ---------- Logs ----------
+  async function loadLogs(){
+    if(!isAdmin){ alert('ليس لديك صلاحية'); return; }
+    $('logsMsg').textContent='جاري...';
+    const { data, error } = await supabase.from('audit_logs')
+      .select('id, created_at, action, table_name, record_id, actor_id, actor_role, changes')
+      .order('id',{ascending:false})
+      .limit(50);
+    if(error){ $('logsMsg').textContent='خطأ: '+error.message; return; }
+    const body = $('logsBody');
+    body.innerHTML='';
+    (data||[]).forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${new Date(r.created_at).toLocaleString()}</td>
+        <td>${escapeHtml(r.action||'-')}</td>
+        <td>${escapeHtml(r.table_name||'-')}</td>
+        <td>${escapeHtml(r.record_id||'-')}</td>
+        <td style="font-family:ui-monospace;font-size:12px">${escapeHtml(r.actor_role||'-')}<br>${escapeHtml(r.actor_id||'-')}</td>
+        <td style="direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;font-size:12px">${escapeHtml(JSON.stringify(r.changes||{},null,2))}</td>
+      `;
+      body.appendChild(tr);
+    });
+    $('logsMsg').textContent = `تم ✅ (${data?.length||0})`;
+  }
+
+  $('btnReloadLogs').onclick = loadLogs;
+
+  // ---------- Super: create users ----------
+  $('btnMakeAdmin').onclick = ()=>{ $('newRole').value='admin'; $('newUnit').value=''; $('createMsg').textContent='اختارنا role=admin'; };
+
+  $('btnCreate').onclick = async ()=>{
+    if(!isSuper){ alert('ليس لديك صلاحية'); return; }
+    $('createMsg').textContent='جاري...';
+    const email = $('newEmail').value.trim();
+    const password = $('newPass').value.trim();
+    const r = $('newRole').value;
+    const unit_id = $('newUnit').value.trim().toUpperCase();
+    if(!email || !password){ $('createMsg').textContent='اكتب email و password'; return; }
+    if(r==='user' && !unit_id){ $('createMsg').textContent='للمستفيد لازم Unit ID مثل A1'; return; }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if(!session){ $('createMsg').textContent='سجّل دخول'; return; }
+
+    try{
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/${FUNCTION_NAME}`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
+        body: JSON.stringify({ email, password, role:r, unit_id: r==='user' ? unit_id : null })
+      });
+      const text = await res.text();
+      if(!res.ok) throw new Error(text);
+      const out = JSON.parse(text);
+      $('createMsg').textContent = `تم ✅ user_id: ${out.user_id}`;
+      $('newEmail').value=''; $('newPass').value=''; $('newUnit').value='';
+      // refresh
+      await fetchUnits();
+      renderDrawer();
+      renderHome();
+    }catch(e){
+      $('createMsg').textContent = 'فشل: ' + (e?.message||e);
     }
+  };
 
-    function setSection(sec){
-        currentSection = sec || 'home';
-        updateSectionPill();
+  // ---------- Utils ----------
+  function escapeHtml(str){
+    return String(str ?? '').replace(/[&<>"]/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[s]));
+  }
 
-        // active item highlight
-        document.querySelectorAll('#sideList .side-item').forEach(it => {
-            it.classList.toggle('active', it.getAttribute('data-section') === currentSection);
-        });
-
-        // Panels
-        const panelUnits = document.getElementById('panelUnits');
-        const panelArchive = document.getElementById('panelArchive');
-        const panelLogs = document.getElementById('panelLogs');
-        [panelUnits, panelArchive, panelLogs].forEach(p => p && p.classList.remove('active'));
-
-        // search visibility
-        const search = document.getElementById('searchBox');
-        const wantsSearch = ['home','late','warning','cancel'].includes(currentSection);
-        if(search){
-            search.style.display = wantsSearch ? 'block' : 'none';
-            if(!wantsSearch) search.value = '';
-        }
-
-        if (currentSection === 'admin'){
-            closeMenu();
-            openAdminsManager();
-            return;
-        }
-
-        if (currentSection === 'archive'){
-            panelArchive && panelArchive.classList.add('active');
-            renderArchive();
-            closeMenu();
-            return;
-        }
-
-        if (currentSection === 'logs'){
-            panelLogs && panelLogs.classList.add('active');
-            loadAuditLogs();
-            closeMenu();
-            return;
-        }
-
-        panelUnits && panelUnits.classList.add('active');
-        renderUnitsGrid(document.getElementById('searchBox')?.value || '');
-        closeMenu();
-    }
-
-    function initAdminDashboard() {
-        currentUnit = null;
-        switchScreen('adminDashboard');
-        currentSection = 'home';
-        updateSectionPill();
-        computeBadges();
-        renderUnitsGrid('');
-    }
-
-    // Grid render حسب القسم
-    window.renderUnitsGrid = function(filter) {
-        if(currentUnit !== null) return;
-        const grid = document.getElementById('unitsGrid');
-        if(!grid) return;
-        grid.innerHTML = '';
-
-        const wanted = currentSection;
-
-        const addUnitCard = (id, d) => {
-            const sold = isSold(d);
-            const hasPending = d && d.visits && d.visits.some(v => v.status === 'pending');
-            const overdue = getOverdueDays(d);
-            const overdueText = (overdue == null) ? '' : ` | ${overdue} يوم`;
-
-            const div = document.createElement('div');
-            div.className = `unit-card ${sold ? 'sold' : ''} ${hasPending ? 'has-request' : ''}`;
-            div.onclick = () => openUnit(id);
-            const name = sold ? (d?.info?.name || 'مباع') : 'متاح';
-            div.innerHTML = `<div class="notify-dot"></div><h3>${id}</h3><small>${name}${overdueText}</small>`;
-            grid.appendChild(div);
-        };
-
-        // حتى يظهر المتاح، نكمل على A/B/C
-        ['A','B','C'].forEach(cat => {
-            for(let i=1;i<=50;i++){
-                const id = cat + i;
-                if (filter && !id.toLowerCase().includes(String(filter).toLowerCase())) continue;
-
-                const d = db[id];
-                // بالرئيسية نعرض الكل (حتى لو ماكو data)
-                if (wanted === 'home'){
-                    if (d) addUnitCard(id, d);
-                    else {
-                        // وحدة متاحة بدون بيانات
-                        const div = document.createElement('div');
-                        div.className = 'unit-card';
-                        div.onclick = () => openUnit(id);
-                        div.innerHTML = `<h3>${id}</h3><small>متاح</small>`;
-                        grid.appendChild(div);
-                    }
-                    continue;
-                }
-
-                // باقي الأقسام: فقط المباعة اللي عندها last payment
-                if (!d || !isSold(d)) continue;
-                const ov = getOverdueDays(d);
-                if (ov == null) continue;
-
-                if (wanted === 'late' && ov > 60) addUnitCard(id, d);
-                if (wanted === 'warning' && ov >= 70 && ov <= 80) addUnitCard(id, d);
-                if (wanted === 'cancel' && ov >= 90) addUnitCard(id, d);
-            }
-        });
-
-        computeBadges();
-    }
-
-    window.filterUnits = (val) => window.renderUnitsGrid(val);
-
-window.openUnit = function(id) {
-        switchScreen('unitInterface'); 
-        currentUnit = id;
-        
-        if (!db[id]) {
-            // إنشاء هيكل فارغ إذا كانت الوحدة جديدة (للأدمن فقط)
-            db[id] = { info: {name:"",phone:""}, settings: {user:id, pass:"123"}, totalPrice:0, payments:[], works:[], history:[], notifs:[], media:[], visits:[], docs:[] };
-        }
-        // ضمان وجود المصفوفات
-        ['docs', 'media', 'history', 'notifs', 'visits', 'payments', 'works'].forEach(k => { if(!db[id][k]) db[id][k] = []; });
-        
-        // إضافة كلاس للتحكم بالإخفاء والإظهار
-        const ui = document.getElementById('unitInterface');
-        if(isAdmin) ui.classList.add('show-admin');
-        else ui.classList.remove('show-admin');
-        
-        loadUnitData();
-        showTab('info');
-    }
-
-    window.loadUnitData = function() {
-        if(!db[currentUnit]) return;
-        const d = db[currentUnit];
-        document.getElementById('headerUnitTitle').innerText = "الوحدة " + currentUnit;
-        document.getElementById('headerOwner').innerText = d.info.name || "غير محدد";
-        document.getElementById('ownerName').value = d.info.name || "";
-        document.getElementById('ownerPhone').value = d.info.phone || "";
-        document.getElementById('totalPrice').value = formatNumber(d.totalPrice);
-        document.getElementById('uUser').value = d.settings.user;
-        document.getElementById('uPass').value = d.settings.pass;
-        
-        // قفل الحقول إذا لم يكن أدمن
-        document.getElementById('ownerName').readOnly = !isAdmin;
-        document.getElementById('ownerPhone').readOnly = !isAdmin;
-        
-        renderTable('payTable', d.payments);
-        renderTable('workTable', d.works);
-        renderTable('histTable', d.history);
-        renderTable('notifTable', d.notifs);
-        renderVisitsTable(d.visits);
-        renderMediaGrid(d.media);
-        renderDocsTable(d.docs);
-        calcStats();
-    }
-
-    function renderTable(id, rows) {
-        if(!rows) rows = [];
-        const tb = document.getElementById(id).querySelector('tbody'); tb.innerHTML = "";
-        rows.forEach((r, i) => {
-            let tr = tb.insertRow();
-            r.forEach(c => tr.insertCell().innerText = c);
-            if(isAdmin) tr.insertCell().innerHTML = `<button onclick="delRow('${id}',${i})" style="color:red;border:none;background:none;font-size:18px">&times;</button>`;
-        });
-    }
-
-    function renderDocsTable(docs) {
-        const tb = document.getElementById('docsTable').querySelector('tbody'); tb.innerHTML = "";
-        if(!docs) docs = [];
-        docs.forEach((d, i) => {
-            let link = `<button onclick="viewImage('${d.url}')" style="background:none;border:none;color:blue;text-decoration:underline;cursor:pointer;font-weight:bold;">عرض الملف</button>`;
-            tb.innerHTML += `<tr><td>${d.date}</td><td>${d.type}</td><td>${d.note}</td><td>${link}</td>${isAdmin ? `<td><button onclick="delRow('docsTable',${i})" style="color:red;border:none;background:none">×</button></td>` : ''}</tr>`;
-        });
-    }
-
-    function renderVisitsTable(visits) {
-        if(!visits) visits = [];
-        const tb = document.getElementById('visitTable').querySelector('tbody'); tb.innerHTML = "";
-        visits.forEach((v, i) => {
-            let tr = tb.insertRow();
-            tr.insertCell().innerText = v.date;
-            tr.insertCell().innerText = v.reason;
-            let status = v.status;
-            let statusText = status === 'pending' ? 'قيد المراجعة' : (status === 'approved' ? 'مقبول' : 'مرفوض');
-            let statusClass = status === 'pending' ? 'st-pending' : (status === 'approved' ? 'st-approved' : 'st-rejected');
-            tr.insertCell().innerHTML = `<span class="status-badge ${statusClass}">${statusText}</span>`;
-            let actionTd = tr.insertCell();
-            if(isAdmin) {
-                if(status === 'pending') {
-                    actionTd.innerHTML = `<button class="visit-action-btn btn-approve" onclick="setVisitStatus(${i}, 'approved')">✔</button><button class="visit-action-btn btn-reject" onclick="setVisitStatus(${i}, 'rejected')">✖</button>`;
-                } else actionTd.innerHTML = `<button onclick="delRow('visitTable',${i})" style="color:red;border:none;background:none;">حذف</button>`;
-            } else actionTd.innerText = "-";
-        });
-    }
-
-    window.submitVisitRequest = function() {
-        const date = document.getElementById('reqVisitDate').value;
-        const reason = document.getElementById('reqVisitReason').value;
-        if(!date || !reason) return alert("املأ الحقول");
-        if(!db[currentUnit].visits) db[currentUnit].visits = [];
-        db[currentUnit].visits.push({ date: date, reason: reason, status: 'pending' });
-        saveData();
-        document.getElementById('reqVisitDate').value = "";
-        document.getElementById('reqVisitReason').value = "";
-        alert("تم الإرسال");
-    }
-
-    window.setVisitStatus = function(index, status) {
-        db[currentUnit].visits[index].status = status;
-        saveData();
-    }
-
-    function renderMediaGrid(media) {
-        const g = document.getElementById('mediaGrid'); g.innerHTML = "";
-        if(!media) media = [];
-        media.forEach((m, i) => {
-            let content = '';
-            if (m.type === 'video') {
-                content = `<a href="${m.url}" target="_blank" style="font-size:40px;text-decoration:none;">🎬</a>`;
-            } else {
-                content = `<img src="${m.url}" onclick="viewImage('${m.url}')">`;
-            }
-            
-            g.innerHTML += `
-            <div class="media-item">
-                ${content}
-                ${isAdmin ? `<button onclick="delRow('mediaGrid',${i})" style="position:absolute;top:5px;left:5px;background:red;color:white;border:none;border-radius:50%;width:25px;height:25px;cursor:pointer;">×</button>` : ''}
-            </div>`;
-        });
-    }
-
-    window.viewImage = function(url) {
-        if(!url) return;
-        document.getElementById('fullImage').src = url;
-        document.getElementById('imageViewer').style.display = 'flex';
-    }
-    
-    // دالة التنزيل (الجديدة)
-    window.downloadCurrentImage = async function() {
-        const img = document.getElementById('fullImage');
-        const url = img.src;
-        if(!url) return;
-        
-        try {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = "image_" + Date.now() + ".jpg";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (e) {
-            console.error(e);
-            window.open(url, '_blank');
-        }
-    }
-
-    function calcStats() {
-        const d = db[currentUnit];
-        let total = parseFloat(String(d.totalPrice).replace(/,/g,'')) || 0;
-        let payments = d.payments || [];
-        let paid = payments.reduce((a,c) => a + (parseFloat(String(c[2]).replace(/,/g,''))||0), 0);
-        document.getElementById('dispPaid').innerText = formatNumber(paid);
-        document.getElementById('dispRemain').innerText = formatNumber(total - paid);
-        let works = d.works || [];
-        document.getElementById('dispProg').innerText = works.length > 0 ? works[works.length-1][2] : "0%";
-    }
-
-    window.showTab = function(t) {
-        currentTab = t;
-        document.querySelectorAll('.tab-content').forEach(d => d.style.display = 'none');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(t).style.display = 'block';
-        
-        const map = {'info':0, 'payments':1, 'docs':2, 'works':3, 'visits':4, 'history':5, 'notifs':6, 'media':7, 'settings':8};
-        if(document.querySelectorAll('.tab-btn')[map[t]]) document.querySelectorAll('.tab-btn')[map[t]].classList.add('active');
-
-        // التحكم في ظهور زر الإضافة (للأدمن فقط)
-        const fab = document.getElementById('fabAdd');
-        fab.style.display = (isAdmin && ['payments','docs','works','history','notifs','media'].includes(t)) ? 'flex' : 'none';
-    }
-
-    window.openModal = function() {
-        const content = document.getElementById('modalInputs');
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('actionModal').style.display = 'flex';
-        
-        if(currentTab === 'media') {
-            content.innerHTML = `<label>صورة أو فيديو</label><input type="file" id="mFile"><input type="text" id="mDesc" placeholder="وصف (اختياري)"><input type="date" id="mDate" value="${today}"><p id="uploadStat" style="color:blue"></p>`;
-        } else if(currentTab === 'docs') { 
-            content.innerHTML = `<label>نوع الوثيقة</label><select id="mType"><option>إنذار</option><option>تأجيل</option><option>تعهد</option><option>أخرى</option></select><input type="text" id="mNote" placeholder="ملاحظات"><label>صورة الوثيقة</label><input type="file" id="mFile"><input type="date" id="mDate" value="${today}"><p id="uploadStat" style="color:blue"></p>`;
-        } else if(currentTab === 'payments') {
-            content.innerHTML = `<input type="text" id="mRcpt" placeholder="رقم الوصل"><input type="number" id="mAmt" placeholder="المبلغ"><input type="text" id="mNote" placeholder="تفاصيل"><input type="date" id="mDate" value="${today}">`;
-        } else if(currentTab === 'works') {
-             // إنشاء قائمة منسدلة بالنسب المئوية
-             let options = "";
-             for(let i=5; i<=100; i+=5) {
-                 options += `<option value="${i}">${i}%</option>`;
-             }
-             content.innerHTML = `<label>المرحلة</label><input type="text" id="mStage" placeholder="المرحلة (مثلاً: صب السقف)"><label>نسبة الإنجاز</label><select id="mPerc" style="width:100%;margin-top:5px;border:1px solid #ddd;padding:10px;border-radius:8px">${options}</select><input type="date" id="mDate" value="${today}">`;
-        } else if(currentTab === 'notifs') {
-             content.innerHTML = `<input type="text" id="mMsg" placeholder="نص التبليغ"><input type="date" id="mDate" value="${today}">`;
-        } else if (currentTab === 'history') {
-             content.innerHTML = `<label>الحدث</label><select id="mEvent" style="width:100%;margin-top:5px;border:1px solid #ddd;padding:10px;border-radius:8px"><option>تنازل</option><option>بيع</option><option>انسحاب</option></select><label>ملاحظات</label><input type="text" id="mNote"><label>التاريخ</label><input type="text" id="mDate" value="${today}">`;
-        }
-    }
-
-    // --- دالة الرفع والحفظ ---
-    window.confirmModal = async function() {
-        const date = document.getElementById('mDate').value;
-        const d = db[currentUnit];
-        
-        if (currentTab === 'media' || currentTab === 'docs') {
-            const fileInput = document.getElementById('mFile');
-            const file = fileInput.files[0];
-            const statusText = document.getElementById('uploadStat');
-
-            if (!file) return alert("يرجى اختيار ملف أولاً");
-
-            statusText.innerText = "جاري الرفع... يرجى الانتظار";
-            
-            const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, ''); 
-            const { data, error } = await supabase.storage.from('media').upload(fileName, file);
-
-            if (error) {
-                console.error(error);
-                alert("فشل الرفع: " + error.message);
-                statusText.innerText = "";
-            } else {
-                const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(fileName);
-                const publicURL = publicUrlData.publicUrl;
-
-                if (currentTab === 'media') {
-                     const desc = document.getElementById('mDesc').value;
-                     const type = file.type.startsWith('video') ? 'video' : 'image';
-                     d.media.push({type: type, desc: desc, date: date, url: publicURL});
-                } else {
-                     const type = document.getElementById('mType').value;
-                     const note = document.getElementById('mNote').value;
-                     d.docs.push({type: type, note: note, date: date, url: publicURL});
-                }
-                saveData();
-                closeModal();
-            }
-            return;
-        }
-
-        if (currentTab === 'payments') {
-            const r = document.getElementById('mRcpt').value;
-            const a = document.getElementById('mAmt').value;
-            const n = document.getElementById('mNote').value;
-            if(!a) return; d.payments.push([date, r||"-", formatNumber(a), n]);
-        } else if (currentTab === 'works') {
-            const s = document.getElementById('mStage').value;
-            const p = document.getElementById('mPerc').value;
-            if(!s) return; d.works.push([s, date, p+"%"]);
-        } else if (currentTab === 'history') {
-             d.history.push([date, document.getElementById('mEvent').value, document.getElementById('mNote').value]);
-        } else if (currentTab === 'notifs') {
-             d.notifs.push([date, document.getElementById('mMsg').value]);
-        }
-        saveData();
-        closeModal();
-    }
-
-    window.closeModal = () => document.getElementById('actionModal').style.display = 'none';
-    
-    window.delRow = function(id, i) {
-        if(!confirm("حذف؟")) return;
-        if(id==='visitTable') db[currentUnit].visits.splice(i,1);
-        else { const map={'payTable':'payments','workTable':'works','histTable':'history','notifTable':'notifs', 'docsTable':'docs', 'mediaGrid':'media'}; db[currentUnit][map[id]].splice(i,1); }
-        saveData();
-    }
-    
-    window.goBack = function() { 
-        if(isAdmin) {
-             initAdminDashboard(); 
-        } else {
-             location.reload(); 
-        }
-    }
-    
-    function formatNumber(n) { return n ? Number(String(n).replace(/,/g,'')).toLocaleString('en-US') : "0"; }
-    document.addEventListener("keyup", function(event) { if (event.key === "Enter" && document.getElementById('loginScreen').style.display !== 'none') handleLogin(); });
+  // ---------- Start ----------
+  initApp();
 </script>
+
 </body>
 </html>
