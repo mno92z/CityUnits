@@ -4,210 +4,181 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>نظام إدارة الوحدات السكنية</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
-:root{--blue:#1e88e5;--late:#fb8c00;--warn:#e53935;--cancel:#8e24aa;--bg:#f4f6f8;--border:#dfe3e8}
-body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg)}
+body{
+  margin:0;
+  font-family:Tahoma, Arial, sans-serif;
+  background:#f5f5f5;
+}
 .hide{display:none}
-header{background:var(--blue);color:#fff;padding:14px;display:flex;justify-content:space-between;align-items:center}
-.sidebar{position:fixed;right:0;top:56px;bottom:0;width:220px;background:#fff;border-left:1px solid var(--border);padding:10px}
-.sidebar button{width:100%;margin-bottom:8px}
-main{margin-right:240px;padding:12px}
-.card{background:#fff;padding:14px;border-radius:12px;margin-bottom:12px}
-.units{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px}
-.unit{padding:14px;border-radius:10px;text-align:center;border:2px solid transparent;cursor:pointer;font-weight:600}
-.unit.sold{background:#e3f2fd;border-color:var(--blue)}
-.unit.late{background:#fff3e0;border-color:var(--late)}
-.unit.warn{background:#ffebee;border-color:var(--warn)}
-.unit.cancel{background:#f3e5f5;border-color:var(--cancel)}
-.tabs{display:flex;gap:6px;overflow-x:auto}
-.tab{padding:6px 12px;border-radius:20px;border:1px solid #ccc;cursor:pointer;white-space:nowrap}
-.tab.active{background:var(--blue);color:#fff}
-input,textarea{width:100%;padding:8px;margin-top:6px;border:1px solid var(--border);border-radius:6px}
-button{background:var(--blue);color:#fff;border:none;padding:8px;border-radius:8px;cursor:pointer}
-.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
-.gallery img{width:100%;border-radius:8px}
-.readonly input,.readonly textarea{background:#eee}
+header{
+  background:#2e7d32;
+  color:#fff;
+  padding:12px;
+  font-size:18px;
+}
+button{
+  background:#2e7d32;
+  color:#fff;
+  border:none;
+  padding:8px 12px;
+  cursor:pointer;
+}
+input,textarea{
+  width:100%;
+  padding:6px;
+  margin-top:4px;
+}
+.card{
+  background:#fff;
+  margin:10px;
+  padding:12px;
+  border:1px solid #ddd;
+}
+.units{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(90px,1fr));
+  gap:8px;
+  padding:10px;
+}
+.unit{
+  background:#fff;
+  border:1px solid #ccc;
+  padding:10px;
+  text-align:center;
+  cursor:pointer;
+}
+.unit.sold{
+  background:#e8f5e9;
+  border-color:#2e7d32;
+}
+.tabs{
+  display:flex;
+  gap:6px;
+  margin:10px;
+}
+.tab{
+  padding:6px 10px;
+  border:1px solid #ccc;
+  cursor:pointer;
+}
+.tab.active{
+  background:#2e7d32;
+  color:#fff;
+}
 </style>
 </head>
+
 <body>
 
-<header>
-<b>نظام إدارة الوحدات</b>
-<span id="roleLabel"></span>
-</header>
+<header>إدارة الوحدات السكنية</header>
 
 <div id="login" class="card">
-<input id="email" placeholder="الايميل">
-<input id="password" type="password" placeholder="كلمة المرور">
-<button onclick="login()">دخول</button>
+  <input id="email" placeholder="الايميل">
+  <input id="password" type="password" placeholder="كلمة المرور">
+  <button onclick="login()">دخول</button>
 </div>
 
-<div id="app" class="hide">
-<div class="sidebar">
-<button onclick="setView('all')">الرئيسية</button>
-<button onclick="setView('late')">المتأخرين</button>
-<button onclick="setView('warn')">الإنذارات</button>
-<button onclick="setView('cancel')">الفسخ</button>
-</div>
+<div id="main" class="hide">
 
-<main>
-<div id="unitsView">
-<div class="units" id="unitsGrid"></div>
-</div>
+  <div id="unitsView">
+    <div class="units" id="unitsGrid"></div>
+  </div>
 
-<div id="unitView" class="hide">
-<div class="tabs">
-<div class="tab active" data-tab="info">المعلومات</div>
-<div class="tab" data-tab="finance">المالية</div>
-<div class="tab" data-tab="media">الوسائط</div>
-</div>
+  <div id="unitView" class="hide">
 
-<div id="info" class="card tabContent"></div>
-<div id="finance" class="card tabContent hide"></div>
-<div id="media" class="card tabContent hide"></div>
+    <div class="tabs">
+      <div class="tab active" data-tab="info">المعلومات</div>
+      <div class="tab" data-tab="finance">المالية</div>
+      <div class="tab" data-tab="media">الوسائط</div>
+    </div>
 
-<button onclick="back()">⬅ رجوع</button>
-</div>
-</main>
+    <div id="info" class="card tabContent"></div>
+    <div id="finance" class="card tabContent hide"></div>
+    <div id="media" class="card tabContent hide"></div>
+
+    <button onclick="back()">رجوع</button>
+  </div>
 </div>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const supabase = createClient(
- "https://csaqawviitdrjzeasmne.supabase.co",
- "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ"
+  "https://csaqawviitdrjzeasmne.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ"
 );
 
-let role="user", units=[], currentUnit=null, viewMode="all";
-const MEDIA_BUCKET="unit-media";
+let currentUnit=null;
 
 window.login = async ()=>{
- const {error}=await supabase.auth.signInWithPassword({email:email.value,password:password.value});
- if(error) alert(error.message); else init();
+  const {error}=await supabase.auth.signInWithPassword({
+    email:email.value,
+    password:password.value
+  });
+  if(error) alert(error.message);
+  else init();
 };
 
 async function init(){
- const {data:{user}}=await supabase.auth.getUser();
- if(!user) return;
- const {data:profile}=await supabase.from("profiles").select("role").eq("id",user.id).single();
- role=profile.role;
- roleLabel.innerText=role;
- login.classList.add("hide");
- app.classList.remove("hide");
- loadUnits();
+  login.classList.add("hide");
+  main.classList.remove("hide");
+  loadUnits();
 }
 
-function isSold(u){return u?.data?.info?.name && u.data.info.name.trim()!=="";}
-
-function calcStatus(u){
- const payments=u.data?.finance?.payments||[];
- if(payments.length===0) return "cancel";
- const last=new Date(payments[payments.length-1].date);
- const diff=(Date.now()-last.getTime())/86400000;
- if(diff>=90) return "cancel";
- if(diff>=70) return "warn";
- if(diff>60) return "late";
- return "normal";
+function isSold(u){
+  return u?.data?.info?.name && u.data.info.name.trim()!=="";
 }
 
 async function loadUnits(){
- const {data}=await supabase.from("units").select("id,data");
- units=data||[];
- renderUnits();
+  const {data}=await supabase.from("units").select("id,data");
+  unitsGrid.innerHTML="";
+  data.forEach(u=>{
+    const d=document.createElement("div");
+    d.className="unit"+(isSold(u)?" sold":"");
+    d.innerText=u.id;
+    d.onclick=()=>openUnit(u);
+    unitsGrid.appendChild(d);
+  });
 }
 
-function setView(v){viewMode=v;renderUnits();}
+function openUnit(u){
+  currentUnit=u;
+  unitsView.classList.add("hide");
+  unitView.classList.remove("hide");
 
-function renderUnits(){
- unitsGrid.innerHTML="";
- units.forEach(u=>{
-   const status=calcStatus(u);
-   if(viewMode!=="all" && status!==viewMode) return;
-   const div=document.createElement("div");
-   let cls="unit";
-   if(isSold(u)) cls+=" sold";
-   if(status==="late") cls+=" late";
-   if(status==="warn") cls+=" warn";
-   if(status==="cancel") cls+=" cancel";
-   div.className=cls;
-   div.innerText=u.id;
-   div.onclick=()=>openUnit(u);
-   unitsGrid.appendChild(div);
- });
+  info.innerHTML=`
+    <b>اسم المستفيد</b>
+    <input id="name" value="${u.data?.info?.name||""}">
+    <button onclick="save()">حفظ</button>
+  `;
+
+  finance.innerHTML="<pre>"+JSON.stringify(u.data?.finance||{},null,2)+"</pre>";
+  media.innerHTML="قسم الوسائط";
 }
 
-async function openUnit(u){
- currentUnit=u;
- unitsView.classList.add("hide");
- unitView.classList.remove("hide");
-
- info.innerHTML=`
- <label>اسم المستفيد</label>
- <input id="name" value="${u.data?.info?.name||""}">
- <label>الهاتف</label>
- <input id="phone" value="${u.data?.info?.phone||""}">
- <button onclick="saveInfo()">حفظ</button>
- `;
-
- finance.innerHTML=`
- <label>دفعات مالية (JSON)</label>
- <textarea id="payments" rows="6">${JSON.stringify(u.data?.finance?.payments||[],null,2)}</textarea>
- <button onclick="saveFinance()">حفظ المالية</button>
- `;
-
- await loadMedia();
-}
-
-window.saveInfo = async ()=>{
- const data=currentUnit.data||{};
- data.info={name:name.value,phone:phone.value};
- await supabase.from("units").update({data}).eq("id",currentUnit.id);
- alert("تم الحفظ");
+window.save = async ()=>{
+  const data=currentUnit.data||{};
+  data.info={name:name.value};
+  await supabase.from("units").update({data}).eq("id",currentUnit.id);
+  alert("تم الحفظ");
 };
 
-window.saveFinance = async ()=>{
- const data=currentUnit.data||{};
- try{data.finance={payments:JSON.parse(payments.value)}}catch(e){alert("خطأ بالبيانات");return;}
- await supabase.from("units").update({data}).eq("id",currentUnit.id);
- alert("تم حفظ المالية");
- loadUnits();
+window.back = ()=>{
+  unitView.classList.add("hide");
+  unitsView.classList.remove("hide");
 };
-
-async function loadMedia(){
- let html=`<input type="file" id="file"><button onclick="uploadMedia()">رفع</button><hr>`;
- const {data:files}=await supabase.storage.from(MEDIA_BUCKET).list(currentUnit.id);
- html+=`<div class="gallery">`;
- for(const f of files||[]){
-   const {data:url}=await supabase.storage.from(MEDIA_BUCKET)
-     .createSignedUrl(currentUnit.id+"/"+f.name,600);
-   html+=`<img src="${url.signedUrl}">`;
- }
- html+=`</div>`;
- media.innerHTML=html;
-}
-
-window.uploadMedia = async ()=>{
- const file=document.getElementById("file").files[0];
- if(!file) return;
- const path=currentUnit.id+"/"+Date.now()+"_"+file.name;
- await supabase.storage.from(MEDIA_BUCKET).upload(path,file);
- loadMedia();
-};
-
-window.back=()=>{unitView.classList.add("hide");unitsView.classList.remove("hide");};
 
 document.querySelectorAll(".tab").forEach(t=>{
- t.onclick=()=>{
-  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-  document.querySelectorAll(".tabContent").forEach(c=>c.classList.add("hide"));
-  t.classList.add("active");
-  document.getElementById(t.dataset.tab).classList.remove("hide");
- };
+  t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tabContent").forEach(c=>c.classList.add("hide"));
+    t.classList.add("active");
+    document.getElementById(t.dataset.tab).classList.remove("hide");
+  };
 });
 
-init();
 </script>
 </body>
 </html>
