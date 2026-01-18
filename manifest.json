@@ -1,0 +1,9 @@
+{
+  "name": "CityUnits",
+  "short_name": "CityUnits",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#004d40",
+  "icons": []
+}

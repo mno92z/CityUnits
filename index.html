@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>إدارة مدينة الأزهر - النظام الشامل</title>
     
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="./manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#004d40">
@@ -266,6 +266,28 @@
     let isSuperAdmin = false;
     let currentTab = 'info';
 
+    // --- أمان: إذا صار خطأ بالـ JS لا تخلي شاشة التحميل تعلق ---
+    function forceShowLogin(msg){
+        try { document.getElementById('loadingScreen').style.display = 'none'; } catch(e){}
+        try { switchScreen('loginScreen'); } catch(e){}
+        if (msg) console.warn(msg);
+    }
+    window.addEventListener('error', (e) => {
+        forceShowLogin(e?.message || 'JS error');
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+        forceShowLogin(e?.reason?.message || 'Promise error');
+    });
+
+    // Timeout احتياطي حتى لا يبقى "جاري الاتصال" للأبد
+    setTimeout(() => {
+        const loading = document.getElementById('loadingScreen');
+        const login = document.getElementById('loginScreen');
+        if (loading && loading.style.display !== 'none' && login && login.style.display === 'none') {
+            forceShowLogin('Timeout: showing login');
+        }
+    }, 4000);
+
     // إعدادات توليد الوحدات (بدون تغيير واجهة الكروت)
     const UNIT_COUNTS = { A: 472, B: 56, C: 284, D: 142 };
 
@@ -328,6 +350,8 @@
 
     // --- بعد تسجيل الدخول ---
     async function afterLogin(user) {
+        // بداية الدخول: لا نخلي شاشة التحميل تعلق
+        try { document.getElementById('loadingScreen').style.display = 'none'; } catch(e){}
         // جلب الدور
         const { data: profile, error: pErr } = await supabase
             .from('profiles')
@@ -384,6 +408,7 @@
         const pass = document.getElementById('loginPass').value.trim();
         if(!email || !pass) return alert("أدخل الإيميل والباسورد");
 
+        document.getElementById('loadingScreen').style.display = 'flex';
         const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
         if (error) return alert("بيانات الدخول غير صحيحة!");
 
