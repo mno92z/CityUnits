@@ -337,33 +337,19 @@
 
     // --- جلب البيانات + متابعة الجلسة ---
     async function init() {
-        // لا ننتظر: أظهر شاشة الدخول فوراً، وبعدين حدث الحالة
+        // لا ننتظر: أظهر شاشة الدخول فوراً، وبعدين افحص الجلسة
         try { switchScreen('loginScreen'); } catch(e){}
         try {
-            // متابعة تغيّر حالة الدخول
-            supabase.auth.onAuthStateChange(async (_event, session) => {
-                if (!session?.user) {
-                    document.getElementById('loadingScreen').style.display = 'none';
-                    switchScreen('loginScreen');
-                    return;
-                }
-                await afterLogin(session.user);
-            });
-
-            // فحص الجلسة الحالية مرة واحدة
             const { data: sess, error: sessErr } = await supabase.auth.getSession();
             if (sessErr) console.warn(sessErr);
-
             if (sess?.session?.user) {
+                document.getElementById('loadingScreen').style.display = 'flex';
                 await afterLogin(sess.session.user);
-            } else {
-                document.getElementById('loadingScreen').style.display = 'none';
-                switchScreen('loginScreen');
             }
         } catch (e) {
             console.error(e);
-            document.getElementById('loadingScreen').style.display = 'none';
-            switchScreen('loginScreen');
+            // نخليها على شاشة الدخول
+            try { document.getElementById('loadingScreen').style.display = 'none'; } catch(_e){}
         }
     }
     init();
@@ -405,11 +391,14 @@
         db = {};
         (u || []).forEach(r => db[r.id] = r.data);
 
-        document.getElementById('loadingScreen').style.display = 'none';
+        try { document.getElementById('loadingScreen').style.display = 'none'; } catch(e){}
 
         if (isAdmin) {
             document.getElementById('btnManageAdmins').style.display = isSuperAdmin ? 'block' : 'none';
-            initAdminDashboard();
+            // افتح الداشبورد فوراً ثم ارسم الكروت
+            switchScreen('adminDashboard');
+            currentUnit = null;
+            try { renderUnitsGrid(''); } catch(e){ console.error(e); }
         } else {
             // user: فتح وحدته فقط (حتى لو db بيها وحدة وحدة بسبب RLS)
             const unitId = (u && u[0] && u[0].id) ? u[0].id : null;
@@ -424,6 +413,7 @@
 
     // --- تسجيل الدخول (Email/Password) ---
     window.handleLogin = async function() {
+        try {
         const email = document.getElementById('loginUser').value.trim();
         const pass = document.getElementById('loginPass').value.trim();
         if(!email || !pass) return alert("أدخل الإيميل والباسورد");
@@ -433,6 +423,12 @@
         if (error) return alert("بيانات الدخول غير صحيحة!");
 
         await afterLogin(data.user);
+        } catch (e) {
+            console.error(e);
+            try { document.getElementById('loadingScreen').style.display = 'none'; } catch(_e){}
+            try { switchScreen('loginScreen'); } catch(_e){}
+            alert('صار خطأ أثناء تسجيل الدخول: ' + (e?.message || e));
+        }
     }
 
     // --- تسجيل خروج (نفس زر الخروج بدون تغيير) ---
