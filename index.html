@@ -295,18 +295,29 @@
         return data?.signedUrl || null;
     }
 
-    // --- جلب البيانات + Session ---
+    // --- جلب البيانات + متابعة الجلسة ---
     async function init() {
         try {
-            // إذا عنده جلسة
-            const { data: sess } = await supabase.auth.getSession();
-            if (!sess?.session) {
+            // متابعة تغيّر حالة الدخول
+            supabase.auth.onAuthStateChange(async (_event, session) => {
+                if (!session?.user) {
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    switchScreen('loginScreen');
+                    return;
+                }
+                await afterLogin(session.user);
+            });
+
+            // فحص الجلسة الحالية مرة واحدة
+            const { data: sess, error: sessErr } = await supabase.auth.getSession();
+            if (sessErr) console.warn(sessErr);
+
+            if (sess?.session?.user) {
+                await afterLogin(sess.session.user);
+            } else {
                 document.getElementById('loadingScreen').style.display = 'none';
                 switchScreen('loginScreen');
-                return;
             }
-
-            await afterLogin(sess.session.user);
         } catch (e) {
             console.error(e);
             document.getElementById('loadingScreen').style.display = 'none';
@@ -327,7 +338,7 @@
         if (pErr || !profile) {
             document.getElementById('loadingScreen').style.display = 'none';
             switchScreen('loginScreen');
-            alert("حسابك غير مهيأ (profiles). راجع الإدارة.");
+            alert("حسابك غير مهيأ (profiles). راجع الإدارة.\nتفاصيل: " + (pErr?.message || pErr));
             return;
         }
 
@@ -343,7 +354,7 @@
             console.error(uErr);
             document.getElementById('loadingScreen').style.display = 'none';
             switchScreen('loginScreen');
-            alert("فشل تحميل الوحدات");
+            alert("فشل تحميل الوحدات: " + (uErr?.message || uErr));
             return;
         }
 
@@ -424,7 +435,7 @@
             // (نخليها كما هي)
         }
 
-        const { error } = await supabase.from('units').update({ data: d }).eq('id', currentUnit);
+        const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d }, { onConflict: 'id' });
 
         if (error) alert("خطأ في الحفظ: " + error.message);
         else {
