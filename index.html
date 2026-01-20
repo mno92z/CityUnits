@@ -5,246 +5,270 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>إدارة مدينة الأزهر - النظام الشامل</title>
     
-    <link rel="manifest" href="./manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#004d40">
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; --white: #ffffff; --sold-bg: #e0f2f1; --sold-border: #00bfa5; --danger: #d32f2f; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; -webkit-tap-highlight-color: transparent; }
         * { box-sizing: border-box; }
         button, input, select, textarea { font-size: 16px; outline: none; font-family: inherit; }
-        .container { max-width: 100%; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
         
+        /* Toast Notification */
+        #toast { visibility: hidden; min-width: 250px; margin-left: -125px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 16px; position: fixed; z-index: 99999; left: 50%; bottom: 30px; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: opacity 0.5s, bottom 0.5s; opacity: 0; }
+        #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+
         /* شاشة التحميل */
-        #loadingScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; transition: opacity 0.5s; }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        #loadingScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; transition: opacity 0.5s; }
+        .loader { border: 4px solid #ddd; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* عارض الصور المكبر مع زر التنزيل */
+        /* عارض الصور */
         #imageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
-        #fullImage { max-width: 95%; max-height: 80vh; border-radius: 5px; box-shadow: 0 0 20px rgba(255,255,255,0.1); object-fit: contain; }
-        
-        /* أزرار العارض */
-        .viewer-btn { position: absolute; top: 20px; color: white; font-size: 24px; cursor: pointer; background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10001; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.3); transition: 0.2s; }
-        .viewer-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
-        .close-viewer { right: 20px; }
-        .download-btn { left: 20px; }
+        #fullImage { max-width: 100%; max-height: 80vh; object-fit: contain; }
+        .viewer-controls { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; }
+        .viewer-btn { color: white; background: rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; font-size: 20px; backdrop-filter: blur(5px); }
 
         /* تسجيل الدخول */
-        #loginScreen { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(135deg, var(--primary), #00251a); color: white; text-align: center; min-height: 100vh; }
-        .login-box { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
-        .login-input { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; background: rgba(255,255,255,0.9); color: #333; font-weight: bold; }
-        .login-btn { width: 100%; padding: 15px; background: var(--accent); color: var(--primary); font-weight: 900; border: none; border-radius: 12px; margin-top: 10px; cursor: pointer; }
-        
+        #loginScreen { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 20px; background: linear-gradient(135deg, var(--primary), #00251a); text-align: center; color: white; }
+        .login-box { background: rgba(255,255,255,0.15); padding: 30px 20px; border-radius: 20px; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .login-input { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; background: rgba(255,255,255,0.95); color: #333; font-weight: 600; text-align: center; }
+        .login-btn { width: 100%; padding: 15px; background: var(--accent); color: white; font-weight: 800; border: none; border-radius: 12px; margin-top: 15px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,191,165,0.3); transition: transform 0.2s; }
+        .login-btn:active { transform: scale(0.98); }
+
         /* لوحة التحكم */
-        #adminDashboard { display: none; padding: 20px; }
-        .top-bar { position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 10px 0; display: flex; gap: 10px; flex-direction: column; }
-        .search-input { width: 100%; padding: 15px; border-radius: 50px; border: 1px solid #ddd; font-size: 16px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .super-admin-btn { background: #333; color: var(--accent); border: 1px solid var(--accent); padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: none; }
+        #adminDashboard { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .top-bar { position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 10px 0; display: flex; flex-direction: column; gap: 10px; }
+        .search-container { display: flex; gap: 10px; }
+        .search-input { flex: 1; padding: 15px; border-radius: 12px; border: 1px solid #ddd; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .icon-btn { width: 50px; background: #333; color: white; border-radius: 12px; border: none; cursor: pointer; font-size: 20px; }
         
-        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding-bottom: 80px; margin-top: 10px; }
-        .unit-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; position: relative; }
+        .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; padding-bottom: 80px; margin-top: 15px; }
+        .unit-card { background: white; padding: 15px 10px; border-radius: 16px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.2s; border: 2px solid transparent; }
+        .unit-card:active { transform: scale(0.96); }
         .unit-card.sold { border-color: var(--sold-border); background: var(--sold-bg); }
-        .unit-card h3 { margin: 0; color: var(--primary); font-size: 18px; }
-        .unit-card small { color: #888; font-size: 11px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .notify-dot { position: absolute; top: -5px; right: -5px; width: 15px; height: 15px; background: red; border-radius: 50%; border: 2px solid white; display: none; }
+        .unit-card h3 { margin: 0 0 5px 0; color: var(--primary); font-size: 18px; }
+        .unit-card small { color: #666; font-size: 11px; display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .notify-dot { position: absolute; top: 8px; right: 8px; width: 10px; height: 10px; background: var(--danger); border-radius: 50%; display: none; }
         .has-request .notify-dot { display: block; }
 
         /* واجهة الوحدة */
-        #unitInterface { display: none; background: white; min-height: 100vh; padding-bottom: 80px; }
-        .unit-header { background: var(--primary); color: white; padding: 20px; border-radius: 0 0 25px 25px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
+        #unitInterface { display: none; background: #fff; min-height: 100vh; padding-bottom: 90px; }
+        .unit-header { background: var(--primary); color: white; padding: 25px 20px 35px; border-radius: 0 0 30px 30px; display: flex; justify-content: space-between; align-items: flex-start; box-shadow: 0 4px 20px rgba(0,77,64,0.3); }
+        .back-btn-small { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; backdrop-filter: blur(5px); }
+
+        .stats-container { margin-top: -25px; padding: 0 20px; display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 15px; }
+        .stat-card { min-width: 140px; padding: 15px; border-radius: 16px; color: white; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .bg-1 { background: linear-gradient(135deg, #FF9800, #F57C00); }
+        .bg-2 { background: linear-gradient(135deg, #2196F3, #1976D2); }
+        .bg-3 { background: linear-gradient(135deg, #4CAF50, #388E3C); }
+
+        .tabs-nav { display: flex; overflow-x: auto; padding: 10px 20px; gap: 15px; border-bottom: 1px solid #f0f0f0; margin-bottom: 15px; scrollbar-width: none; }
+        .tab-btn { padding: 8px 0; background: none; border: none; color: #888; font-weight: 600; font-size: 15px; white-space: nowrap; position: relative; }
+        .tab-btn.active { color: var(--primary); }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -11px; left: 0; width: 100%; height: 3px; background: var(--accent); border-radius: 3px 3px 0 0; }
         
-        .stats-scroll { display: flex; overflow-x: auto; gap: 15px; padding: 0 20px 20px; scrollbar-width: none; }
-        .stat-card { min-width: 150px; padding: 15px; border-radius: 15px; color: white; flex-shrink: 0; }
-        .bg-1 { background: linear-gradient(45deg, #FF9800, #F57C00); }
-        .bg-2 { background: linear-gradient(45deg, #2196F3, #1976D2); }
-        .bg-3 { background: linear-gradient(45deg, #4CAF50, #388E3C); }
+        .tab-content { display: none; padding: 0 20px; animation: fadeIn 0.4s; }
+        .table-responsive { overflow-x: auto; border-radius: 12px; border: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; white-space: nowrap; }
+        th { background: #f8f9fa; color: #555; font-weight: 600; padding: 12px; border-bottom: 2px solid #eee; }
+        td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
+        tr:last-child td { border-bottom: none; }
 
-        .tabs-nav { display: flex; overflow-x: auto; padding: 0 10px; gap: 10px; border-bottom: 1px solid #eee; margin-bottom: 15px; scrollbar-width: none; }
-        .tab-btn { padding: 10px 15px; background: none; border: none; white-space: nowrap; color: #666; font-weight: bold; border-bottom: 3px solid transparent; font-size: 14px; }
-        .tab-btn.active { color: var(--primary); border-bottom-color: var(--accent); }
-        .tab-content { display: none; padding: 0 20px; animation: fadeIn 0.3s; }
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; }
+        .st-pending { background: #fff8e1; color: #f57f17; }
+        .st-approved { background: #e8f5e9; color: #2e7d32; }
+        .st-rejected { background: #ffebee; color: #c62828; }
+
+        .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .media-item { aspect-ratio: 1; border-radius: 12px; overflow: hidden; position: relative; background: #eee; border: 1px solid #eee; }
+        .media-item img, .media-item video { width: 100%; height: 100%; object-fit: cover; }
         
-        .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: #444; }
+        /* Floating Action Button */
+        .fab-add { position: fixed; bottom: 25px; left: 25px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 30px; box-shadow: 0 6px 20px rgba(0,77,64,0.4); display: none; align-items: center; justify-content: center; z-index: 90; transition: transform 0.2s; }
+        .fab-add:active { transform: scale(0.9); }
 
-        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; }
-        .st-pending { background: #fff3cd; color: #856404; }
-        .st-approved { background: #d4edda; color: #155724; }
-        .st-rejected { background: #f8d7da; color: #721c24; }
-        .visit-action-btn { border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin: 0 2px; }
-        .btn-approve { background: #28a745; color: white; }
-        .btn-reject { background: #dc3545; color: white; }
-
-        .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .media-item { 
-            background: #fff; border-radius: 10px; height: 160px; 
-            display: flex; align-items: center; justify-content: center; 
-            position: relative; overflow: hidden; border: 1px solid #ddd;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .media-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: 0.3s; }
-        .media-item img:active { transform: scale(0.95); }
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: flex-end; backdrop-filter: blur(3px); }
+        .modal-sheet { background: white; width: 100%; max-width: 600px; margin: 0 auto; border-radius: 25px 25px 0 0; padding: 30px 25px; animation: slideUp 0.3s; max-height: 90vh; overflow-y: auto; }
+        .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 20px; color: var(--primary); }
         
-        .fab-add { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; display: none; align-items: center; justify-content: center; }
-        
-        label { font-size: 13px; color: #666; font-weight: bold; margin-top: 10px; display: block; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: #fff; }
+        label { font-size: 13px; color: #666; font-weight: bold; margin-top: 15px; display: block; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 10px; background: #fff; transition: border-color 0.2s; }
+        input:focus, select:focus { border-color: var(--primary); }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px); }
-        .modal-sheet { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 25px; animation: slideUp 0.3s; }
-        .modal-btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-confirm { flex: 2; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; }
-        .btn-cancel { flex: 1; padding: 12px; background: #eee; color: #333; border: none; border-radius: 10px; font-weight: bold; }
+        .btn-confirm { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; margin-top: 20px; }
+        .btn-cancel { width: 100%; padding: 15px; background: #f5f5f5; color: #666; border: none; border-radius: 12px; font-weight: bold; margin-top: 10px; }
 
-        /* Manage Admins Modal */
-        #adminsModal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:150; padding:20px; overflow-y:auto; }
-        .admin-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
-        .admin-badge { background: #333; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+        /* Helpers */
+        .admin-only { display: none !important; }
+        .show-admin .admin-only { display: block !important; }
+        .unit-interface:not(.show-admin) .editable { pointer-events: none; background: #f9f9f9; color: #555; border: none; padding-right: 0; font-weight: bold; }
 
         @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
-        
-        /* كلاسات التحكم بالظهور */
-        .admin-only { display: none !important; }
-        .show-admin .admin-only { display: block !important; }
-        /* عند العرض للمستفيد، الحقول تكون للقراءة فقط شكلياً */
-        .unit-interface:not(.show-admin) .editable { pointer-events: none; background: #eee; }
     </style>
 </head>
 <body>
 
-<div id="fatalErrorOverlay" style="display:none; position:fixed; inset:0; background:#0b1f1c; color:#fff; z-index:20000; padding:20px; font-family:inherit;">
-  <h2 style="margin:0 0 10px 0; color:#00bfa5;">صار خطأ بالتطبيق</h2>
-  <p style="margin:0 0 12px 0; opacity:0.9;">انسخ النص هذا ودزّه إلي:</p>
-  <pre id="fatalErrorText" style="white-space:pre-wrap; background:rgba(255,255,255,0.08); padding:12px; border-radius:12px; overflow:auto; max-height:60vh;"></pre>
-  <button onclick="location.reload()" style="margin-top:12px; padding:12px 16px; border-radius:12px; border:none; background:#00bfa5; color:#004d40; font-weight:800; cursor:pointer;">إعادة تحميل</button>
-</div>
+<div id="toast">تمت العملية بنجاح</div>
 
 <div id="loadingScreen">
     <div class="loader"></div>
-    <p style="margin-top:20px; font-weight:bold;">جاري الاتصال بالسيرفر...</p>
+    <p style="margin-top:20px; color:#666; font-weight:bold;">جاري الاتصال بالنظام...</p>
 </div>
 
 <div id="imageViewer">
-    <div class="viewer-btn close-viewer" onclick="document.getElementById('imageViewer').style.display='none'">×</div>
-    <div class="viewer-btn download-btn" onclick="downloadCurrentImage()">⬇</div>
+    <div class="viewer-controls">
+        <button class="viewer-btn" onclick="downloadCurrentImage()">⬇</button>
+        <button class="viewer-btn" onclick="document.getElementById('imageViewer').style.display='none'">✕</button>
+    </div>
     <img id="fullImage" src="">
 </div>
 
 <div id="loginScreen" style="display:none;">
-    <div style="margin-bottom: 30px;">
-        <h1 style="margin:0;">مدينة الأزهر</h1>
-        <p style="opacity:0.8;">نظام المتابعة السحابي</p>
+    <div style="margin-bottom: 40px;">
+        <h1 style="margin:0; font-size: 32px;">مدينة الأزهر</h1>
+        <p style="opacity:0.8; margin-top: 5px;">نظام إدارة ومتابعة الوحدات السكنية</p>
     </div>
     <div class="login-box">
-        <input type="text" id="loginUser" class="login-input" placeholder="اسم المستخدم (للإدارة) أو رقم الوحدة">
+        <input type="text" id="loginUser" class="login-input" placeholder="رقم الوحدة أو اسم المستخدم">
         <input type="password" id="loginPass" class="login-input" placeholder="كلمة المرور">
-        <button onclick="handleLogin()" class="login-btn">دخول</button>
+        <button onclick="handleLogin()" class="login-btn">تسجيل الدخول</button>
     </div>
 </div>
 
 <div id="adminDashboard">
     <div class="top-bar">
-        <div style="display: flex; gap:5px;">
-             <input type="text" class="search-input" placeholder="🔍 ابحث عن وحدة..." onkeyup="filterUnits(this.value)">
-             <button class="super-admin-btn" id="btnManageAdmins" onclick="openAdminsManager()">⚙️</button>
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="بحث عن وحدة (مثال: A1)" onkeyup="filterUnits(this.value)">
+            <button class="icon-btn admin-only" id="btnManageAdmins" onclick="openAdminsManager()" title="إدارة المسؤولين">⚙️</button>
         </div>
-        <button class="back-btn" style="background:var(--danger); width:100%;" onclick="location.reload()">تسجيل خروج</button>
+        <button onclick="logout()" style="background:var(--danger); color:white; border:none; padding:12px; border-radius:12px; width:100%; font-weight:bold;">تسجيل خروج</button>
     </div>
     
     <div class="units-grid" id="unitsGrid"></div>
 </div>
 
-<div id="adminsModal">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2 style="margin:0">إدارة المسؤولين</h2>
-        <button onclick="closeAdminsManager()" style="background:none; border:none; font-size:20px;">✖</button>
-    </div>
-    <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-bottom:20px;">
-        <h4 style="margin-top:0;">إضافة / تعديل مسؤول</h4>
-        <input type="text" id="newAdminUser" placeholder="اسم المستخدم (Username)">
-        <input type="text" id="newAdminPass" placeholder="كلمة المرور">
-        <button class="login-btn" onclick="saveAdminUser()">حفظ المسؤول</button>
-    </div>
-    <h3>قائمة المسؤولين</h3>
-    <div id="adminsListContainer"></div>
-</div>
-
 <div id="unitInterface" class="unit-interface">
     <div class="unit-header">
         <div>
-            <h2 style="margin:0;" id="headerUnitTitle">...</h2>
-            <small style="opacity:0.9;" id="headerOwner">...</small>
+            <h2 style="margin:0; font-size: 24px;" id="headerUnitTitle">...</h2>
+            <small style="opacity:0.9; font-size: 14px;" id="headerOwner">...</small>
         </div>
-        <button class="back-btn" onclick="goBack()">رجوع</button>
+        <button class="back-btn-small" onclick="goBack()">رجوع</button>
     </div>
 
-    <div class="stats-scroll">
-        <div class="stat-card bg-1"><small>المدفوع</small><h3 style="margin:5px 0" id="dispPaid">0</h3></div>
-        <div class="stat-card bg-2"><small>المتبقي</small><h3 style="margin:5px 0" id="dispRemain">0</h3></div>
-        <div class="stat-card bg-3"><small>الإنجاز</small><h3 style="margin:5px 0" id="dispProg">0%</h3></div>
+    <div class="stats-container">
+        <div class="stat-card bg-1"><small>الواصل (مدفوع)</small><h3 style="margin:5px 0" id="dispPaid">0</h3></div>
+        <div class="stat-card bg-2"><small>المتبقي (أقساط)</small><h3 style="margin:5px 0" id="dispRemain">0</h3></div>
+        <div class="stat-card bg-3"><small>نسبة الإنجاز</small><h3 style="margin:5px 0" id="dispProg">0%</h3></div>
     </div>
 
     <div class="tabs-nav">
         <button class="tab-btn active" onclick="showTab('info')">المعلومات</button>
         <button class="tab-btn" onclick="showTab('payments')">المالية</button>
+        <button class="tab-btn" onclick="showTab('works')">الإنجاز</button>
         <button class="tab-btn" onclick="showTab('docs')">الوثائق</button> 
-        <button class="tab-btn" onclick="showTab('works')">سير العمل</button>
         <button class="tab-btn" onclick="showTab('visits')">الزيارات</button>
-        <button class="tab-btn" onclick="showTab('history')">سجل الوحدة</button>
+        <button class="tab-btn" onclick="showTab('history')">السجل</button>
         <button class="tab-btn" onclick="showTab('notifs')">التبليغات</button>
-        <button class="tab-btn" onclick="showTab('media')">الوسائط</button>
+        <button class="tab-btn" onclick="showTab('media')">الصور</button>
         <button class="tab-btn admin-only" onclick="showTab('settings')">الإعدادات</button>
     </div>
 
     <div id="info" class="tab-content" style="display:block;">
-        <label>اسم المستفيد</label><input type="text" id="ownerName" class="editable">
-        <label>رقم الهاتف</label><input type="text" id="ownerPhone" class="editable">
-        <div class="admin-only" style="margin-top:20px; background:#e0f7fa; padding:15px; border-radius:10px;">
-            <label style="color:#006064;">السعر الكلي</label><input type="text" id="totalPrice" onchange="saveData()">
+        <label>اسم المستفيد</label>
+        <input type="text" id="ownerName" class="editable">
+        
+        <label>رقم الهاتف</label>
+        <input type="tel" id="ownerPhone" class="editable" dir="ltr" style="text-align:right">
+        
+        <div class="admin-only" style="margin-top:25px; background:#e0f2f1; padding:20px; border-radius:15px; border:1px solid #b2dfdb;">
+            <label style="color:#00695c; margin-top:0;">السعر الكلي للوحدة</label>
+            <input type="text" id="totalPrice" onchange="formatInput(this)" style="font-weight:bold; color:#00695c;">
+            <button class="btn-confirm" style="margin-top:15px; background:#00796b;" onclick="saveData()">حفظ التعديلات</button>
         </div>
-        <button class="login-btn admin-only" style="margin-top:20px;" onclick="saveData()">حفظ التعديلات</button>
     </div>
 
     <div id="payments" class="tab-content">
-        <div class="table-wrapper"><table id="payTable"><thead><tr><th>التاريخ</th><th>الوصل</th><th>المبلغ</th><th>التفاصيل</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div>
-        <div style="height:60px;"></div>
+        <div class="table-responsive">
+            <table id="payTable">
+                <thead><tr><th>التاريخ</th><th>رقم الوصل</th><th>المبلغ</th><th>ملاحظات</th><th class="admin-only"></th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
     <div id="docs" class="tab-content">
-        <div class="table-wrapper"><table id="docsTable"><thead><tr><th>تاريخ</th><th>نوع</th><th>ملاحظات</th><th>ملف</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div class="table-responsive">
+            <table id="docsTable">
+                <thead><tr><th>التاريخ</th><th>النوع</th><th>ملاحظات</th><th>معاينة</th><th class="admin-only"></th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
     <div id="works" class="tab-content">
-        <div class="table-wrapper"><table id="workTable"><thead><tr><th>المرحلة</th><th>التاريخ</th><th>%</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div>
-        <div style="height:60px;"></div>
+        <div class="table-responsive">
+            <table id="workTable">
+                <thead><tr><th>المرحلة</th><th>التاريخ</th><th>النسبة</th><th class="admin-only"></th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
     <div id="visits" class="tab-content">
-        <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee; margin-bottom:20px;">
-            <h3 style="margin-top:0; color:var(--primary);">طلب زيارة</h3>
-            <label>التاريخ</label><input type="date" id="reqVisitDate">
-            <label>السبب</label><input type="text" id="reqVisitReason" placeholder="...">
-            <button class="login-btn" style="margin-top:10px;" onclick="submitVisitRequest()">إرسال</button>
+        <div style="background:white; padding:20px; border-radius:15px; border:1px solid #eee; margin-bottom:25px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+            <h3 style="margin-top:0; color:var(--primary);">حجز موعد زيارة</h3>
+            <label>تاريخ الزيارة المطلوب</label>
+            <input type="date" id="reqVisitDate">
+            <label>سبب الزيارة / ملاحظات</label>
+            <input type="text" id="reqVisitReason" placeholder="اكتب هنا...">
+            <button class="btn-confirm" style="margin-top:15px;" onclick="submitVisitRequest()">إرسال الطلب</button>
         </div>
-        <h3 style="margin-bottom:10px;">السجل</h3>
-        <div class="table-wrapper"><table id="visitTable"><thead><tr><th>التاريخ</th><th>السبب</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody></tbody></table></div>
-        <div style="height:60px;"></div>
+        <h3 style="margin-bottom:15px;">سجل الزيارات</h3>
+        <div class="table-responsive">
+            <table id="visitTable">
+                <thead><tr><th>التاريخ</th><th>السبب</th><th>الحالة</th><th>إجراء</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
-    <div id="history" class="tab-content"><div class="table-wrapper"><table id="histTable"><thead><tr><th>التاريخ</th><th>الحدث</th><th>ملاحظات</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div><div style="height:60px;"></div></div>
-    <div id="notifs" class="tab-content"><div class="table-wrapper"><table id="notifTable"><thead><tr><th>التاريخ</th><th>التبليغ</th><th class="admin-only"></th></tr></thead><tbody></tbody></table></div><div style="height:60px;"></div></div>
-    <div id="media" class="tab-content"><div class="media-grid" id="mediaGrid"></div><div style="height:60px;"></div></div>
+    <div id="history" class="tab-content">
+        <div class="table-responsive">
+            <table id="histTable">
+                <thead><tr><th>التاريخ</th><th>الحدث</th><th>تفاصيل</th><th class="admin-only"></th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="notifs" class="tab-content">
+        <div class="table-responsive">
+            <table id="notifTable">
+                <thead><tr><th>التاريخ</th><th>نص التبليغ</th><th class="admin-only"></th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="media" class="tab-content">
+        <div class="media-grid" id="mediaGrid"></div>
+    </div>
 
     <div id="settings" class="tab-content">
-        <label>اسم المستخدم (للمستفيد)</label><input type="text" id="uUser"><label>كلمة المرور (للمستفيد)</label><input type="text" id="uPass">
-        <button class="login-btn" onclick="saveData()">تحديث الحساب</button>
+        <div style="background:#fff3e0; padding:20px; border-radius:15px; border:1px solid #ffe0b2;">
+            <h3 style="margin-top:0; color:#e65100;">بيانات الدخول (للمستفيد)</h3>
+            <label>اسم المستخدم</label><input type="text" id="uUser">
+            <label>كلمة المرور</label><input type="text" id="uPass">
+            <button class="btn-confirm" style="background:#ef6c00;" onclick="saveData()">تحديث بيانات الدخول</button>
+        </div>
     </div>
 
     <button id="fabAdd" class="fab-add admin-only" onclick="openModal()">+</button>
@@ -254,581 +278,723 @@
     <div class="modal-sheet">
         <div class="modal-title" id="modalTitle">إضافة جديد</div>
         <div id="modalInputs"></div> 
-        <div class="modal-btn-group"><button class="btn-confirm" onclick="confirmModal()">حفظ</button><button class="btn-cancel" onclick="closeModal()">إلغاء</button></div>
+        <button class="btn-confirm" onclick="confirmModal()">حفظ</button>
+        <button class="btn-cancel" onclick="closeModal()">إلغاء</button>
     </div>
 </div>
 
-<script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/+esm'
+<div id="adminsModal" class="modal-overlay" style="align-items: center; justify-content: center;">
+    <div class="modal-sheet" style="max-height: 80vh; border-radius: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 class="modal-title" style="margin:0">إدارة المسؤولين</h2>
+            <button onclick="document.getElementById('adminsModal').style.display='none'" style="background:none; border:none; font-size:24px;">&times;</button>
+        </div>
+        
+        <div style="background:#f5f5f5; padding:15px; border-radius:12px; margin-bottom:20px;">
+            <h4 style="margin:0 0 10px;">إضافة مسؤول جديد</h4>
+            <input type="text" id="newAdminUser" placeholder="اسم المستخدم" style="margin-bottom:10px;">
+            <input type="text" id="newAdminPass" placeholder="كلمة المرور">
+            <button class="btn-confirm" style="padding:10px; margin-top:10px;" onclick="saveAdminUser()">إضافة</button>
+        </div>
+        
+        <div id="adminsListContainer" style="border-top:1px solid #eee; padding-top:10px;"></div>
+    </div>
+</div>
 
-    // 🔴🔴🔴 بيانات Supabase الخاصة بك 🔴🔴🔴
+<script>
+    // --- 1. إعداد المتغيرات والثوابت ---
+    // 🔴🔴🔴 هام: استبدل الروابط والمفاتيح أدناه ببيانات مشروعك الحقيقي 🔴🔴🔴
     const SUPABASE_URL = 'https://csaqawviitdrjzeasmne.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ';
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
+    
+    // إنشاء عميل Supabase
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // متغيرات الحالة
     let db = {}; 
+    let adminsDb = {};
     let currentUnit = null;
     let isAdmin = false;
     let isSuperAdmin = false;
     let currentTab = 'info';
 
-    // --- أمان: إذا صار خطأ بالـ JS لا تخلي شاشة التحميل تعلق ---
-    function showFatal(err){
-        try{
-            const ov = document.getElementById('fatalErrorOverlay');
-            const tx = document.getElementById('fatalErrorText');
-            if(tx) tx.textContent = String(err || 'Unknown error');
-            if(ov) ov.style.display = 'block';
-        }catch(e){}
+    // --- 2. دوال مساعدة عامة ---
+    function showToast(message) {
+        const x = document.getElementById("toast");
+        x.innerText = message;
+        x.className = "show";
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
     }
 
-    function forceShowLogin(msg){
-        try { document.getElementById('loadingScreen').style.display = 'none'; } catch(e){}
-        try { switchScreen('loginScreen'); } catch(e){}
-        if (msg) console.warn(msg);
+    function formatNumber(num) {
+        if (!num) return "0";
+        // إزالة أي فواصل موجودة ثم التنسيق
+        const cleanNum = String(num).replace(/,/g, '');
+        return Number(cleanNum).toLocaleString('en-US');
     }
-    window.addEventListener('error', (e) => {
-        showFatal(e?.error?.stack || e?.message || 'JS error');
-        forceShowLogin(e?.message || 'JS error');
-    });
-    window.addEventListener('unhandledrejection', (e) => {
-        showFatal(e?.reason?.stack || e?.reason?.message || e?.reason || 'Promise error');
-        forceShowLogin(e?.reason?.message || 'Promise error');
-    });
 
-    // Timeout احتياطي حتى لا يبقى "جاري الاتصال" للأبد
-    setTimeout(() => {
-        const loading = document.getElementById('loadingScreen');
-        const login = document.getElementById('loginScreen');
-        if (loading && loading.style.display !== 'none' && login && login.style.display === 'none') {
-            forceShowLogin('Timeout: showing login');
-        }
-    }, 4000);
+    function formatInput(input) {
+        input.value = formatNumber(input.value);
+    }
 
-    // إعدادات توليد الوحدات (بدون تغيير واجهة الكروت)
-    const UNIT_COUNTS = { A: 472, B: 56, C: 284, D: 142 };
-
-    // دالة التبديل
     function switchScreen(screenId) {
-        const screens = ['loadingScreen', 'loginScreen', 'adminDashboard', 'unitInterface', 'adminsModal'];
-        screens.forEach(id => {
+        // إخفاء جميع الشاشات
+        ['loadingScreen', 'loginScreen', 'adminDashboard', 'unitInterface', 'adminsModal'].forEach(id => {
             const el = document.getElementById(id);
-            if(el) el.style.cssText = "display: none !important;"; 
+            if(el) el.style.display = 'none';
         });
+        
+        // إظهار الشاشة المطلوبة
         const target = document.getElementById(screenId);
         if(target) {
-            target.style.cssText = "display: block !important;";
-            if(screenId === 'adminDashboard') target.style.display = 'block'; 
+            target.style.display = (screenId === 'actionModal' || screenId === 'adminsModal' || screenId === 'imageViewer') ? 'flex' : 'block';
         }
+        
         window.scrollTo(0, 0);
     }
 
-    // --- Helpers ---
-    function formatNumber(n) { return n ? Number(String(n).replace(/,/g,'')).toLocaleString('en-US') : "0"; }
-    function safeArr(x){ return Array.isArray(x) ? x : []; }
-
-    // Signed URL helper (Private buckets)
-    async function signedUrl(bucket, path, expiresSec = 300) {
-        const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresSec);
-        if (error) return null;
-        return data?.signedUrl || null;
-    }
-
-    // --- جلب البيانات + متابعة الجلسة ---
-    async function init() {
-        // لا ننتظر: أظهر شاشة الدخول فوراً، وبعدين افحص الجلسة
-        try { switchScreen('loginScreen'); } catch(e){}
+    // --- 3. التهيئة والاتصال بقاعدة البيانات ---
+    async function initApp() {
         try {
-            const { data: sess, error: sessErr } = await supabase.auth.getSession();
-            if (sessErr) console.warn(sessErr);
-            if (sess?.session?.user) {
-                document.getElementById('loadingScreen').style.display = 'flex';
-                await afterLogin(sess.session.user);
-            }
-        } catch (e) {
-            console.error(e);
-            // نخليها على شاشة الدخول
-            try { document.getElementById('loadingScreen').style.display = 'none'; } catch(_e){}
-        }
-    }
-    init();
+            // جلب الوحدات
+            const { data: uData, error: uErr } = await supabase.from('units').select('*');
+            if(uErr) throw uErr;
+            if(uData) uData.forEach(r => db[r.id] = r.data);
+            
+            // جلب الأدمن (لأغراض التحقق المحلي السريع، يفضل التحقق عبر السيرفر في التطبيقات الحساسة)
+            const { data: aData, error: aErr } = await supabase.from('admins').select('*');
+            if(aData) aData.forEach(r => adminsDb[r.username.toLowerCase()] = r);
 
-    // --- بعد تسجيل الدخول ---
-    async function afterLogin(user) {
-        // بداية الدخول: لا نخلي شاشة التحميل تعلق
-        try { document.getElementById('loadingScreen').style.display = 'none'; } catch(e){}
-        // جلب الدور
-        const { data: profile, error: pErr } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-        if (pErr || !profile) {
             document.getElementById('loadingScreen').style.display = 'none';
-            switchScreen('loginScreen');
-            alert("حسابك غير مهيأ (profiles). راجع الإدارة.\nتفاصيل: " + (pErr?.message || pErr));
-            return;
-        }
-
-        isAdmin = profile.role === 'admin' || profile.role === 'super';
-        isSuperAdmin = profile.role === 'super';
-
-        // تحميل الوحدات (RLS: user يرجع وحدته فقط، admin يرجع الكل)
-        const { data: u, error: uErr } = await supabase
-            .from('units')
-            .select('id, data, archived');
-
-        if (uErr) {
-            console.error(uErr);
-            document.getElementById('loadingScreen').style.display = 'none';
-            switchScreen('loginScreen');
-            alert("فشل تحميل الوحدات: " + (uErr?.message || uErr));
-            return;
-        }
-
-        db = {};
-        (u || []).forEach(r => db[r.id] = r.data);
-
-        try { document.getElementById('loadingScreen').style.display = 'none'; } catch(e){}
-
-        if (isAdmin) {
-            document.getElementById('btnManageAdmins').style.display = isSuperAdmin ? 'block' : 'none';
-            // افتح الداشبورد فوراً ثم ارسم الكروت
-            switchScreen('adminDashboard');
-            currentUnit = null;
-            try { renderUnitsGrid(''); } catch(e){ console.error(e); }
-        } else {
-            // user: فتح وحدته فقط (حتى لو db بيها وحدة وحدة بسبب RLS)
-            const unitId = (u && u[0] && u[0].id) ? u[0].id : null;
-            if (!unitId) {
+            
+            // التحقق من وجود جلسة سابقة
+            const savedUser = localStorage.getItem('azhar_user');
+            const savedPass = localStorage.getItem('azhar_pass');
+            if(savedUser && savedPass) {
+                document.getElementById('loginUser').value = savedUser;
+                document.getElementById('loginPass').value = savedPass;
+                handleLogin(true); // تسجيل دخول صامت
+            } else {
                 switchScreen('loginScreen');
-                alert("ماكو وحدة مرتبطة بحسابك. راجع الإدارة.");
-                return;
             }
-            openUnit(unitId);
+
+        } catch (error) {
+            alert("خطأ في الاتصال: " + error.message);
+            document.getElementById('loadingScreen').innerHTML = `<p style="color:red">فشل الاتصال، تحقق من الإنترنت</p><button onclick="location.reload()">إعادة المحاولة</button>`;
         }
     }
 
-    // --- تسجيل الدخول (Email/Password) ---
-    window.handleLogin = async function() {
-        try {
-        const email = document.getElementById('loginUser').value.trim();
+    // تشغيل التطبيق
+    initApp();
+
+    // --- 4. نظام تسجيل الدخول ---
+    window.handleLogin = async function(isSilent = false) {
+        const rawUser = document.getElementById('loginUser').value.trim();
         const pass = document.getElementById('loginPass').value.trim();
-        if(!email || !pass) return alert("أدخل الإيميل والباسورد");
+        
+        if(!rawUser || !pass) {
+            if(!isSilent) showToast("يرجى إدخال البيانات");
+            return;
+        }
 
-        document.getElementById('loadingScreen').style.display = 'flex';
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-        if (error) return alert("بيانات الدخول غير صحيحة!");
+        const adminKey = rawUser.toLowerCase();
+        const unitKey = rawUser.toUpperCase();
 
-        await afterLogin(data.user);
-        } catch (e) {
-            console.error(e);
-            try { document.getElementById('loadingScreen').style.display = 'none'; } catch(_e){}
-            try { switchScreen('loginScreen'); } catch(_e){}
-            alert('صار خطأ أثناء تسجيل الدخول: ' + (e?.message || e));
+        // 1. هل هو أدمن؟
+        if (adminsDb[adminKey] && adminsDb[adminKey].password === pass) {
+            isAdmin = true;
+            isSuperAdmin = (adminsDb[adminKey].role === 'super');
+            currentUnit = null;
+            
+            localStorage.setItem('azhar_user', rawUser);
+            localStorage.setItem('azhar_pass', pass);
+            
+            const adminBtn = document.getElementById('btnManageAdmins');
+            if(adminBtn) adminBtn.style.display = isSuperAdmin ? 'block' : 'none';
+            
+            initAdminDashboard();
+        } 
+        // 2. هل هو مستفيد (وحدة)؟
+        else if (db[unitKey]) {
+            // التحقق من كلمة مرور الوحدة الموجودة في Settings
+            const unitSettings = db[unitKey].settings || {};
+            if (unitSettings.pass === pass) { // هنا يفترض أن المستخدم هو رقم الوحدة
+                isAdmin = false; 
+                isSuperAdmin = false;
+                
+                localStorage.setItem('azhar_user', rawUser);
+                localStorage.setItem('azhar_pass', pass);
+                
+                openUnit(unitKey);
+            } else {
+                if(!isSilent) alert("بيانات الدخول غير صحيحة");
+                else switchScreen('loginScreen');
+            }
+        } 
+        // 3. خطأ
+        else {
+            if(!isSilent) alert("الحساب غير موجود");
+            else switchScreen('loginScreen');
         }
     }
 
-    // --- تسجيل خروج (نفس زر الخروج بدون تغيير) ---
-    window.logoutNow = async function() {
-        try { await supabase.auth.signOut(); } catch(e){}
+    window.logout = function() {
+        localStorage.removeItem('azhar_user');
+        localStorage.removeItem('azhar_pass');
         location.reload();
     }
 
-    // ربط زر الخروج الحالي على نفس الفعل (بدون تغيير الزر نفسه)
-    // الزر الموجود يستدعي location.reload() — نخليه مثل ما هو، بس إذا تريد تربطه:
-    // window.location.reload = logoutNow;
-
-    // --- إدارة الأدمنية (تم تعطيلها بدون تغيير زرها/واجهتها) ---
-    window.openAdminsManager = function() {
-        alert("هذه الشاشة تم تعطيلها بالإصدار الإنتاجي. إدارة المسؤولين تتم من Supabase (Auth + profiles).");
-    }
-    window.closeAdminsManager = () => switchScreen('adminDashboard');
-
-    // --- حفظ بيانات الوحدة ---
-    window.saveData = async function() {
-        if(!currentUnit) return;
-        const d = db[currentUnit];
-        if(!d) return;
-
-        // ضمان وجود الحقول الأساسية
-        if(!d.info) d.info = { name:"", phone:"" };
-        if(!d.settings) d.settings = {};
-        d.payments = safeArr(d.payments);
-        d.works = safeArr(d.works);
-        d.history = safeArr(d.history);
-        d.notifs = safeArr(d.notifs);
-        d.visits = safeArr(d.visits);
-        d.docs = safeArr(d.docs);
-        d.media = safeArr(d.media);
-
-        // تحديثات مسموحة حسب الدور
-        if(isAdmin) {
-            if (document.getElementById('ownerName')) d.info.name = document.getElementById('ownerName').value;
-            if (document.getElementById('ownerPhone')) d.info.phone = document.getElementById('ownerPhone').value;
-            if (document.getElementById('totalPrice')) d.totalPrice = document.getElementById('totalPrice').value.replace(/,/g,'');
-            if (document.getElementById('uUser')) d.settings.user = document.getElementById('uUser').value;
-            if (document.getElementById('uPass')) d.settings.pass = document.getElementById('uPass').value;
-        } else {
-            // user: لا يغير معلومات/مالية/وثائق/وسائط... فقط طلب زيارة (visits) محفوظ أصلاً داخل d.visits
-            // (نخليها كما هي)
-        }
-
-        const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d }, { onConflict: 'id' });
-
-        if (error) alert("خطأ في الحفظ: " + error.message);
-        else {
-            if(document.getElementById('uploadStat')) document.getElementById('uploadStat').innerText = 'تم الحفظ!';
-            await loadUnitData();
-        }
-    }
-
+    // --- 5. لوحة تحكم الإدارة ---
     function initAdminDashboard() {
         currentUnit = null; 
         switchScreen('adminDashboard');
         renderUnitsGrid("");
     }
 
-    window.renderUnitsGrid = function(filter) {
-        if(currentUnit !== null) return;
-        const grid = document.getElementById('unitsGrid'); grid.innerHTML = "";
+    window.filterUnits = function(val) {
+        renderUnitsGrid(val);
+    }
 
-        const cats = ['A','B','C','D'];
-        cats.forEach(cat => {
-            const max = UNIT_COUNTS[cat] || 0;
-            for(let i=1; i<=max; i++) {
+    function renderUnitsGrid(filter) {
+        const grid = document.getElementById('unitsGrid'); 
+        grid.innerHTML = "";
+        
+        // ترتيب الوحدات: A1..A50, B1..B50, C1..C50
+        const categories = ['A', 'B', 'C'];
+        
+        categories.forEach(cat => {
+            for(let i=1; i<=50; i++) {
                 let id = cat + i;
                 if (filter && !id.toLowerCase().includes(filter.toLowerCase())) continue;
-
+                
                 let d = db[id];
-                let isSold = d && d.info && d.info.name && String(d.info.name).trim().length > 0;
+                let isSold = d && d.info && d.info.name && d.info.name.trim().length > 0;
                 let hasPending = d && d.visits && d.visits.some(v => v.status === 'pending');
-
+                
                 let div = document.createElement('div');
                 div.className = `unit-card ${isSold ? 'sold' : ''} ${hasPending ? 'has-request' : ''}`;
                 div.onclick = () => openUnit(id);
-                div.innerHTML = `<div class="notify-dot"></div><h3>${id}</h3><small>${isSold ? d.info.name : 'متاح'}</small>`;
+                
+                div.innerHTML = `
+                    <div class="notify-dot"></div>
+                    <h3>${id}</h3>
+                    <small>${isSold ? d.info.name : 'متاح للبيع'}</small>
+                `;
                 grid.appendChild(div);
             }
         });
     }
-    window.filterUnits = (val) => renderUnitsGrid(val);
 
+    // --- 6. منطق واجهة الوحدة ---
     window.openUnit = function(id) {
-        switchScreen('unitInterface'); 
         currentUnit = id;
-
+        
+        // التأكد من وجود البيانات وهيكليتها
         if (!db[id]) {
-            // إنشاء هيكل فارغ إذا كانت الوحدة جديدة (للأدمن فقط)
-            db[id] = { info: {name:"",phone:""}, settings: {user:id, pass:""}, totalPrice:0, payments:[], works:[], history:[], notifs:[], media:[], visits:[], docs:[] };
+            // هيكل افتراضي جديد
+            db[id] = { 
+                info: {name:"", phone:""}, 
+                settings: {user:id, pass:"123456"}, 
+                totalPrice: 0, 
+                payments:[], works:[], history:[], notifs:[], media:[], visits:[], docs:[] 
+            };
         }
-        // ضمان وجود المصفوفات
-        ['docs', 'media', 'history', 'notifs', 'visits', 'payments', 'works'].forEach(k => { if(!db[id][k]) db[id][k] = []; });
+        
+        // إصلاح البيانات القديمة إذا نقصت مصفوفات
+        ['docs', 'media', 'history', 'notifs', 'visits', 'payments', 'works'].forEach(k => { 
+            if(!db[id][k]) db[id][k] = []; 
+        });
+        if(!db[id].info) db[id].info = {name:"", phone:""};
+        if(!db[id].settings) db[id].settings = {user:id, pass:"123456"};
 
-        // إضافة كلاس للتحكم بالإخفاء والإظهار
+        // التحكم في عرض عناصر الأدمن
         const ui = document.getElementById('unitInterface');
         if(isAdmin) ui.classList.add('show-admin');
         else ui.classList.remove('show-admin');
-
+        
+        switchScreen('unitInterface'); 
         loadUnitData();
         showTab('info');
     }
 
-    window.loadUnitData = async function() {
+    window.loadUnitData = function() {
         if(!db[currentUnit]) return;
         const d = db[currentUnit];
-
-        // ضمان هيكل البيانات
-        if(!d.info) d.info = { name:"", phone:"" };
-        if(!d.settings) d.settings = {};
-        d.totalPrice = d.totalPrice || 0;
-
+        
+        // تعبئة البيانات الأساسية
         document.getElementById('headerUnitTitle').innerText = "الوحدة " + currentUnit;
-        document.getElementById('headerOwner').innerText = d.info.name || "غير محدد";
+        document.getElementById('headerOwner').innerText = d.info.name || "غير محجوزة";
+        
         document.getElementById('ownerName').value = d.info.name || "";
         document.getElementById('ownerPhone').value = d.info.phone || "";
         document.getElementById('totalPrice').value = formatNumber(d.totalPrice);
-        document.getElementById('uUser').value = d.settings.user || "";
+        
+        document.getElementById('uUser').value = d.settings.user || currentUnit;
         document.getElementById('uPass').value = d.settings.pass || "";
-
-        // قفل الحقول إذا لم يكن أدمن
+        
+        // قفل/فتح الحقول حسب الصلاحية
         document.getElementById('ownerName').readOnly = !isAdmin;
         document.getElementById('ownerPhone').readOnly = !isAdmin;
-
-        renderTable('payTable', safeArr(d.payments));
-        renderTable('workTable', safeArr(d.works));
-        renderTable('histTable', safeArr(d.history));
-        renderTable('notifTable', safeArr(d.notifs));
-        renderVisitsTable(safeArr(d.visits));
-
-        await renderMediaGrid(safeArr(d.media));
-        await renderDocsTable(safeArr(d.docs));
-
+        
+        // عرض الجداول
+        renderPaymentTable(d.payments);
+        renderWorkTable(d.works);
+        renderDocsTable(d.docs);
+        renderVisitsTable(d.visits);
+        renderHistoryTable(d.history);
+        renderNotifTable(d.notifs);
+        renderMediaGrid(d.media);
+        
         calcStats();
     }
 
-    function renderTable(id, rows) {
-        const tb = document.getElementById(id).querySelector('tbody'); tb.innerHTML = "";
-        rows.forEach((r, i) => {
-            let tr = tb.insertRow();
-            r.forEach(c => tr.insertCell().innerText = c);
-            if(isAdmin) tr.insertCell().innerHTML = `<button onclick="delRow('${id}',${i})" style="color:red;border:none;background:none;font-size:18px">&times;</button>`;
+    function calcStats() {
+        const d = db[currentUnit];
+        let total = parseFloat(String(d.totalPrice).replace(/,/g,'')) || 0;
+        
+        let payments = d.payments || [];
+        let paid = payments.reduce((acc, curr) => acc + (parseFloat(String(curr[2]).replace(/,/g,''))||0), 0);
+        
+        document.getElementById('dispPaid').innerText = formatNumber(paid);
+        document.getElementById('dispRemain').innerText = formatNumber(total - paid);
+        
+        let works = d.works || [];
+        // نفترض أن آخر إدخال يمثل النسبة الحالية
+        document.getElementById('dispProg').innerText = works.length > 0 ? works[works.length-1][2] : "0%";
+    }
+
+    // دوال عرض الجداول (Rendering)
+    function renderPaymentTable(data) {
+        const tbody = document.getElementById('payTable').querySelector('tbody'); 
+        tbody.innerHTML = "";
+        data.forEach((row, index) => {
+            const tr = tbody.insertRow();
+            tr.innerHTML = `
+                <td>${row[0]}</td>
+                <td>${row[1]}</td>
+                <td style="font-weight:bold; color:var(--primary)">${row[2]}</td>
+                <td>${row[3] || '-'}</td>
+                ${isAdmin ? `<td><button onclick="deleteItem('payments', ${index})" style="color:red;border:none;background:none;font-weight:bold;cursor:pointer">×</button></td>` : '<td style="display:none"></td>'}
+            `;
+        });
+        if(data.length === 0) tbody.innerHTML = `<tr><td colspan="5" style="color:#999">لا توجد دفعات مسجلة</td></tr>`;
+    }
+
+    function renderWorkTable(data) {
+        const tbody = document.getElementById('workTable').querySelector('tbody');
+        tbody.innerHTML = "";
+        data.forEach((row, index) => {
+            const tr = tbody.insertRow();
+            tr.innerHTML = `
+                <td>${row[0]}</td>
+                <td>${row[1]}</td>
+                <td><span style="background:#e3f2fd; color:#1565c0; padding:2px 8px; border-radius:10px; font-weight:bold">${row[2]}</span></td>
+                ${isAdmin ? `<td><button onclick="deleteItem('works', ${index})" style="color:red;border:none;background:none;cursor:pointer">×</button></td>` : '<td style="display:none"></td>'}
+            `;
         });
     }
 
-    async function renderDocsTable(docs) {
-        const tb = document.getElementById('docsTable').querySelector('tbody'); tb.innerHTML = "";
-        for (let i=0; i<docs.length; i++) {
-            const doc = docs[i];
-            // نتوقع doc = {type,note,date,bucket,path} (Private)
-            let url = doc?.url;
-            if (!url && doc?.bucket && doc?.path) url = await signedUrl(doc.bucket, doc.path, 300);
+    function renderDocsTable(data) {
+        const tbody = document.getElementById('docsTable').querySelector('tbody');
+        tbody.innerHTML = "";
+        data.forEach((row, index) => {
+            const tr = tbody.insertRow();
+            tr.innerHTML = `
+                <td>${row.date}</td>
+                <td>${row.type}</td>
+                <td>${row.note}</td>
+                <td><button onclick="viewImage('${row.url}')" style="background:var(--accent); color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">عرض</button></td>
+                ${isAdmin ? `<td><button onclick="deleteItem('docs', ${index})" style="color:red;border:none;background:none;cursor:pointer">×</button></td>` : '<td style="display:none"></td>'}
+            `;
+        });
+    }
 
-            let link = url
-              ? `<button onclick="viewImage('${url}')" style="background:none;border:none;color:blue;text-decoration:underline;cursor:pointer;font-weight:bold;">عرض الملف</button>`
-              : `<span style="color:#999">غير متوفر</span>`;
+    function renderVisitsTable(data) {
+        const tbody = document.getElementById('visitTable').querySelector('tbody');
+        tbody.innerHTML = "";
+        data.forEach((v, i) => {
+            let statusText = v.status === 'pending' ? 'قيد المراجعة' : (v.status === 'approved' ? 'مقبول' : 'مرفوض');
+            let statusClass = v.status === 'pending' ? 'st-pending' : (v.status === 'approved' ? 'st-approved' : 'st-rejected');
+            
+            const tr = tbody.insertRow();
+            tr.innerHTML = `
+                <td>${v.date}</td>
+                <td style="white-space:normal; max-width:150px;">${v.reason}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>${getVisitActionHTML(v, i)}</td>
+            `;
+        });
+        if(data.length === 0) tbody.innerHTML = `<tr><td colspan="4" style="color:#999">لا توجد زيارات</td></tr>`;
+    }
 
-            tb.innerHTML += `<tr><td>${doc.date||''}</td><td>${doc.type||''}</td><td>${doc.note||''}</td><td>${link}</td>${isAdmin ? `<td><button onclick="delRow('docsTable',${i})" style="color:red;border:none;background:none">×</button></td>` : ''}</tr>`;
+    function getVisitActionHTML(visit, index) {
+        if(!isAdmin) {
+             return visit.status === 'pending' ? '<span style="color:#f57f17">انتظار...</span>' : '-';
+        }
+        if(visit.status === 'pending') {
+            return `
+                <button onclick="updateVisit(${index}, 'approved')" style="background:#4caf50; color:white; border:none; border-radius:4px; margin:2px; cursor:pointer;">✔</button>
+                <button onclick="updateVisit(${index}, 'rejected')" style="background:#f44336; color:white; border:none; border-radius:4px; margin:2px; cursor:pointer;">✖</button>
+            `;
+        } else {
+            return `<button onclick="deleteItem('visits', ${index})" style="color:red;border:none;background:none;cursor:pointer;">حذف</button>`;
         }
     }
 
-    function renderVisitsTable(visits) {
-        const tb = document.getElementById('visitTable').querySelector('tbody'); tb.innerHTML = "";
-        visits.forEach((v, i) => {
-            let tr = tb.insertRow();
-            tr.insertCell().innerText = v.date || "";
-            tr.insertCell().innerText = v.reason || "";
-            let status = v.status || "pending";
-            let statusText = status === 'pending' ? 'قيد المراجعة' : (status === 'approved' ? 'مقبول' : 'مرفوض');
-            let statusClass = status === 'pending' ? 'st-pending' : (status === 'approved' ? 'st-approved' : 'st-rejected');
-            tr.insertCell().innerHTML = `<span class="status-badge ${statusClass}">${statusText}</span>`;
-            let actionTd = tr.insertCell();
-            if(isAdmin) {
-                if(status === 'pending') {
-                    actionTd.innerHTML = `<button class="visit-action-btn btn-approve" onclick="setVisitStatus(${i}, 'approved')">✔</button><button class="visit-action-btn btn-reject" onclick="setVisitStatus(${i}, 'rejected')">✖</button>`;
-                } else actionTd.innerHTML = `<button onclick="delRow('visitTable',${i})" style="color:red;border:none;background:none;">حذف</button>`;
-            } else actionTd.innerText = "-";
+    function renderHistoryTable(data) {
+        const tbody = document.getElementById('histTable').querySelector('tbody');
+        tbody.innerHTML = "";
+        data.forEach((row, index) => {
+            const tr = tbody.insertRow();
+            tr.innerHTML = `
+                <td>${row[0]}</td>
+                <td>${row[1]}</td>
+                <td style="white-space:normal">${row[2]}</td>
+                ${isAdmin ? `<td><button onclick="deleteItem('history', ${index})" style="color:red;border:none;background:none;cursor:pointer">×</button></td>` : '<td style="display:none"></td>'}
+            `;
         });
     }
 
+    function renderNotifTable(data) {
+        const tbody = document.getElementById('notifTable').querySelector('tbody');
+        tbody.innerHTML = "";
+        data.forEach((row, index) => {
+            const tr = tbody.insertRow();
+            tr.innerHTML = `
+                <td>${row[0]}</td>
+                <td style="white-space:normal">${row[1]}</td>
+                ${isAdmin ? `<td><button onclick="deleteItem('notifs', ${index})" style="color:red;border:none;background:none;cursor:pointer">×</button></td>` : '<td style="display:none"></td>'}
+            `;
+        });
+    }
+
+    function renderMediaGrid(data) {
+        const grid = document.getElementById('mediaGrid');
+        grid.innerHTML = "";
+        data.forEach((m, i) => {
+            let content = m.type === 'video' 
+                ? `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:40px;">🎬</div>`
+                : `<img src="${m.url}" loading="lazy">`;
+            
+            let div = document.createElement('div');
+            div.className = 'media-item';
+            div.innerHTML = `
+                <div onclick="viewImage('${m.url}')" style="width:100%;height:100%;cursor:pointer;">${content}</div>
+                ${isAdmin ? `<button onclick="deleteItem('media', ${i})" style="position:absolute;top:5px;right:5px;background:rgba(255,0,0,0.8);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;">×</button>` : ''}
+                ${m.desc ? `<div style="position:absolute;bottom:0;width:100%;background:rgba(0,0,0,0.5);color:white;font-size:10px;padding:2px;text-align:center;">${m.desc}</div>` : ''}
+            `;
+            grid.appendChild(div);
+        });
+        if(data.length === 0) grid.innerHTML = `<div style="grid-column:span 2; text-align:center; padding:20px; color:#999;">لا توجد وسائط</div>`;
+    }
+
+    // --- 7. عمليات الحفظ والتعديل ---
+    
+    // حفظ التغييرات العامة
+    window.saveData = async function() {
+        if(!currentUnit) return;
+        const d = db[currentUnit];
+        
+        if(isAdmin) {
+             if(document.getElementById('ownerName')) d.info.name = document.getElementById('ownerName').value;
+             if(document.getElementById('ownerPhone')) d.info.phone = document.getElementById('ownerPhone').value;
+             if(document.getElementById('totalPrice')) d.totalPrice = document.getElementById('totalPrice').value.replace(/,/g,'');
+             if(document.getElementById('uUser')) d.settings.user = document.getElementById('uUser').value;
+             if(document.getElementById('uPass')) d.settings.pass = document.getElementById('uPass').value;
+        }
+
+        // إظهار تحميل
+        showToast("جاري الحفظ...");
+        
+        const { error } = await supabase.from('units').upsert({ id: currentUnit, data: d });
+        
+        if (error) {
+            alert("خطأ في الحفظ: " + error.message);
+        } else {
+             showToast("تم حفظ التغييرات بنجاح ✅");
+             loadUnitData(); // إعادة التحميل لتحديث الواجهة
+        }
+    }
+
+    // إدارة الزيارات
     window.submitVisitRequest = function() {
         const date = document.getElementById('reqVisitDate').value;
         const reason = document.getElementById('reqVisitReason').value;
-        if(!date || !reason) return alert("املأ الحقول");
+        
+        if(!date || !reason) return alert("يرجى ملء التاريخ والسبب");
+        
         if(!db[currentUnit].visits) db[currentUnit].visits = [];
         db[currentUnit].visits.push({ date: date, reason: reason, status: 'pending' });
+        
         saveData();
+        
         document.getElementById('reqVisitDate').value = "";
         document.getElementById('reqVisitReason').value = "";
-        alert("تم الإرسال");
     }
 
-    window.setVisitStatus = function(index, status) {
+    window.updateVisit = function(index, status) {
         db[currentUnit].visits[index].status = status;
         saveData();
     }
 
-    async function renderMediaGrid(media) {
-        const g = document.getElementById('mediaGrid'); g.innerHTML = "";
-        for (let i=0; i<media.length; i++) {
-            const m = media[i];
-            let url = m?.url;
-            if (!url && m?.bucket && m?.path) url = await signedUrl(m.bucket, m.path, 300);
-
-            let content = '';
-            if (m.type === 'video') {
-                content = url
-                  ? `<a href="${url}" target="_blank" style="font-size:40px;text-decoration:none;">🎬</a>`
-                  : `<span style="font-size:34px;color:#999;">🎬</span>`;
-            } else {
-                content = url
-                  ? `<img src="${url}" onclick="viewImage('${url}')">`
-                  : `<span style="color:#999;">لا يوجد</span>`;
-            }
-
-            g.innerHTML += `
-            <div class="media-item">
-                ${content}
-                ${isAdmin ? `<button onclick="delRow('mediaGrid',${i})" style="position:absolute;top:5px;left:5px;background:red;color:white;border:none;border-radius:50%;width:25px;height:25px;cursor:pointer;">×</button>` : ''}
-            </div>`;
-        }
+    // حذف عنصر
+    window.deleteItem = function(arrayName, index) {
+        if(!confirm("هل أنت متأكد من الحذف؟")) return;
+        db[currentUnit][arrayName].splice(index, 1);
+        saveData();
     }
 
+    // --- 8. المودال والنوافذ المنبثقة ---
+    window.showTab = function(t) {
+        currentTab = t;
+        document.querySelectorAll('.tab-content').forEach(d => d.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(t).style.display = 'block';
+        
+        // تفعيل الزر النشط
+        const buttons = document.querySelectorAll('.tab-btn');
+        const tabsOrder = ['info', 'payments', 'works', 'docs', 'visits', 'history', 'notifs', 'media', 'settings'];
+        const index = tabsOrder.indexOf(t);
+        if(buttons[index]) buttons[index].classList.add('active');
+
+        // زر العائم للإضافة
+        const fab = document.getElementById('fabAdd');
+        const allowedTabs = ['payments','docs','works','history','notifs','media'];
+        fab.style.display = (isAdmin && allowedTabs.includes(t)) ? 'flex' : 'none';
+    }
+
+    window.openModal = function() {
+        const inputsDiv = document.getElementById('modalInputs');
+        const titleDiv = document.getElementById('modalTitle');
+        const today = new Date().toISOString().split('T')[0];
+        
+        let html = '';
+        
+        switch(currentTab) {
+            case 'payments':
+                titleDiv.innerText = "إضافة دفعة مالية";
+                html = `
+                    <label>تاريخ الدفع</label><input type="date" id="mDate" value="${today}">
+                    <label>رقم الوصل</label><input type="text" id="mRcpt">
+                    <label>المبلغ المدفوع</label><input type="number" id="mAmt" placeholder="0">
+                    <label>ملاحظات</label><input type="text" id="mNote">
+                `;
+                break;
+            case 'works':
+                titleDiv.innerText = "تحديث سير العمل";
+                let opts = ""; for(let i=0; i<=100; i+=5) opts += `<option value="${i}">${i}%</option>`;
+                html = `
+                    <label>التاريخ</label><input type="date" id="mDate" value="${today}">
+                    <label>اسم المرحلة</label><input type="text" id="mStage" placeholder="مثلاً: صب السقف الثاني">
+                    <label>نسبة الإنجاز</label><select id="mPerc">${opts}</select>
+                `;
+                break;
+            case 'notifs':
+                titleDiv.innerText = "إرسال تبليغ";
+                html = `
+                    <label>التاريخ</label><input type="date" id="mDate" value="${today}">
+                    <label>نص التبليغ</label><textarea id="mMsg" style="width:100%;border:1px solid #ddd;border-radius:10px;padding:10px;height:100px;"></textarea>
+                `;
+                break;
+            case 'history':
+                titleDiv.innerText = "إضافة حدث للسجل";
+                html = `
+                    <label>التاريخ</label><input type="date" id="mDate" value="${today}">
+                    <label>نوع الحدث</label>
+                    <select id="mEvent">
+                        <option>تغيير ملكية</option>
+                        <option>تعديل عقد</option>
+                        <option>إضافة ملحق</option>
+                        <option>أخرى</option>
+                    </select>
+                    <label>التفاصيل</label><input type="text" id="mNote">
+                `;
+                break;
+            case 'media':
+                titleDiv.innerText = "رفع صورة";
+                html = `
+                    <label>التاريخ</label><input type="date" id="mDate" value="${today}">
+                    <label>اختر الملف</label><input type="file" id="mFile" accept="image/*,video/*">
+                    <label>وصف (اختياري)</label><input type="text" id="mDesc">
+                    <p id="uploadStatus" style="color:var(--primary); font-size:12px; margin-top:5px;"></p>
+                `;
+                break;
+            case 'docs':
+                titleDiv.innerText = "رفع وثيقة";
+                html = `
+                    <label>التاريخ</label><input type="date" id="mDate" value="${today}">
+                    <label>نوع الوثيقة</label>
+                    <select id="mType">
+                        <option>عقد</option>
+                        <option>وصل أمانة</option>
+                        <option>تعهد خطي</option>
+                        <option>إنذار</option>
+                        <option>أخرى</option>
+                    </select>
+                    <label>اختر الملف</label><input type="file" id="mFile" accept="image/*,.pdf">
+                    <label>ملاحظات</label><input type="text" id="mNote">
+                    <p id="uploadStatus" style="color:var(--primary); font-size:12px; margin-top:5px;"></p>
+                `;
+                break;
+        }
+        
+        inputsDiv.innerHTML = html;
+        document.getElementById('actionModal').style.display = 'flex';
+    }
+
+    window.closeModal = function() {
+        document.getElementById('actionModal').style.display = 'none';
+    }
+
+    window.confirmModal = async function() {
+        const date = document.getElementById('mDate').value;
+        const d = db[currentUnit];
+        
+        // منطق الرفع (Upload Logic)
+        if (currentTab === 'media' || currentTab === 'docs') {
+            const fileInput = document.getElementById('mFile');
+            const file = fileInput.files[0];
+            
+            if(!file) return alert("اختر ملفاً");
+            
+            document.getElementById('uploadStatus').innerText = "جاري الرفع... ⏳";
+            
+            // تنظيف اسم الملف
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}.${fileExt}`;
+            const bucketName = 'media'; // تأكد من إنشاء Bucket باسم 'media' في Supabase وجعله Public
+            
+            const { data, error } = await supabase.storage.from(bucketName).upload(fileName, file);
+            
+            if(error) {
+                alert("فشل الرفع: " + error.message);
+                document.getElementById('uploadStatus').innerText = "";
+                return;
+            }
+            
+            const { data: { publicUrl } } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+            
+            if (currentTab === 'media') {
+                const desc = document.getElementById('mDesc').value;
+                const type = file.type.startsWith('video') ? 'video' : 'image';
+                d.media.push({type, desc, date, url: publicUrl});
+            } else {
+                const type = document.getElementById('mType').value;
+                const note = document.getElementById('mNote').value;
+                d.docs.push({type, note, date, url: publicUrl});
+            }
+            
+        } else if (currentTab === 'payments') {
+            const rcpt = document.getElementById('mRcpt').value;
+            const amt = document.getElementById('mAmt').value;
+            const note = document.getElementById('mNote').value;
+            if(!amt) return alert("أدخل المبلغ");
+            d.payments.push([date, rcpt || "-", formatNumber(amt), note]);
+            
+        } else if (currentTab === 'works') {
+            const stage = document.getElementById('mStage').value;
+            const perc = document.getElementById('mPerc').value;
+            if(!stage) return alert("أدخل المرحلة");
+            d.works.push([stage, date, perc + "%"]);
+            
+        } else if (currentTab === 'notifs') {
+            const msg = document.getElementById('mMsg').value;
+            if(!msg) return alert("أدخل النص");
+            d.notifs.push([date, msg]);
+            
+        } else if (currentTab === 'history') {
+            const evt = document.getElementById('mEvent').value;
+            const note = document.getElementById('mNote').value;
+            d.history.push([date, evt, note]);
+        }
+
+        await saveData(); // الحفظ في قاعدة البيانات
+        closeModal();
+    }
+
+    // --- 9. عارض الصور ---
     window.viewImage = function(url) {
         if(!url) return;
         document.getElementById('fullImage').src = url;
         document.getElementById('imageViewer').style.display = 'flex';
     }
 
-    // دالة التنزيل (تعمل مع signed URLs أيضاً)
     window.downloadCurrentImage = async function() {
-        const img = document.getElementById('fullImage');
-        const url = img.src;
+        const url = document.getElementById('fullImage').src;
         if(!url) return;
-
-        try {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = "file_" + Date.now();
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (e) {
-            console.error(e);
-            window.open(url, '_blank');
-        }
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.download = 'download';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
-    function calcStats() {
-        const d = db[currentUnit];
-        let total = parseFloat(String(d.totalPrice).replace(/,/g,'')) || 0;
-        let payments = safeArr(d.payments);
-        // payments rows: [date, receipt, amount, details]
-        let paid = payments.reduce((a,c) => a + (parseFloat(String(c[2]).replace(/,/g,''))||0), 0);
-        document.getElementById('dispPaid').innerText = formatNumber(paid);
-        document.getElementById('dispRemain').innerText = formatNumber(total - paid);
-        let works = safeArr(d.works);
-        document.getElementById('dispProg').innerText = works.length > 0 ? works[works.length-1][2] : "0%";
-    }
-
-    window.showTab = function(t) {
-        currentTab = t;
-        document.querySelectorAll('.tab-content').forEach(d => d.style.display = 'none');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(t).style.display = 'block';
-
-        const map = {'info':0, 'payments':1, 'docs':2, 'works':3, 'visits':4, 'history':5, 'notifs':6, 'media':7, 'settings':8};
-        if(document.querySelectorAll('.tab-btn')[map[t]]) document.querySelectorAll('.tab-btn')[map[t]].classList.add('active');
-
-        // التحكم في ظهور زر الإضافة (للأدمن فقط)
-        const fab = document.getElementById('fabAdd');
-        fab.style.display = (isAdmin && ['payments','docs','works','history','notifs','media'].includes(t)) ? 'flex' : 'none';
-    }
-
-    window.openModal = function() {
-        const content = document.getElementById('modalInputs');
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('actionModal').style.display = 'flex';
-
-        if(currentTab === 'media') {
-            content.innerHTML = `<label>صورة أو فيديو</label><input type="file" id="mFile"><input type="text" id="mDesc" placeholder="وصف (اختياري)"><input type="date" id="mDate" value="${today}"><p id="uploadStat" style="color:blue"></p>`;
-        } else if(currentTab === 'docs') { 
-            content.innerHTML = `<label>نوع الوثيقة</label><select id="mType"><option>إنذار</option><option>تأجيل</option><option>تعهد</option><option>أخرى</option></select><input type="text" id="mNote" placeholder="ملاحظات"><label>صورة الوثيقة</label><input type="file" id="mFile"><input type="date" id="mDate" value="${today}"><p id="uploadStat" style="color:blue"></p>`;
-        } else if(currentTab === 'payments') {
-            content.innerHTML = `<input type="text" id="mRcpt" placeholder="رقم الوصل"><input type="number" id="mAmt" placeholder="المبلغ"><input type="text" id="mNote" placeholder="تفاصيل"><input type="date" id="mDate" value="${today}">`;
-        } else if(currentTab === 'works') {
-             let options = "";
-             for(let i=5; i<=100; i+=5) options += `<option value="${i}">${i}%</option>`;
-             content.innerHTML = `<label>المرحلة</label><input type="text" id="mStage" placeholder="المرحلة (مثلاً: صب السقف)"><label>نسبة الإنجاز</label><select id="mPerc" style="width:100%;margin-top:5px;border:1px solid #ddd;padding:10px;border-radius:8px">${options}</select><input type="date" id="mDate" value="${today}">`;
-        } else if(currentTab === 'notifs') {
-             content.innerHTML = `<input type="text" id="mMsg" placeholder="نص التبليغ"><input type="date" id="mDate" value="${today}">`;
-        } else if (currentTab === 'history') {
-             content.innerHTML = `<label>الحدث</label><select id="mEvent" style="width:100%;margin-top:5px;border:1px solid #ddd;padding:10px;border-radius:8px"><option>تنازل</option><option>بيع</option><option>انسحاب</option></select><label>ملاحظات</label><input type="text" id="mNote"><label>التاريخ</label><input type="text" id="mDate" value="${today}">`;
-        }
-    }
-
-    // --- دالة الرفع والحفظ (Private buckets + مسارات الوحدة) ---
-    window.confirmModal = async function() {
-        const date = document.getElementById('mDate').value;
-        const d = db[currentUnit];
-
-        if (currentTab === 'media' || currentTab === 'docs') {
-            const fileInput = document.getElementById('mFile');
-            const file = fileInput.files[0];
-            const statusText = document.getElementById('uploadStat');
-
-            if (!file) return alert("يرجى اختيار ملف أولاً");
-
-            statusText.innerText = "جاري الرفع... يرجى الانتظار";
-
-            const cleanName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
-            const fileName = Date.now() + '_' + cleanName;
-            const path = `${currentUnit}/${fileName}`;
-
-            const bucket = (currentTab === 'media') ? 'unit-media' : 'unit-docs';
-
-            const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: false });
-
-            if (error) {
-                console.error(error);
-                alert("فشل الرفع: " + error.message);
-                statusText.innerText = "";
-            } else {
-                const url = await signedUrl(bucket, path, 300);
-
-                if (currentTab === 'media') {
-                     const desc = document.getElementById('mDesc').value;
-                     const type = file.type.startsWith('video') ? 'video' : 'image';
-                     d.media.push({type: type, desc: desc, date: date, bucket, path}); // نخزن path فقط
-                } else {
-                     const type = document.getElementById('mType').value;
-                     const note = document.getElementById('mNote').value;
-                     d.docs.push({type: type, note: note, date: date, bucket, path}); // نخزن path فقط
-                }
-
-                await saveData();
-                closeModal();
+    window.goBack = function() {
+        if(isAdmin) {
+            initAdminDashboard();
+        } else {
+            // للمستخدم العادي، الخروج يعني تسجيل خروج
+            if(confirm("هل تريد تسجيل الخروج؟")) {
+                logout();
             }
-            return;
         }
-
-        if (currentTab === 'payments') {
-            const r = document.getElementById('mRcpt').value;
-            const a = document.getElementById('mAmt').value;
-            const n = document.getElementById('mNote').value;
-            if(!a) return; d.payments.push([date, r||"-", formatNumber(a), n]);
-        } else if (currentTab === 'works') {
-            const s = document.getElementById('mStage').value;
-            const p = document.getElementById('mPerc').value;
-            if(!s) return; d.works.push([s, date, p+"%"]);
-        } else if (currentTab === 'history') {
-             d.history.push([date, document.getElementById('mEvent').value, document.getElementById('mNote').value]);
-        } else if (currentTab === 'notifs') {
-             d.notifs.push([date, document.getElementById('mMsg').value]);
-        }
-        await saveData();
-        closeModal();
     }
 
-    window.closeModal = () => document.getElementById('actionModal').style.display = 'none';
-
-    window.delRow = async function(id, i) {
-        if(!confirm("حذف؟")) return;
-
-        // حذف من التخزين إذا كان ملف
-        const d = db[currentUnit];
-        const map={'payTable':'payments','workTable':'works','histTable':'history','notifTable':'notifs', 'docsTable':'docs', 'mediaGrid':'media'};
-
-        if(id==='visitTable') {
-            d.visits.splice(i,1);
-            await saveData();
-            return;
-        }
-
-        const key = map[id];
-        const item = d[key][i];
-
-        // حذف ملف من Storage إذا docs/media
-        if ((id === 'docsTable' || id === 'mediaGrid') && item?.bucket && item?.path) {
-            try { await supabase.storage.from(item.bucket).remove([item.path]); } catch(e){}
-        }
-
-        d[key].splice(i,1);
-        await saveData();
+    // --- 10. إدارة المسؤولين (Super Admin) ---
+    window.openAdminsManager = function() {
+        if(!isSuperAdmin) return alert("هذه الميزة للمشرف الرئيسي فقط");
+        document.getElementById('adminsModal').style.display = 'flex';
+        renderAdminsList();
     }
 
-    window.goBack = function() { 
-        if(isAdmin) initAdminDashboard();
-        else logoutNow();
+    window.renderAdminsList = function() {
+        const container = document.getElementById('adminsListContainer');
+        container.innerHTML = "";
+        
+        Object.values(adminsDb).forEach(admin => {
+            const div = document.createElement('div');
+            div.style.cssText = "display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #ddd; background:white; margin-bottom:5px; border-radius:8px;";
+            div.innerHTML = `
+                <div>
+                    <strong>${admin.username}</strong>
+                    <br><span style="font-size:11px; color:#888;">${admin.role === 'super' ? 'مشرف رئيسي' : 'محرر'}</span>
+                </div>
+                ${admin.role !== 'super' ? `<button onclick="deleteAdmin('${admin.username}')" style="color:red; border:none; background:none; cursor:pointer;">حذف</button>` : ''}
+            `;
+            container.appendChild(div);
+        });
     }
 
-    document.addEventListener("keyup", function(event) {
-        if (event.key === "Enter" && document.getElementById('loginScreen').style.display !== 'none') handleLogin();
-    });
+    window.saveAdminUser = async function() {
+        const u = document.getElementById('newAdminUser').value.trim().toLowerCase();
+        const p = document.getElementById('newAdminPass').value.trim();
+        if(!u || !p) return alert("أدخل البيانات");
+
+        const { error } = await supabase.from('admins').upsert({ username: u, password: p, role: 'editor' });
+        
+        if(!error) {
+            adminsDb[u] = { username: u, password: p, role: 'editor' };
+            renderAdminsList();
+            document.getElementById('newAdminUser').value="";
+            document.getElementById('newAdminPass').value="";
+            showToast("تمت إضافة المسؤول");
+        } else {
+            alert("خطأ: " + error.message);
+        }
+    }
+
+    window.deleteAdmin = async function(username) {
+        if(!confirm("حذف المسؤول؟")) return;
+        const { error } = await supabase.from('admins').delete().eq('username', username);
+        if(!error) {
+            delete adminsDb[username];
+            renderAdminsList();
+        } else {
+            alert("خطأ: " + error.message);
+        }
+    }
 
 </script>
 </body>
