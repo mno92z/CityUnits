@@ -3,392 +3,355 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إدارة مدينة الأزهر</title>
-    
+    <title>إدارة مدينة الأزهر - النظام الشامل</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <style>
-        :root { --primary: #004d40; --accent: #00bfa5; --bg: #f5f7fa; }
-        body { font-family: Tahoma, sans-serif; background: var(--bg); margin: 0; color: #333; }
-        * { box-sizing: border-box; }
-        
-        /* شاشات النظام */
-        .screen { display: none; min-height: 100vh; padding: 20px; }
-        .active-screen { display: block; }
+        :root { --primary: #00695c; --accent: #4db6ac; --bg: #f4f6f8; --text: #37474f; --white: #ffffff; --danger: #d32f2f; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; outline: none; }
 
-        /* اللودر */
-        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s infinite linear; }
+        /* شاشات */
+        .screen { display: none; min-height: 100vh; animation: fadeIn 0.3s; }
+        .active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* لودر */
+        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #e0e0e0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* تسجيل الدخول */
-        #loginScreen { background: linear-gradient(135deg, var(--primary), #00251a); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        .login-box { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; width: 100%; max-width: 350px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; outline: none; text-align: center; }
-        button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
-        .btn-primary { background: var(--accent); color: var(--primary); }
-        .btn-primary:active { transform: scale(0.95); }
+        #loginScreen { display: flex; flex-direction: column; justify-content: center; align-items: center; background: linear-gradient(135deg, var(--primary), #004d40); color: white; padding: 20px; text-align: center; }
+        .login-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 40px 30px; border-radius: 20px; width: 100%; max-width: 400px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+        .inp-login { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: none; background: rgba(255,255,255,0.9); font-size: 16px; text-align: center; }
+        .btn-login { width: 100%; padding: 15px; background: var(--accent); color: #00251a; font-weight: bold; border-radius: 10px; border: none; font-size: 18px; cursor: pointer; margin-top: 20px; transition: transform 0.2s; }
+        .btn-login:active { transform: scale(0.95); }
 
-        /* الشبكة والوحدات */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 20px; }
-        .card { background: white; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; position: relative; }
-        .card.sold { background: #e0f2f1; border: 1px solid var(--accent); }
-        .notify { width: 10px; height: 10px; background: red; border-radius: 50%; position: absolute; top: 5px; right: 5px; display: none; }
+        /* الهيدر والقوائم */
+        .header { background: var(--white); padding: 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .header h2 { margin: 0; font-size: 18px; color: var(--primary); }
+        .btn-small { padding: 8px 15px; border-radius: 20px; border: none; font-size: 14px; cursor: pointer; font-weight: bold; }
+        .btn-danger { background: #ffebee; color: var(--danger); }
+        .btn-back { background: #eceff1; color: #546e7a; }
+
+        /* الشبكة */
+        .filters { display: flex; gap: 10px; padding: 15px; overflow-x: auto; background: var(--white); border-bottom: 1px solid #eee; }
+        .filter-btn { padding: 8px 20px; border-radius: 20px; border: 1px solid #eee; background: white; cursor: pointer; white-space: nowrap; }
+        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        /* التبويبات */
-        .tabs { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid #ddd; margin-bottom: 20px; }
-        .tab { padding: 8px 15px; background: #eee; border-radius: 20px; border: none; cursor: pointer; white-space: nowrap; }
-        .tab.active { background: var(--primary); color: white; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; padding: 15px; padding-bottom: 80px; }
+        .unit-card { background: var(--white); border-radius: 15px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); cursor: pointer; position: relative; border: 2px solid transparent; transition: transform 0.2s; }
+        .unit-card:active { transform: scale(0.97); }
+        .unit-card.sold { background: #e0f2f1; border-color: #80cbc4; }
+        .unit-card h3 { margin: 0 0 5px 0; color: var(--primary); }
+        .unit-card small { color: #78909c; font-size: 12px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* تفاصيل الوحدة */
+        .unit-hero { background: var(--primary); color: white; padding: 30px 20px 40px; border-radius: 0 0 30px 30px; box-shadow: 0 4px 15px rgba(0,105,92,0.3); margin-bottom: 20px; }
+        .stats-row { display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; margin-top: -30px; padding-bottom: 20px; scrollbar-width: none; }
+        .stat-box { min-width: 140px; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); flex-shrink: 0; }
+        .stat-title { font-size: 12px; color: #78909c; display: block; margin-bottom: 5px; }
+        .stat-val { font-size: 18px; font-weight: bold; color: var(--primary); }
         
-        .tab-content { display: none; }
-        .show-tab { display: block; animation: fade 0.3s; }
-        @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* التبويبات الداخلية */
+        .tabs-nav { display: flex; gap: 15px; overflow-x: auto; padding: 0 20px 10px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
+        .tab-link { padding: 10px 5px; background: none; border: none; color: #90a4ae; font-weight: bold; cursor: pointer; white-space: nowrap; position: relative; }
+        .tab-link.active { color: var(--primary); }
+        .tab-link.active::after { content: ''; position: absolute; bottom: -11px; left: 0; width: 100%; height: 3px; background: var(--accent); border-radius: 10px; }
 
-        /* الجداول */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th { background: #eee; padding: 10px; text-align: center; }
-        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+        .tab-pane { display: none; padding: 0 20px 40px; }
+        .tab-pane.show { display: block; animation: fadeIn 0.3s; }
 
-        /* زر الخروج */
-        .logout-btn { background: #d32f2f; color: white; position: fixed; top: 10px; left: 10px; z-index: 100; padding: 8px 15px; font-size: 12px; }
+        /* الحقول والجداول */
+        label { display: block; font-size: 13px; font-weight: bold; color: #78909c; margin: 15px 0 5px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #cfd8dc; border-radius: 10px; background: #fff; font-size: 16px; color: var(--text); }
+        input[readonly] { background: #f5f5f5; color: #90a4ae; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        th { background: #eceff1; color: #546e7a; padding: 12px; font-size: 13px; text-align: right; }
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        
+        .action-btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; margin-top: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,105,92,0.2); }
+        .floating-add { position: fixed; bottom: 25px; left: 25px; width: 55px; height: 55px; background: var(--accent); color: #004d40; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; border: none; z-index: 90; }
+        
+        .admin-only { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="loader">
-        <div class="spinner"></div>
-        <p style="margin-top: 10px; font-weight: bold;">جاري المعالجة...</p>
-    </div>
+    <div id="loader"><div class="spinner"></div><p style="margin-top:15px;color:#777">جاري التحميل...</p></div>
 
-    <div id="loginScreen" class="screen active-screen">
-        <h1 style="margin-bottom: 5px;">مدينة الأزهر</h1>
-        <p style="opacity: 0.8; margin-bottom: 30px;">نظام الإدارة</p>
-        <div class="login-box">
-            <input type="text" id="username" placeholder="رقم الوحدة أو اسم المشرف">
-            <input type="password" id="password" placeholder="كلمة المرور">
-            <button class="btn-primary" onclick="attemptLogin()">دخول</button>
+    <div id="loginScreen" class="screen active">
+        <div class="login-card">
+            <h2 style="margin-bottom:5px">مدينة الأزهر</h2>
+            <p style="opacity:0.8; margin-bottom:30px">نظام الإدارة المتكامل</p>
+            <input type="text" id="userInp" class="inp-login" placeholder="اسم المستخدم أو رقم الوحدة">
+            <input type="password" id="passInp" class="inp-login" placeholder="كلمة المرور">
+            <button onclick="login()" class="btn-login">تسجيل الدخول</button>
         </div>
-        <p id="loginError" style="color: #ff8a80; font-size: 14px; margin-top: 10px;"></p>
     </div>
 
-    <div id="adminScreen" class="screen">
-        <button class="logout-btn" onclick="logout()">خروج</button>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <h2>لوحة الإدارة</h2>
-            <input type="text" placeholder="بحث..." onkeyup="filterGrid(this.value)" style="width:150px; padding:8px;">
+    <div id="gridScreen" class="screen">
+        <div class="header">
+            <h2>لوحة الوحدات</h2>
+            <button onclick="logout()" class="btn-small btn-danger">خروج</button>
         </div>
-        <div id="unitsGrid" class="grid"></div>
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterGrid('all')">الكل</button>
+            <button class="filter-btn" onclick="filterGrid('A')">فئة A</button>
+            <button class="filter-btn" onclick="filterGrid('B')">فئة B</button>
+            <button class="filter-btn" onclick="filterGrid('C')">فئة C</button>
+        </div>
+        <div style="padding:0 15px"><input type="text" onkeyup="searchGrid(this.value)" placeholder="🔍 بحث سريع..." style="margin-top:10px"></div>
+        <div id="unitsContainer" class="grid"></div>
     </div>
 
-    <div id="unitScreen" class="screen">
-        <button class="logout-btn" onclick="logout()">خروج</button>
-        <button onclick="goBack()" style="background:#ddd; border:none; padding:8px 15px; border-radius:8px; margin-bottom:10px;">رجوع</button>
+    <div id="detailScreen" class="screen">
+        <div class="unit-hero">
+            <div style="display:flex; justify-content:space-between; align-items:start">
+                <div>
+                    <h1 style="margin:0; font-size:28px" id="dId">...</h1>
+                    <p style="margin:5px 0 0; opacity:0.9" id="dOwner">...</p>
+                </div>
+                <button onclick="showScreen('gridScreen')" class="btn-small" style="background:rgba(255,255,255,0.2); color:white">رجوع</button>
+            </div>
+        </div>
         
-        <h2 id="uTitle">الوحدة ...</h2>
-        <p id="uOwner" style="color:#666; margin-top:-15px;">...</p>
-
-        <div class="tabs">
-            <button class="tab active" onclick="setTab('info')">المعلومات</button>
-            <button class="tab" onclick="setTab('payments')">المالية</button>
-            <button class="tab" onclick="setTab('works')">الإنجاز</button>
-            <button class="tab admin-only" onclick="setTab('settings')">إعدادات</button>
+        <div class="stats-row">
+            <div class="stat-box"><span class="stat-title">الواصل</span><span class="stat-val" id="sPaid">0</span></div>
+            <div class="stat-box"><span class="stat-title">المتبقي</span><span class="stat-val" id="sRem">0</span></div>
+            <div class="stat-box"><span class="stat-title">الإنجاز</span><span class="stat-val" id="sProg">0%</span></div>
         </div>
 
-        <div id="tab-info" class="tab-content show-tab">
-            <label>اسم المالك</label><input type="text" id="inpName" readonly>
-            <label>السعر الكلي</label><input type="text" id="inpPrice" readonly>
-            <button id="btnSaveInfo" class="btn-primary admin-only" onclick="saveUnitInfo()" style="display:none; margin-top:10px;">حفظ التعديلات</button>
+        <div class="tabs-nav">
+            <button class="tab-link active" onclick="openTab('info')">بيانات</button>
+            <button class="tab-link" onclick="openTab('finance')">مالية</button>
+            <button class="tab-link" onclick="openTab('work')">إنجاز</button>
+            <button class="tab-link admin-only" onclick="openTab('settings')">إعدادات</button>
         </div>
 
-        <div id="tab-payments" class="tab-content">
-            <div class="admin-only" style="display:none; background:#e0f2f1; padding:10px; border-radius:8px; margin-bottom:10px;">
-                <input type="text" id="newPayAmount" placeholder="المبلغ">
-                <button class="btn-primary" onclick="addPayment()">إضافة دفعة</button>
-            </div>
-            <table><thead><tr><th>التاريخ</th><th>المبلغ</th></tr></thead><tbody id="tblPayments"></tbody></table>
-            <h3 style="text-align:center; margin-top:10px;">الواصل: <span id="totalPaid">0</span></h3>
+        <div id="tab-info" class="tab-pane show">
+            <label>اسم المالك</label><input type="text" id="infName" readonly>
+            <label>رقم الهاتف</label><input type="text" id="infPhone" readonly>
+            <label>السعر الكلي</label><input type="text" id="infPrice" readonly>
+            <button onclick="saveInfo()" class="action-btn admin-only">حفظ التعديلات</button>
         </div>
 
-        <div id="tab-works" class="tab-content">
-             <div class="admin-only" style="display:none; background:#e0f2f1; padding:10px; border-radius:8px; margin-bottom:10px;">
-                <input type="text" id="newWorkStage" placeholder="المرحلة">
-                <input type="text" id="newWorkPerc" placeholder="النسبة %">
-                <button class="btn-primary" onclick="addWork()">تحديث</button>
-            </div>
-            <table><thead><tr><th>المرحلة</th><th>%</th></tr></thead><tbody id="tblWorks"></tbody></table>
+        <div id="tab-finance" class="tab-pane">
+            <table><thead><tr><th>تاريخ</th><th>مبلغ</th><th>ملاحظة</th></tr></thead><tbody id="tblFinance"></tbody></table>
+            <button onclick="addItem('finance')" class="floating-add admin-only">+</button>
         </div>
 
-        <div id="tab-settings" class="tab-content">
-            <label>باسوورد الوحدة</label><input type="text" id="inpPass">
-            <button class="btn-primary" onclick="saveUnitPass()">تحديث</button>
+        <div id="tab-work" class="tab-pane">
+            <table><thead><tr><th>مرحلة</th><th>نسبة</th><th>تاريخ</th></tr></thead><tbody id="tblWork"></tbody></table>
+            <button onclick="addItem('work')" class="floating-add admin-only">+</button>
+        </div>
+
+        <div id="tab-settings" class="tab-pane">
+            <label>اسم مستخدم الوحدة</label><input type="text" id="setUser">
+            <label>كلمة مرور الوحدة</label><input type="text" id="setPass">
+            <button onclick="saveSettings()" class="action-btn">تحديث البيانات</button>
         </div>
     </div>
 
     <script>
-        // إعداد Supabase
         const SUPABASE_URL = 'https://csaqawviitdrjzeasmne.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYXFhd3ZpaXRkcmp6ZWFzbW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MzI0MzIsImV4cCI6MjA4MzMwODQzMn0.68PktNhQbi264YF-5uaWMr2zm5_44X7sAFXoA_wqnNQ';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Headers للأمان عند التعديل
+        let authHeaders = {}; 
 
-        // متغيرات النظام
-        let currentUser = null; // 'admin' or unitID
-        let isAdmin = false;
-        let currentUnitData = null;
         let allUnits = [];
+        let curUnit = null;
+        let isAdmin = false;
 
-        // --- دوال التنقل ---
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
-            document.getElementById(id).classList.add('active-screen');
-        }
+        // دوال مساعدة
+        const $ = (id) => document.getElementById(id);
+        const fmt = (n) => Number(String(n).replace(/,/g,'')).toLocaleString('en-US');
+        const showScreen = (id) => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            $(id).classList.add('active');
+            window.scrollTo(0,0);
+        };
 
-        function toggleLoader(show) {
-            document.getElementById('loader').style.display = show ? 'flex' : 'none';
-        }
+        // تسجيل الدخول
+        async function login() {
+            const u = $('userInp').value.trim().toLowerCase();
+            const p = $('passInp').value.trim();
+            if(!u || !p) return alert('يرجى ملء البيانات');
 
-        // --- تسجيل الدخول (المنطق الجديد) ---
-        async function attemptLogin() {
-            const u = document.getElementById('username').value.trim().toLowerCase(); // Admin is lowercase
-            const p = document.getElementById('password').value.trim();
-            const err = document.getElementById('loginError');
-            
-            if(!u || !p) return err.innerText = "أدخل البيانات كاملة";
-            
-            toggleLoader(true);
-            err.innerText = "";
+            $('loader').style.display = 'flex';
 
             try {
-                // 1. محاولة الدخول كأدمن
-                let { data: admins, error: adminErr } = await supabase
-                    .from('admins')
-                    .select('*')
-                    .eq('username', u)
-                    .eq('password', p);
-
+                // 1. محاولة كأدمن
+                const { data: admins } = await supabase.from('admins').select('*').eq('username', u).eq('password', p);
+                
                 if (admins && admins.length > 0) {
                     isAdmin = true;
-                    currentUser = admins[0];
-                    await loadAdminDashboard();
-                    return; // تم الدخول
-                }
-
-                // 2. محاولة الدخول كوحدة سكنية
-                // نبحث عن الوحدة، ثم نتحقق من الباسورد المخزن داخل JSON
-                // ملاحظة: لسرعة الاستجابة سنجلب الوحدة مباشرة
-                const unitId = u.toUpperCase();
-                let { data: units, error: unitErr } = await supabase
-                    .from('units')
-                    .select('*')
-                    .eq('id', unitId);
-
-                if (units && units.length > 0) {
-                    const unit = units[0];
-                    const settings = unit.data.settings || {};
-                    // التحقق من الباسورد (الافتراضي 123456 اذا لم يوجد)
-                    const savedPass = settings.pass || '123456';
+                    // نخزن بيانات الأدمن لإرسالها مع كل طلب تعديل (تجاوز الحماية)
+                    authHeaders = { 'x-admin-user': u, 'x-admin-pass': p };
+                    // تفعيل الـ Custom Headers في Supabase Client
+                    supabase.rest.headers = { ...supabase.rest.headers, ...authHeaders };
                     
-                    if (savedPass === p) {
+                    await loadGrid();
+                } else {
+                    // 2. محاولة كوحدة
+                    const unitID = u.toUpperCase();
+                    const { data: unit } = await supabase.from('units').select('*').eq('id', unitID).single();
+                    
+                    if (unit && (unit.data.settings?.pass || '123456') === p) {
                         isAdmin = false;
-                        currentUser = unitId;
-                        openUnitInterface(unit);
-                        toggleLoader(false);
-                        return;
+                        openUnit(unit);
+                    } else {
+                        throw new Error('بيانات خاطئة');
                     }
                 }
-
-                throw new Error("بيانات الدخول غير صحيحة");
-
             } catch (e) {
-                console.error(e);
-                err.innerText = e.message || "خطأ في الاتصال";
-                toggleLoader(false);
+                alert(e.message || 'خطأ في الاتصال');
+                $('loader').style.display = 'none';
             }
         }
 
-        // --- لوحة الأدمن ---
-        async function loadAdminDashboard() {
-            const { data, error } = await supabase.from('units').select('*');
-            if(error) { alert("خطأ في جلب الوحدات"); toggleLoader(false); return; }
-            
-            allUnits = data;
+        async function loadGrid() {
+            const { data } = await supabase.from('units').select('*');
+            allUnits = data || [];
             renderGrid(allUnits);
-            showScreen('adminScreen');
-            toggleLoader(false);
+            showScreen('gridScreen');
+            $('loader').style.display = 'none';
+            
+            // إظهار عناصر الأدمن
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'block' : 'none');
         }
 
-        function renderGrid(units) {
-            const grid = document.getElementById('unitsGrid');
-            grid.innerHTML = "";
+        function renderGrid(list) {
+            const c = $('unitsContainer'); c.innerHTML = '';
+            // ترتيب ذكي: A1, A2... بدلاً من A1, A10
+            list.sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric:true}));
             
-            // ترتيب الفئات A, B, C
-            ['A', 'B', 'C'].forEach(cat => {
-                for(let i=1; i<=50; i++) {
-                    const id = cat + i;
-                    const unit = units.find(u => u.id === id);
-                    const isSold = unit && unit.data.info && unit.data.info.name;
-                    
-                    const div = document.createElement('div');
-                    div.className = `card ${isSold ? 'sold' : ''}`;
-                    div.innerHTML = `<h3>${id}</h3><small>${isSold ? unit.data.info.name : 'متاح'}</small>`;
-                    div.onclick = () => fetchAndOpenUnit(id);
-                    grid.appendChild(div);
-                }
+            list.forEach(u => {
+                const info = u.data.info || {};
+                const div = document.createElement('div');
+                div.className = `unit-card ${info.name ? 'sold' : ''}`;
+                div.innerHTML = `<h3>${u.id}</h3><small>${info.name || 'متاح'}</small>`;
+                div.onclick = () => openUnit(u);
+                c.appendChild(div);
             });
         }
 
-        function filterGrid(txt) {
-            const items = document.querySelectorAll('.card');
-            items.forEach(item => {
-                if(item.innerText.toLowerCase().includes(txt.toLowerCase())) item.style.display = 'block';
-                else item.style.display = 'none';
-            });
-        }
-
-        // --- واجهة الوحدة ---
-        async function fetchAndOpenUnit(id) {
-            toggleLoader(true);
-            // جلب أحدث بيانات للوحدة
-            const { data } = await supabase.from('units').select('*').eq('id', id).single();
-            
-            if (!data && isAdmin) {
-                // إذا لم تكن موجودة والداخل أدمن، ننشئ هيكل فارغ للعرض
-                openUnitInterface({ id: id, data: { info:{}, finance:{payments:[]}, work:[], settings:{pass:'123456'} } });
-            } else {
-                openUnitInterface(data);
-            }
-            toggleLoader(false);
-        }
-
-        function openUnitInterface(unitRow) {
-            currentUnitData = unitRow;
-            const d = unitRow.data || {};
+        function openUnit(u) {
+            curUnit = u;
+            const d = u.data;
             
             // تعبئة البيانات
-            document.getElementById('uTitle').innerText = "الوحدة " + unitRow.id;
-            document.getElementById('uOwner').innerText = d.info?.name || "غير محجوز";
+            $('dId').innerText = u.id;
+            $('dOwner').innerText = d.info?.name || 'غير محجوز';
             
-            document.getElementById('inpName').value = d.info?.name || "";
-            document.getElementById('inpPrice').value = d.info?.price || "";
-            document.getElementById('inpPass').value = d.settings?.pass || "123456";
+            $('infName').value = d.info?.name || '';
+            $('infPhone').value = d.info?.phone || '';
+            $('infPrice').value = fmt(d.info?.price || '');
+            
+            $('setUser').value = d.settings?.user || u.id;
+            $('setPass').value = d.settings?.pass || '';
 
             // الجداول
-            renderTable('tblPayments', d.finance?.payments || []);
-            renderTable('tblWorks', d.work || []);
-            
-            // حساب المجموع
-            let total = (d.finance?.payments || []).reduce((acc, cur) => acc + Number(cur.amount || 0), 0);
-            document.getElementById('totalPaid').innerText = total.toLocaleString();
+            renderTable('tblFinance', d.finance?.payments || [], ['date', 'amount', 'note']);
+            renderTable('tblWork', d.work || [], ['stage', 'percent', 'date']);
 
-            // صلاحيات الأدمن
-            if (isAdmin) {
-                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
-                document.getElementById('inpName').readOnly = false;
-                document.getElementById('inpPrice').readOnly = false;
-            } else {
-                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-                document.getElementById('inpName').readOnly = true;
-                document.getElementById('inpPrice').readOnly = true;
-            }
+            // الحسابات
+            let paid = (d.finance?.payments||[]).reduce((a,b)=>a+Number(String(b.amount).replace(/,/g,'')||0),0);
+            let total = Number(String(d.info?.price||0).replace(/,/g,''));
+            $('sPaid').innerText = fmt(paid);
+            $('sRem').innerText = fmt(total - paid);
+            let lastWork = (d.work||[])[d.work?.length-1];
+            $('sProg').innerText = lastWork ? lastWork.percent + '%' : '0%';
 
-            showScreen('unitScreen');
+            // صلاحيات
+            const inputs = ['infName', 'infPhone', 'infPrice'];
+            inputs.forEach(id => $(id).readOnly = !isAdmin);
+            document.querySelectorAll('.admin-only').forEach(e => e.style.display = isAdmin ? (e.tagName=='BUTTON'?'flex':'block') : 'none');
+
+            showScreen('detailScreen');
+            if(!isAdmin) $('loader').style.display = 'none';
         }
 
-        function renderTable(id, data) {
-            const body = document.getElementById(id);
-            body.innerHTML = "";
-            if(Array.isArray(data)) {
-                data.forEach(row => {
-                    // ندعم الصيغتين: الكائن (object) أو المصفوفة (array)
-                    let c1 = row.date || row.stage || row[0];
-                    let c2 = row.amount || row.percent || row[1];
-                    body.innerHTML += `<tr><td>${c1}</td><td>${c2}</td></tr>`;
-                });
-            }
+        function renderTable(id, data, keys) {
+            const b = $(id); b.innerHTML = '';
+            data.forEach(row => {
+                let tr = '<tr>';
+                keys.forEach(k => tr += `<td>${row[k]||'-'}</td>`);
+                tr += '</tr>';
+                b.innerHTML += tr;
+            });
         }
 
-        // --- عمليات الحفظ (للأدمن) ---
-        async function saveToDB() {
-            toggleLoader(true);
-            const { error } = await supabase
-                .from('units')
-                .upsert({ id: currentUnitData.id, data: currentUnitData.data });
-            
-            toggleLoader(false);
-            if(error) alert("فشل الحفظ: " + error.message);
+        // عمليات الحفظ (محمية الآن بـ SQL Policy)
+        async function saveDB() {
+            $('loader').style.display = 'flex';
+            const { error } = await supabase.from('units').upsert({ id: curUnit.id, data: curUnit.data });
+            $('loader').style.display = 'none';
+            if(error) alert('خطأ في الحفظ: ' + error.message);
             else {
-                // تحديث البيانات المحلية للأدمن
-                if(isAdmin && allUnits.length > 0) {
-                     const idx = allUnits.findIndex(u => u.id === currentUnitData.id);
-                     if(idx >= 0) allUnits[idx] = currentUnitData;
-                     else allUnits.push(currentUnitData);
-                     renderGrid(allUnits);
-                }
+                alert('تم الحفظ بنجاح');
+                if(isAdmin) loadGrid(); // تحديث القائمة
             }
         }
 
-        async function saveUnitInfo() {
-            if(!currentUnitData.data.info) currentUnitData.data.info = {};
-            currentUnitData.data.info.name = document.getElementById('inpName').value;
-            currentUnitData.data.info.price = document.getElementById('inpPrice').value;
-            await saveToDB();
-            alert("تم حفظ المعلومات");
+        function saveInfo() {
+            if(!curUnit.data.info) curUnit.data.info = {};
+            curUnit.data.info.name = $('infName').value;
+            curUnit.data.info.phone = $('infPhone').value;
+            curUnit.data.info.price = $('infPrice').value;
+            saveDB();
         }
 
-        async function saveUnitPass() {
-            if(!currentUnitData.data.settings) currentUnitData.data.settings = {};
-            currentUnitData.data.settings.pass = document.getElementById('inpPass').value;
-            await saveToDB();
-            alert("تم تحديث الباسورد");
+        function saveSettings() {
+            if(!curUnit.data.settings) curUnit.data.settings = {};
+            curUnit.data.settings.user = $('setUser').value;
+            curUnit.data.settings.pass = $('setPass').value;
+            saveDB();
         }
 
-        async function addPayment() {
-            const amt = document.getElementById('newPayAmount').value;
-            if(!amt) return;
-            
-            if(!currentUnitData.data.finance) currentUnitData.data.finance = { payments: [] };
-            if(!currentUnitData.data.finance.payments) currentUnitData.data.finance.payments = [];
-            
+        function addItem(type) {
             const today = new Date().toISOString().split('T')[0];
-            currentUnitData.data.finance.payments.push({ date: today, amount: amt });
-            
-            await saveToDB();
-            openUnitInterface(currentUnitData); // إعادة تحميل للعرض
-            document.getElementById('newPayAmount').value = "";
+            if(type === 'finance') {
+                const amt = prompt('المبلغ المدفوع:');
+                if(!amt) return;
+                const note = prompt('ملاحظة (اختياري):');
+                if(!curUnit.data.finance) curUnit.data.finance = {payments:[]};
+                curUnit.data.finance.payments.push({date:today, amount:amt, note:note});
+            } else {
+                const stage = prompt('المرحلة (مثلاً صب سقف):');
+                if(!stage) return;
+                const perc = prompt('نسبة الإنجاز (رقم فقط):');
+                if(!curUnit.data.work) curUnit.data.work = [];
+                curUnit.data.work.push({stage:stage, percent:perc, date:today});
+            }
+            saveDB();
+            openUnit(curUnit); // تحديث الواجهة
         }
 
-        async function addWork() {
-            const stg = document.getElementById('newWorkStage').value;
-            const prc = document.getElementById('newWorkPerc').value;
-            if(!stg) return;
-
-            if(!currentUnitData.data.work) currentUnitData.data.work = [];
-            currentUnitData.data.work.push({ stage: stg, percent: prc });
-
-            await saveToDB();
-            openUnitInterface(currentUnitData);
-            document.getElementById('newWorkStage').value = "";
-        }
-
-        // --- أدوات ---
-        function setTab(name) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('show-tab'));
-            
+        function filterGrid(cat) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
-            document.getElementById('tab-' + name).classList.add('show-tab');
+            if(cat === 'all') renderGrid(allUnits);
+            else renderGrid(allUnits.filter(u => u.id.startsWith(cat)));
         }
 
-        function goBack() {
-            if(isAdmin) showScreen('adminScreen');
-            else logout();
+        function searchGrid(txt) {
+            const t = txt.toLowerCase();
+            renderGrid(allUnits.filter(u => u.id.toLowerCase().includes(t) || (u.data.info?.name||'').includes(t)));
+        }
+
+        function openTab(t) {
+            document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('show'));
+            event.target.classList.add('active');
+            $('tab-'+t).classList.add('show');
         }
 
         function logout() {
-            currentUser = null;
-            isAdmin = false;
-            document.getElementById('username').value = "";
-            document.getElementById('password').value = "";
-            showScreen('loginScreen');
+            location.reload();
         }
     </script>
 </body>
